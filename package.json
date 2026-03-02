@@ -1,0 +1,30 @@
+{
+  "name": "google-sheets-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server plugin for Claude Code to interact with Google Sheets",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "google-sheets-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:41098/git/jd432-cc/Claude"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "googleapis": "^171.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3"
+  }
+}
