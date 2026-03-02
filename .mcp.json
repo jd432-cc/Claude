@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "google-sheets": {
+      "command": "node",
+      "args": ["/home/user/Claude/dist/index.js"],
+      "env": {
+        "GOOGLE_SERVICE_ACCOUNT_KEY_FILE": ""
+      }
+    }
+  }
+}
