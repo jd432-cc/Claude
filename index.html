@@ -73,6 +73,7 @@
         <div class="toolbar-group">
           <button id="wire-add-connector" class="btn btn-primary">+ Add Connector</button>
           <button id="wire-add-component" class="btn btn-primary" style="background:#22c55e;border-color:#16a34a;">+ Add Component</button>
+          <button id="wire-add-route-node" class="btn btn-primary" style="background:#7c3aed;border-color:#6d28d9;">+ Add Node</button>
           <button id="wire-add-wire" class="btn btn-primary">+ Add Wire</button>
           <button id="wire-import" class="btn">Import JSON</button>
           <button id="wire-export" class="btn">Export JSON</button>
@@ -87,6 +88,8 @@
           <div id="wire-connector-list" class="item-list"></div>
           <h2 style="margin-top:16px;">Components</h2>
           <div id="wire-component-list" class="item-list"></div>
+          <h2 style="margin-top:16px;">Routing Nodes</h2>
+          <div id="wire-route-node-list" class="item-list"></div>
         </div>
         <div class="panel panel-right">
           <div id="wire-detail-placeholder" class="placeholder-text">
@@ -156,7 +159,7 @@
           <h2>Wiring Diagram</h2>
           <button id="wire-reset-layout" class="btn btn-sm">Reset Layout</button>
         </div>
-        <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:8px;">Click a pin dot to start a wire, then click another pin to connect. Drag connectors/components to reposition. Double-click to edit.</p>
+        <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:8px;">Click a pin dot to start a wire, then click another pin to connect. Drag connectors/components/nodes to reposition. Double-click to edit. Assign wires to routing nodes via the wire edit modal.</p>
         <canvas id="wiring-diagram-canvas" width="900" height="350"></canvas>
       </div>
     </section>

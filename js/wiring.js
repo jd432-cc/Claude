@@ -2,9 +2,10 @@
 
 const Wiring = (() => {
   let state = {
-    connectors: [],  // { id, name, type, pins: [{ id, number, label, func }] }
-    components: [],  // { id, name, pins: [{ id, number, label, func }] }
-    wires: []        // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes }
+    connectors: [],   // { id, name, type, pins: [{ id, number, label, func }] }
+    components: [],   // { id, name, pins: [{ id, number, label, func }] }
+    wires: [],        // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes, routeNode? }
+    routeNodes: []    // { id, name, width }
   };
 
   let selectedConnectorId = null;
@@ -27,6 +28,7 @@ const Wiring = (() => {
   function setState(newState) {
     state = newState;
     if (!state.components) state.components = [];
+    if (!state.routeNodes) state.routeNodes = [];
     selectedConnectorId = null;
     selectedComponentId = null;
     render();
@@ -206,6 +208,45 @@ const Wiring = (() => {
     render();
   }
 
+  /* ---- Route Nodes ---- */
+  const ROUTE_NODE_HEIGHT = 10;
+
+  function addRouteNode() {
+    const html = Utils.formField('name', 'Node Name', 'text', { value: '' }) +
+      Utils.formField('width', 'Bar Width (px)', 'number', { value: 200, min: 40, max: 2000 });
+
+    Utils.showModal('Add Routing Node', html, () => {
+      const name = Utils.getModalValue('name').trim() || 'Node';
+      const width = parseInt(Utils.getModalValue('width')) || 200;
+      state.routeNodes.push({ id: Utils.uid('rn'), name, width });
+      render();
+    });
+  }
+
+  function editRouteNode(nodeId) {
+    const node = state.routeNodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    const html = Utils.formField('name', 'Node Name', 'text', { value: node.name }) +
+      Utils.formField('width', 'Bar Width (px)', 'number', { value: node.width, min: 40, max: 2000 });
+
+    Utils.showModal('Edit Routing Node', html, () => {
+      node.name = Utils.getModalValue('name').trim() || node.name;
+      node.width = parseInt(Utils.getModalValue('width')) || node.width;
+      render();
+    });
+  }
+
+  function deleteRouteNode(nodeId) {
+    // Unassign any wires from this node
+    for (const w of state.wires) {
+      if (w.routeNode === nodeId) delete w.routeNode;
+    }
+    state.routeNodes = state.routeNodes.filter(n => n.id !== nodeId);
+    delete connectorPositions[nodeId];
+    render();
+  }
+
   /* ---- Pins ---- */
   function addPin() {
     if (!selectedConnectorId) return;
@@ -283,6 +324,14 @@ const Wiring = (() => {
     return options;
   }
 
+  function buildRouteNodeOptions() {
+    const opts = [{ value: '', label: '(None)' }];
+    for (const rn of state.routeNodes) {
+      opts.push({ value: rn.id, label: rn.name });
+    }
+    return opts;
+  }
+
   function addWire(preFrom, preTo) {
     if (state.connectors.length < 1 && state.components.length < 1) {
       alert('Add at least one connector or component before creating wires.');
@@ -299,12 +348,15 @@ const Wiring = (() => {
     const defaultFrom = preFrom || pinOpts[0].value;
     const defaultTo = preTo || (pinOpts.length > 1 ? pinOpts[1].value : pinOpts[0].value);
 
+    const rnOpts = buildRouteNodeOptions();
+
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: 'W' + nextWireNum }) +
       Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, defaultFrom) +
       Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, defaultTo) +
       Utils.formField('gauge', 'Wire Gauge', 'select', { value: '18', options: Utils.getAWGOptions() }) +
       Utils.colorPickerField('color', 'Wire Color', '#dc2626') +
       Utils.formField('length', 'Length (m)', 'number', { value: 1, min: 0.01, step: 0.01 }) +
+      Utils.formField('routeNode', 'Route Through Node', 'select', { value: '', options: rnOpts }) +
       Utils.formField('notes', 'Notes', 'text', { value: '' });
 
     Utils.showModal('Add Wire', html, () => {
@@ -312,8 +364,9 @@ const Wiring = (() => {
       const toVal = Utils.getModalValue('to');
       const [fromConn, fromPin] = fromVal.split('::');
       const [toConn, toPin] = toVal.split('::');
+      const rnVal = Utils.getModalValue('routeNode');
 
-      state.wires.push({
+      const wireObj = {
         id: Utils.uid('wire'),
         wireId: Utils.getModalValue('wireId').trim() || 'W' + nextWireNum,
         fromConnector: fromConn,
@@ -324,7 +377,9 @@ const Wiring = (() => {
         color: Utils.getModalValue('color'),
         length: parseFloat(Utils.getModalValue('length')) || 1,
         notes: Utils.getModalValue('notes').trim()
-      });
+      };
+      if (rnVal) wireObj.routeNode = rnVal;
+      state.wires.push(wireObj);
       render();
     }, () => {
       Utils.initSearchSelects({ from: pinOpts, to: pinOpts });
@@ -337,6 +392,7 @@ const Wiring = (() => {
     if (!wire) return;
 
     const pinOpts = buildPinOptions();
+    const rnOpts = buildRouteNodeOptions();
 
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: wire.wireId }) +
       Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, wire.fromConnector + '::' + wire.fromPin) +
@@ -344,6 +400,7 @@ const Wiring = (() => {
       Utils.formField('gauge', 'Wire Gauge', 'select', { value: wire.gauge, options: Utils.getAWGOptions() }) +
       Utils.colorPickerField('color', 'Wire Color', wire.color) +
       Utils.formField('length', 'Length (m)', 'number', { value: wire.length, min: 0.01, step: 0.01 }) +
+      Utils.formField('routeNode', 'Route Through Node', 'select', { value: wire.routeNode || '', options: rnOpts }) +
       Utils.formField('notes', 'Notes', 'text', { value: wire.notes });
 
     Utils.showModal('Edit Wire', html, () => {
@@ -351,6 +408,7 @@ const Wiring = (() => {
       const toVal = Utils.getModalValue('to');
       const [fromConn, fromPin] = fromVal.split('::');
       const [toConn, toPin] = toVal.split('::');
+      const rnVal = Utils.getModalValue('routeNode');
 
       wire.wireId = Utils.getModalValue('wireId').trim() || wire.wireId;
       wire.fromConnector = fromConn;
@@ -361,6 +419,7 @@ const Wiring = (() => {
       wire.color = Utils.getModalValue('color');
       wire.length = parseFloat(Utils.getModalValue('length')) || wire.length;
       wire.notes = Utils.getModalValue('notes').trim();
+      if (rnVal) { wire.routeNode = rnVal; } else { delete wire.routeNode; }
       render();
     }, () => {
       Utils.initSearchSelects({ from: pinOpts, to: pinOpts });
@@ -520,7 +579,8 @@ const Wiring = (() => {
       if (ids.length > 1) ids.forEach(id => dupIds.add(id));
     }
 
-    // Draw wires, connectors, components — same as drawWiringDiagram
+    // Draw route nodes, wires, connectors, components — same as drawWiringDiagram
+    state.routeNodes.forEach(rn => drawRouteNode(ctx, rn));
     for (const wire of state.wires) {
       drawWire(ctx, wire, dupIds.has(wire.id));
     }
@@ -577,6 +637,7 @@ const Wiring = (() => {
     renderConnectorDetail();
     renderComponentList();
     renderComponentDetail();
+    renderRouteNodeList();
     renderWireSchedule();
     updateStats();
     drawWiringDiagram();
@@ -737,6 +798,34 @@ const Wiring = (() => {
     }
   }
 
+  function renderRouteNodeList() {
+    const container = document.getElementById('wire-route-node-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const rn of state.routeNodes) {
+      const wireCount = state.wires.filter(w => w.routeNode === rn.id).length;
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        <div>
+          <div class="item-name">${escHtml(rn.name)}</div>
+          <div class="item-sub">${wireCount} wire${wireCount !== 1 ? 's' : ''} · ${rn.width}px wide</div>
+        </div>
+        <div class="item-actions">
+          <button title="Edit" data-action="edit">&#9998;</button>
+          <button title="Delete" data-action="delete">&times;</button>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'edit') { e.stopPropagation(); editRouteNode(rn.id); }
+        else if (action === 'delete') { e.stopPropagation(); deleteRouteNode(rn.id); }
+      });
+      container.appendChild(card);
+    }
+  }
+
   function renderWireSchedule() {
     const tbody = document.getElementById('wire-schedule-tbody');
     tbody.innerHTML = '';
@@ -787,6 +876,35 @@ const Wiring = (() => {
       tr.querySelector('[data-action="delete-wire"]').addEventListener('click', () => deleteWire(wire.id));
       tbody.appendChild(tr);
     }
+  }
+
+  function getWireLabelPos(wire) {
+    const fromConn = findNode(wire.fromConnector);
+    const toConn = findNode(wire.toConnector);
+    if (!fromConn || !toConn) return null;
+    const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
+    const tIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
+    if (fIdx === -1 || tIdx === -1) return null;
+    const fp = pinDotPos(fromConn, fIdx);
+    const tp = pinDotPos(toConn, tIdx);
+    if (!fp || !tp) return null;
+
+    const x1 = fp.x, y1 = fp.y + PIN_RADIUS + 1;
+    const x2 = tp.x, y2 = tp.y + PIN_RADIUS + 1;
+
+    const rn = wire.routeNode ? state.routeNodes.find(n => n.id === wire.routeNode) : null;
+    const rnPos = rn ? connectorPositions[rn.id] : null;
+
+    if (rnPos) {
+      const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
+      const barLeft = rnPos.x - (rn.width || 200) / 2;
+      const barRight = rnPos.x + (rn.width || 200) / 2;
+      const entryX = Math.max(barLeft, Math.min(barRight, x1));
+      const exitX = Math.max(barLeft, Math.min(barRight, x2));
+      // Midpoint of first segment (pin to bar)
+      return { x: (x1 + entryX) / 2, y: (y1 + barY) / 2 };
+    }
+    return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
   }
 
   /* ---- Color mapping for display ---- */
@@ -857,45 +975,57 @@ const Wiring = (() => {
     const canvas = document.getElementById('wiring-diagram-canvas');
     const W = canvas ? canvas.clientWidth : 900;
 
+    // Connector/component positions
     const nodes = allNodes();
     const unpositioned = nodes.filter(c => !connectorPositions[c.id]);
-    if (unpositioned.length === 0) {
-      // Clean up positions for deleted nodes
-      const ids = new Set(nodes.map(c => c.id));
-      for (const key of Object.keys(connectorPositions)) {
-        if (!ids.has(key)) delete connectorPositions[key];
-      }
-      return;
+
+    if (unpositioned.length > 0) {
+      const totalNodes = nodes.length;
+      const spacing = (W - DIAGRAM_MARGIN * 2) / Math.max(1, totalNodes);
+
+      unpositioned.forEach((node) => {
+        const idx = nodes.indexOf(node);
+        connectorPositions[node.id] = {
+          x: DIAGRAM_MARGIN + spacing * idx + spacing / 2,
+          y: DIAGRAM_TOP
+        };
+      });
     }
 
-    // Space nodes evenly across the canvas width
-    const totalNodes = nodes.length;
-    const spacing = (W - DIAGRAM_MARGIN * 2) / Math.max(1, totalNodes);
+    // Route node positions — default below connectors
+    const unposRn = state.routeNodes.filter(rn => !connectorPositions[rn.id]);
+    if (unposRn.length > 0) {
+      const rnY = DIAGRAM_TOP + connTotalHeight() + 60;
+      unposRn.forEach((rn, i) => {
+        connectorPositions[rn.id] = {
+          x: DIAGRAM_MARGIN + (rn.width || 200) / 2 + i * 40,
+          y: rnY + i * 30
+        };
+      });
+    }
 
-    unpositioned.forEach((node) => {
-      const idx = nodes.indexOf(node);
-      connectorPositions[node.id] = {
-        x: DIAGRAM_MARGIN + spacing * idx + spacing / 2,
-        y: DIAGRAM_TOP
-      };
-    });
-
-    // Clean up positions for deleted nodes
-    const ids = new Set(nodes.map(c => c.id));
+    // Clean up positions for deleted items
+    const allIds = new Set([...nodes.map(c => c.id), ...state.routeNodes.map(r => r.id)]);
     for (const key of Object.keys(connectorPositions)) {
-      if (!ids.has(key)) delete connectorPositions[key];
+      if (!allIds.has(key)) delete connectorPositions[key];
     }
   }
 
   /* ---- Auto-size canvas height ---- */
   function calcCanvasHeight() {
     const nodes = allNodes();
-    if (nodes.length === 0) return 200;
+    if (nodes.length === 0 && state.routeNodes.length === 0) return 200;
     let maxBottom = 200;
     for (const node of nodes) {
       const pos = connectorPositions[node.id];
       if (!pos) continue;
       const bottom = pos.y + connTotalHeight() + 120;
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    for (const rn of state.routeNodes) {
+      const pos = connectorPositions[rn.id];
+      if (!pos) continue;
+      const bottom = pos.y + ROUTE_NODE_HEIGHT + 80;
       if (bottom > maxBottom) maxBottom = bottom;
     }
     return Math.max(300, maxBottom);
@@ -928,7 +1058,7 @@ const Wiring = (() => {
     ctx.clearRect(0, 0, W, H);
 
     const nodes = allNodes();
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && state.routeNodes.length === 0) {
       ctx.fillStyle = '#8890a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
@@ -951,7 +1081,10 @@ const Wiring = (() => {
       if (ids.length > 1) ids.forEach(id => diagramDupIds.add(id));
     }
 
-    // Draw wires first (behind everything)
+    // Draw route nodes first (behind wires)
+    state.routeNodes.forEach(rn => drawRouteNode(ctx, rn));
+
+    // Draw wires
     for (const wire of state.wires) {
       drawWire(ctx, wire, diagramDupIds.has(wire.id));
     }
@@ -1148,6 +1281,58 @@ const Wiring = (() => {
     });
   }
 
+  function drawRouteNode(ctx, rn) {
+    const pos = connectorPositions[rn.id];
+    if (!pos) return;
+
+    const w = rn.width || 200;
+    const h = ROUTE_NODE_HEIGHT;
+    const x = pos.x - w / 2;
+    const y = pos.y;
+
+    // Bar fill
+    ctx.fillStyle = '#2d1f4e';
+    ctx.strokeStyle = '#7c3aed';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.fill();
+    ctx.stroke();
+
+    // Hatch pattern for visual distinction
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(124, 58, 237, 0.25)';
+    ctx.lineWidth = 1;
+    for (let hx = x - h; hx < x + w + h; hx += 8) {
+      ctx.beginPath();
+      ctx.moveTo(hx, y + h);
+      ctx.lineTo(hx + h, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Label above the bar
+    ctx.fillStyle = '#c4b5fd';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(truncate(rn.name, 24), pos.x, y - 3);
+
+    // Wire count badge
+    const wireCount = state.wires.filter(w => w.routeNode === rn.id).length;
+    if (wireCount > 0) {
+      const badge = wireCount + ' wire' + (wireCount !== 1 ? 's' : '');
+      ctx.fillStyle = '#8b5cf6';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(badge, pos.x, y + h + 2);
+    }
+  }
+
   function drawWire(ctx, wire, isDuplicate) {
     const fromConn = findNode(wire.fromConnector);
     const toConn = findNode(wire.toConnector);
@@ -1167,28 +1352,49 @@ const Wiring = (() => {
     const x2 = tp.x;
     const y2 = tp.y + PIN_RADIUS + 1;
 
-    // Duplicate wires get a red dashed underline
+    // Check if wire routes through a node
+    const rn = wire.routeNode ? state.routeNodes.find(n => n.id === wire.routeNode) : null;
+    const rnPos = rn ? connectorPositions[rn.id] : null;
+
+    // Build path segments
+    const segments = [];
+    if (rnPos) {
+      // Route through the bar: pin1 → bar entry → bar exit → pin2
+      const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
+      const barLeft = rnPos.x - (rn.width || 200) / 2;
+      const barRight = rnPos.x + (rn.width || 200) / 2;
+      // Clamp entry/exit x to bar bounds
+      const entryX = Math.max(barLeft, Math.min(barRight, x1));
+      const exitX = Math.max(barLeft, Math.min(barRight, x2));
+      segments.push({ x: x1, y: y1 }, { x: entryX, y: barY }, { x: exitX, y: barY }, { x: x2, y: y2 });
+    } else {
+      segments.push({ x: x1, y: y1 }, { x: x2, y: y2 });
+    }
+
+    // Draw duplicate underline
     if (isDuplicate) {
       ctx.strokeStyle = '#dc2626';
       ctx.lineWidth = 4;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
+      ctx.moveTo(segments[0].x, segments[0].y);
+      for (let i = 1; i < segments.length; i++) ctx.lineTo(segments[i].x, segments[i].y);
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
+    // Draw wire
     ctx.strokeStyle = cssColor(wire.color);
     ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(segments[0].x, segments[0].y);
+    for (let i = 1; i < segments.length; i++) ctx.lineTo(segments[i].x, segments[i].y);
     ctx.stroke();
 
-    // Wire label at the midpoint
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
+    // Wire label at the midpoint of the full path
+    const midSeg = Math.floor(segments.length / 2);
+    const midX = (segments[midSeg - 1].x + segments[midSeg].x) / 2;
+    const midY = (segments[midSeg - 1].y + segments[midSeg].y) / 2;
     drawWireLabel(ctx, wire, midX, midY, isDuplicate);
   }
 
@@ -1258,6 +1464,23 @@ const Wiring = (() => {
     return null;
   }
 
+  function hitTestRouteNode(mx, my) {
+    for (const rn of state.routeNodes) {
+      const pos = connectorPositions[rn.id];
+      if (!pos) continue;
+      const w = rn.width || 200;
+      const h = ROUTE_NODE_HEIGHT;
+      // Generous hit area: include label above and badge below
+      const x = pos.x - w / 2;
+      const hitTop = pos.y - 16;
+      const hitBot = pos.y + h + 16;
+      if (mx >= x && mx <= x + w && my >= hitTop && my <= hitBot) {
+        return rn.id;
+      }
+    }
+    return null;
+  }
+
   function onCanvasMouseDown(e) {
     const { x, y } = canvasCoords(e);
 
@@ -1314,6 +1537,19 @@ const Wiring = (() => {
       renderConnectorDetail();
       renderComponentDetail();
       e.target.style.cursor = 'grabbing';
+      return;
+    }
+
+    // Route node drag
+    const rnHitId = hitTestRouteNode(x, y);
+    if (rnHitId) {
+      const pos = connectorPositions[rnHitId];
+      dragState = {
+        connId: rnHitId,
+        offsetX: x - pos.x,
+        offsetY: y - pos.y
+      };
+      e.target.style.cursor = 'grabbing';
     }
   }
 
@@ -1333,8 +1569,11 @@ const Wiring = (() => {
     }
 
     if (dragState) {
-      const conn = state.connectors.find(c => c.id === dragState.connId);
-      const minX = conn ? connBoxWidth(conn) / 2 + 10 : 70;
+      const node = findNode(dragState.connId);
+      const rn = state.routeNodes.find(r => r.id === dragState.connId);
+      let minX = 70;
+      if (node) minX = connBoxWidth(node) / 2 + 10;
+      else if (rn) minX = (rn.width || 200) / 2 + 10;
       connectorPositions[dragState.connId] = {
         x: Math.max(minX, x - dragState.offsetX),
         y: Math.max(20, y - dragState.offsetY)
@@ -1359,31 +1598,17 @@ const Wiring = (() => {
       drawWiringDiagram();
     }
 
-    // Hover cursor for connectors
-    const hitId = hitTestConnector(x, y);
+    // Hover cursor for connectors and route nodes
+    const hitId = hitTestConnector(x, y) || hitTestRouteNode(x, y);
     e.target.style.cursor = hitId ? 'grab' : 'default';
 
     // Hover detection for wire labels
     let newHoveredWire = null;
     for (const wire of state.wires) {
-      const fromConn = findNode(wire.fromConnector);
-      const toConn = findNode(wire.toConnector);
-      if (!fromConn || !toConn) continue;
+      const labelPos = getWireLabelPos(wire);
+      if (!labelPos) continue;
 
-      const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
-      const tIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
-      if (fIdx === -1 || tIdx === -1) continue;
-
-      const fp = pinDotPos(fromConn, fIdx);
-      const tp = pinDotPos(toConn, tIdx);
-      if (!fp || !tp) continue;
-
-      const y1 = fp.y + PIN_RADIUS + 1;
-      const y2 = tp.y + PIN_RADIUS + 1;
-      const midX = (fp.x + tp.x) / 2;
-      const midY = (y1 + y2) / 2;
-
-      const dist = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2);
+      const dist = Math.sqrt((x - labelPos.x) ** 2 + (y - labelPos.y) ** 2);
       if (dist < 20) {
         newHoveredWire = wire.id;
         break;
@@ -1415,6 +1640,11 @@ const Wiring = (() => {
       } else {
         editComponent(hitId);
       }
+      return;
+    }
+    const rnHitId = hitTestRouteNode(x, y);
+    if (rnHitId) {
+      editRouteNode(rnHitId);
     }
   }
 
@@ -1453,6 +1683,7 @@ const Wiring = (() => {
   function init() {
     document.getElementById('wire-add-connector').addEventListener('click', addConnector);
     document.getElementById('wire-add-component').addEventListener('click', addComponent);
+    document.getElementById('wire-add-route-node').addEventListener('click', addRouteNode);
     document.getElementById('wire-add-wire').addEventListener('click', addWire);
     document.getElementById('wire-add-pin').addEventListener('click', addPin);
     document.getElementById('wire-add-comp-pin').addEventListener('click', addComponentPin);
