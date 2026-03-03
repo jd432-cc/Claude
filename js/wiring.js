@@ -3,10 +3,12 @@
 const Wiring = (() => {
   let state = {
     connectors: [],  // { id, name, type, pins: [{ id, number, label, func }] }
+    components: [],  // { id, name, pins: [{ id, number, label, func }] }
     wires: []        // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes }
   };
 
   let selectedConnectorId = null;
+  let selectedComponentId = null;
 
   // Diagram layout positions (persisted per connector id)
   let connectorPositions = {};  // { connId: { x, y } }
@@ -24,7 +26,9 @@ const Wiring = (() => {
 
   function setState(newState) {
     state = newState;
+    if (!state.components) state.components = [];
     selectedConnectorId = null;
+    selectedComponentId = null;
     render();
   }
 
@@ -104,6 +108,101 @@ const Wiring = (() => {
 
   function selectConnector(connId) {
     selectedConnectorId = connId;
+    selectedComponentId = null;
+    render();
+  }
+
+  /* ---- Components ---- */
+  function addComponent() {
+    const html = Utils.formField('name', 'Component Name', 'text', { value: '' }) +
+      Utils.formField('pinCount', 'Number of Pins', 'number', { value: 2, min: 1, max: 200 });
+
+    Utils.showModal('Add Component', html, () => {
+      const name = Utils.getModalValue('name').trim() || 'Component';
+      const pinCount = parseInt(Utils.getModalValue('pinCount')) || 2;
+      const pins = [];
+      for (let i = 1; i <= pinCount; i++) {
+        pins.push({ id: Utils.uid('pin'), number: i, label: 'Pin ' + i, func: '' });
+      }
+      state.components.push({ id: Utils.uid('comp'), name, pins });
+      render();
+    });
+  }
+
+  function editComponent(compId) {
+    const comp = state.components.find(c => c.id === compId);
+    if (!comp) return;
+
+    const html = Utils.formField('name', 'Component Name', 'text', { value: comp.name });
+
+    Utils.showModal('Edit Component', html, () => {
+      comp.name = Utils.getModalValue('name').trim() || comp.name;
+      render();
+    });
+  }
+
+  function deleteComponent(compId) {
+    state.wires = state.wires.filter(w => w.fromConnector !== compId && w.toConnector !== compId);
+    state.components = state.components.filter(c => c.id !== compId);
+    if (selectedComponentId === compId) selectedComponentId = null;
+    render();
+  }
+
+  function selectComponent(compId) {
+    selectedComponentId = compId;
+    selectedConnectorId = null;
+    render();
+  }
+
+  /* ---- Component Pins ---- */
+  function addComponentPin() {
+    if (!selectedComponentId) return;
+    const comp = state.components.find(c => c.id === selectedComponentId);
+    if (!comp) return;
+
+    const nextNum = comp.pins.length > 0 ? Math.max(...comp.pins.map(p => p.number)) + 1 : 1;
+    const html = Utils.formField('number', 'Pin Number', 'number', { value: nextNum, min: 1 }) +
+      Utils.formField('label', 'Label', 'text', { value: 'Pin ' + nextNum }) +
+      Utils.formField('func', 'Function', 'text', { value: '' });
+
+    Utils.showModal('Add Pin to Component', html, () => {
+      comp.pins.push({
+        id: Utils.uid('pin'),
+        number: parseInt(Utils.getModalValue('number')) || nextNum,
+        label: Utils.getModalValue('label').trim() || 'Pin ' + nextNum,
+        func: Utils.getModalValue('func').trim()
+      });
+      comp.pins.sort((a, b) => a.number - b.number);
+      render();
+    });
+  }
+
+  function editComponentPin(compId, pinId) {
+    const comp = state.components.find(c => c.id === compId);
+    if (!comp) return;
+    const pin = comp.pins.find(p => p.id === pinId);
+    if (!pin) return;
+
+    const html = Utils.formField('number', 'Pin Number', 'number', { value: pin.number, min: 1 }) +
+      Utils.formField('label', 'Label', 'text', { value: pin.label }) +
+      Utils.formField('func', 'Function', 'text', { value: pin.func || '' });
+
+    Utils.showModal('Edit Component Pin', html, () => {
+      pin.number = parseInt(Utils.getModalValue('number')) || pin.number;
+      pin.label = Utils.getModalValue('label').trim() || pin.label;
+      pin.func = Utils.getModalValue('func').trim();
+      comp.pins.sort((a, b) => a.number - b.number);
+      render();
+    });
+  }
+
+  function deleteComponentPin(compId, pinId) {
+    const comp = state.components.find(c => c.id === compId);
+    if (!comp) return;
+    state.wires = state.wires.filter(w =>
+      !((w.fromConnector === compId && w.fromPin === pinId) || (w.toConnector === compId && w.toPin === pinId))
+    );
+    comp.pins = comp.pins.filter(p => p.id !== pinId);
     render();
   }
 
@@ -173,12 +272,20 @@ const Wiring = (() => {
         });
       }
     }
+    for (const comp of state.components) {
+      for (const pin of comp.pins) {
+        options.push({
+          value: comp.id + '::' + pin.id,
+          label: comp.name + ' : Pin ' + pin.number + (pin.label !== 'Pin ' + pin.number ? ' (' + pin.label + ')' : '')
+        });
+      }
+    }
     return options;
   }
 
   function addWire(preFrom, preTo) {
-    if (state.connectors.length < 1) {
-      alert('Add at least one connector before creating wires.');
+    if (state.connectors.length < 1 && state.components.length < 1) {
+      alert('Add at least one connector or component before creating wires.');
       return;
     }
 
@@ -319,13 +426,23 @@ const Wiring = (() => {
       rows.push([conn.name, conn.type, conn.pins.length]);
     }
 
+    // Component summary
+    if (state.components.length > 0) {
+      rows.push([]);
+      rows.push(['--- Component Summary ---']);
+      rows.push(['Component', 'Pin Count']);
+      for (const comp of state.components) {
+        rows.push([comp.name, comp.pins.length]);
+      }
+    }
+
     const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
     Utils.downloadFile('wiring_bom.csv', csv, 'text/csv');
   }
 
   /* ---- Helpers ---- */
   function getPinLabel(connId, pinId) {
-    const conn = state.connectors.find(c => c.id === connId);
+    const conn = state.connectors.find(c => c.id === connId) || state.components.find(c => c.id === connId);
     if (!conn) return '?';
     const pin = conn.pins.find(p => p.id === pinId);
     if (!pin) return conn.name + ':?';
@@ -339,6 +456,15 @@ const Wiring = (() => {
     );
   }
 
+  /* ---- Unified node lookup (connector or component) ---- */
+  function findNode(id) {
+    return state.connectors.find(c => c.id === id) || state.components.find(c => c.id === id);
+  }
+
+  function allNodes() {
+    return [...state.connectors, ...state.components];
+  }
+
   function updateStats() {
     document.getElementById('wire-count-display').textContent = 'Wires: ' + state.wires.length;
     const total = state.wires.reduce((sum, w) => sum + (w.length || 0), 0);
@@ -349,6 +475,8 @@ const Wiring = (() => {
   function render() {
     renderConnectorList();
     renderConnectorDetail();
+    renderComponentList();
+    renderComponentDetail();
     renderWireSchedule();
     updateStats();
     drawWiringDiagram();
@@ -386,14 +514,15 @@ const Wiring = (() => {
     const detail = document.getElementById('wire-detail');
 
     if (!selectedConnectorId) {
-      placeholder.style.display = '';
+      // Only show placeholder if no component is selected either
+      if (!selectedComponentId) placeholder.style.display = '';
       detail.style.display = 'none';
       return;
     }
 
     const conn = state.connectors.find(c => c.id === selectedConnectorId);
     if (!conn) {
-      placeholder.style.display = '';
+      if (!selectedComponentId) placeholder.style.display = '';
       detail.style.display = 'none';
       return;
     }
@@ -427,6 +556,83 @@ const Wiring = (() => {
 
       tr.querySelector('[data-action="edit-pin"]').addEventListener('click', () => editPin(conn.id, pin.id));
       tr.querySelector('[data-action="delete-pin"]').addEventListener('click', () => deletePin(conn.id, pin.id));
+      tbody.appendChild(tr);
+    }
+  }
+
+  function renderComponentList() {
+    const container = document.getElementById('wire-component-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const comp of state.components) {
+      const card = document.createElement('div');
+      card.className = 'item-card' + (selectedComponentId === comp.id ? ' selected' : '');
+      card.innerHTML = `
+        <div>
+          <div class="item-name">${escHtml(comp.name)}</div>
+          <div class="item-sub">${comp.pins.length} pins</div>
+        </div>
+        <div class="item-actions">
+          <button title="Edit" data-action="edit">&#9998;</button>
+          <button title="Delete" data-action="delete">&times;</button>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'edit') { e.stopPropagation(); editComponent(comp.id); }
+        else if (action === 'delete') { e.stopPropagation(); deleteComponent(comp.id); }
+        else selectComponent(comp.id);
+      });
+      container.appendChild(card);
+    }
+  }
+
+  function renderComponentDetail() {
+    const mainPlaceholder = document.getElementById('wire-detail-placeholder');
+    const detail = document.getElementById('wire-comp-detail');
+    if (!detail) return;
+
+    if (!selectedComponentId) {
+      detail.style.display = 'none';
+      return;
+    }
+
+    const comp = state.components.find(c => c.id === selectedComponentId);
+    if (!comp) {
+      detail.style.display = 'none';
+      return;
+    }
+
+    mainPlaceholder.style.display = 'none';
+    detail.style.display = '';
+    document.getElementById('wire-comp-detail-title').textContent = comp.name;
+
+    const tbody = document.getElementById('wire-comp-pin-tbody');
+    tbody.innerHTML = '';
+
+    for (const pin of comp.pins) {
+      const connections = getWireConnectionsForPin(comp.id, pin.id);
+      const connText = connections.map(w => {
+        const otherConn = w.fromConnector === comp.id && w.fromPin === pin.id ? w.toConnector : w.fromConnector;
+        const otherPin = w.fromConnector === comp.id && w.fromPin === pin.id ? w.toPin : w.fromPin;
+        return w.wireId + ' → ' + getPinLabel(otherConn, otherPin);
+      }).join(', ') || '—';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${pin.number}</td>
+        <td>${escHtml(pin.label)}</td>
+        <td>${escHtml(pin.func || '—')}</td>
+        <td style="font-size:0.8rem;">${escHtml(connText)}</td>
+        <td>
+          <button class="btn btn-sm" data-action="edit-pin">Edit</button>
+          <button class="btn btn-sm btn-danger" data-action="delete-pin">&times;</button>
+        </td>
+      `;
+
+      tr.querySelector('[data-action="edit-pin"]').addEventListener('click', () => editComponentPin(comp.id, pin.id));
+      tr.querySelector('[data-action="delete-pin"]').addEventListener('click', () => deleteComponentPin(comp.id, pin.id));
       tbody.appendChild(tr);
     }
   }
@@ -533,13 +739,13 @@ const Wiring = (() => {
   /* ---- Hit-test a pin dot ---- */
   function hitTestPin(mx, my) {
     const hitRadius = PIN_RADIUS + 4; // slightly generous
-    for (const conn of state.connectors) {
-      for (let pi = 0; pi < conn.pins.length; pi++) {
-        const dp = pinDotPos(conn, pi);
+    for (const node of allNodes()) {
+      for (let pi = 0; pi < node.pins.length; pi++) {
+        const dp = pinDotPos(node, pi);
         if (!dp) continue;
         const dist = Math.sqrt((mx - dp.x) ** 2 + (my - dp.y) ** 2);
         if (dist <= hitRadius) {
-          return { connId: conn.id, pinId: conn.pins[pi].id, pinIdx: pi, x: dp.x, y: dp.y };
+          return { connId: node.id, pinId: node.pins[pi].id, pinIdx: pi, x: dp.x, y: dp.y };
         }
       }
     }
@@ -551,23 +757,31 @@ const Wiring = (() => {
     const canvas = document.getElementById('wiring-diagram-canvas');
     const W = canvas ? canvas.clientWidth : 900;
 
-    const unpositioned = state.connectors.filter(c => !connectorPositions[c.id]);
-    if (unpositioned.length === 0) return;
+    const nodes = allNodes();
+    const unpositioned = nodes.filter(c => !connectorPositions[c.id]);
+    if (unpositioned.length === 0) {
+      // Clean up positions for deleted nodes
+      const ids = new Set(nodes.map(c => c.id));
+      for (const key of Object.keys(connectorPositions)) {
+        if (!ids.has(key)) delete connectorPositions[key];
+      }
+      return;
+    }
 
-    // Space connectors evenly across the canvas width
-    const totalConns = state.connectors.length;
-    const spacing = (W - DIAGRAM_MARGIN * 2) / Math.max(1, totalConns);
+    // Space nodes evenly across the canvas width
+    const totalNodes = nodes.length;
+    const spacing = (W - DIAGRAM_MARGIN * 2) / Math.max(1, totalNodes);
 
-    unpositioned.forEach((conn) => {
-      const idx = state.connectors.indexOf(conn);
-      connectorPositions[conn.id] = {
+    unpositioned.forEach((node) => {
+      const idx = nodes.indexOf(node);
+      connectorPositions[node.id] = {
         x: DIAGRAM_MARGIN + spacing * idx + spacing / 2,
         y: DIAGRAM_TOP
       };
     });
 
-    // Clean up positions for deleted connectors
-    const ids = new Set(state.connectors.map(c => c.id));
+    // Clean up positions for deleted nodes
+    const ids = new Set(nodes.map(c => c.id));
     for (const key of Object.keys(connectorPositions)) {
       if (!ids.has(key)) delete connectorPositions[key];
     }
@@ -575,12 +789,13 @@ const Wiring = (() => {
 
   /* ---- Auto-size canvas height ---- */
   function calcCanvasHeight() {
-    if (state.connectors.length === 0) return 200;
+    const nodes = allNodes();
+    if (nodes.length === 0) return 200;
     let maxBottom = 200;
-    for (const conn of state.connectors) {
-      const pos = connectorPositions[conn.id];
+    for (const node of nodes) {
+      const pos = connectorPositions[node.id];
       if (!pos) continue;
-      const bottom = pos.y + connTotalHeight() + 120; // extra space for wire routing below
+      const bottom = pos.y + connTotalHeight() + 120;
       if (bottom > maxBottom) maxBottom = bottom;
     }
     return Math.max(300, maxBottom);
@@ -612,13 +827,13 @@ const Wiring = (() => {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
-    const connectors = state.connectors;
-    if (connectors.length === 0) {
+    const nodes = allNodes();
+    if (nodes.length === 0) {
       ctx.fillStyle = '#8890a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Add connectors and wires to see the diagram', W / 2, H / 2);
+      ctx.fillText('Add connectors, components, and wires to see the diagram', W / 2, H / 2);
       return;
     }
 
@@ -636,23 +851,28 @@ const Wiring = (() => {
       if (ids.length > 1) ids.forEach(id => diagramDupIds.add(id));
     }
 
-    // Draw wires first (behind connectors)
+    // Draw wires first (behind everything)
     for (const wire of state.wires) {
       drawWire(ctx, wire, diagramDupIds.has(wire.id));
     }
 
-    // Draw connectors on top
-    connectors.forEach((conn) => {
+    // Draw connectors
+    state.connectors.forEach((conn) => {
       drawConnector(ctx, conn);
+    });
+
+    // Draw components
+    state.components.forEach((comp) => {
+      drawComponent(ctx, comp);
     });
 
     // Draw connection preview line when connecting pins
     if (connectingFrom && mousePos) {
-      const fromConn = state.connectors.find(c => c.id === connectingFrom.connId);
-      if (fromConn) {
-        const fromPinIdx = fromConn.pins.findIndex(p => p.id === connectingFrom.pinId);
+      const fromNode = findNode(connectingFrom.connId);
+      if (fromNode) {
+        const fromPinIdx = fromNode.pins.findIndex(p => p.id === connectingFrom.pinId);
         if (fromPinIdx !== -1) {
-          const fp = pinDotPos(fromConn, fromPinIdx);
+          const fp = pinDotPos(fromNode, fromPinIdx);
           if (fp) {
             ctx.strokeStyle = '#4a9eff';
             ctx.lineWidth = 2;
@@ -676,9 +896,9 @@ const Wiring = (() => {
 
     // Highlight hovered pin
     if (hoveredPin && !dragState) {
-      const hConn = state.connectors.find(c => c.id === hoveredPin.connId);
-      if (hConn) {
-        const dp = pinDotPos(hConn, hoveredPin.pinIdx);
+      const hNode = findNode(hoveredPin.connId);
+      if (hNode) {
+        const dp = pinDotPos(hNode, hoveredPin.pinIdx);
         if (dp) {
           ctx.strokeStyle = connectingFrom ? '#22c55e' : '#4a9eff';
           ctx.lineWidth = 2;
@@ -761,9 +981,76 @@ const Wiring = (() => {
     });
   }
 
+  function drawComponent(ctx, comp) {
+    const pos = connectorPositions[comp.id];
+    if (!pos) return;
+
+    const boxW = connBoxWidth(comp);
+    const boxH = CONN_BOX_HEIGHT;
+    const x = pos.x - boxW / 2;
+    const y = pos.y;
+
+    const isSelected = selectedComponentId === comp.id;
+    const isDragging = dragState && dragState.connId === comp.id;
+
+    // Shadow when dragging
+    if (isDragging) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(34,197,94,0.3)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+    }
+
+    // Component box — sharp rectangle, green accent
+    ctx.fillStyle = isSelected ? '#1e3a2a' : '#1a1d27';
+    ctx.strokeStyle = isSelected ? '#22c55e' : '#3d6b50';
+    ctx.lineWidth = isSelected ? 2 : 1.5;
+    ctx.beginPath();
+    ctx.rect(x, y, boxW, boxH);
+    ctx.fill();
+    ctx.stroke();
+
+    if (isDragging) ctx.restore();
+
+    // Component name (inside box)
+    ctx.fillStyle = '#e0f0e4';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(truncate(comp.name, 18), pos.x, y + boxH / 2);
+
+    // Pins — dots along the bottom edge (same layout as connectors)
+    comp.pins.forEach((pin, pi) => {
+      const dp = pinDotPos(comp, pi);
+      if (!dp) return;
+
+      // Stub line from box bottom to dot
+      ctx.strokeStyle = '#3d6b50';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(dp.x, y + boxH);
+      ctx.lineTo(dp.x, dp.y);
+      ctx.stroke();
+
+      // Pin dot — green for components
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(dp.x, dp.y, PIN_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pin number below dot
+      ctx.fillStyle = '#c0c8d8';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(String(pin.number), dp.x, dp.y + PIN_RADIUS + 2);
+    });
+  }
+
   function drawWire(ctx, wire, isDuplicate) {
-    const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
-    const toConn = state.connectors.find(c => c.id === wire.toConnector);
+    const fromConn = findNode(wire.fromConnector);
+    const toConn = findNode(wire.toConnector);
     if (!fromConn || !toConn) return;
 
     const fromPinIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
@@ -857,15 +1144,15 @@ const Wiring = (() => {
 
   function hitTestConnector(mx, my) {
     // Hit test includes the box and the pin area below it
-    for (const conn of state.connectors) {
-      const pos = connectorPositions[conn.id];
+    for (const node of allNodes()) {
+      const pos = connectorPositions[node.id];
       if (!pos) continue;
-      const boxW = connBoxWidth(conn);
+      const boxW = connBoxWidth(node);
       const x = pos.x - boxW / 2;
       const y = pos.y;
       const totalH = connTotalHeight();
       if (mx >= x && mx <= x + boxW && my >= y && my <= y + totalH) {
-        return conn.id;
+        return node.id;
       }
     }
     return null;
@@ -905,7 +1192,7 @@ const Wiring = (() => {
       return;
     }
 
-    // Normal connector drag
+    // Normal connector/component drag
     const hitId = hitTestConnector(x, y);
     if (hitId) {
       const pos = connectorPositions[hitId];
@@ -914,9 +1201,18 @@ const Wiring = (() => {
         offsetX: x - pos.x,
         offsetY: y - pos.y
       };
-      selectedConnectorId = hitId;
+      // Select the right type
+      if (state.connectors.find(c => c.id === hitId)) {
+        selectedConnectorId = hitId;
+        selectedComponentId = null;
+      } else {
+        selectedComponentId = hitId;
+        selectedConnectorId = null;
+      }
       renderConnectorList();
+      renderComponentList();
       renderConnectorDetail();
+      renderComponentDetail();
       e.target.style.cursor = 'grabbing';
     }
   }
@@ -970,8 +1266,8 @@ const Wiring = (() => {
     // Hover detection for wire labels
     let newHoveredWire = null;
     for (const wire of state.wires) {
-      const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
-      const toConn = state.connectors.find(c => c.id === wire.toConnector);
+      const fromConn = findNode(wire.fromConnector);
+      const toConn = findNode(wire.toConnector);
       if (!fromConn || !toConn) continue;
 
       const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
@@ -1014,7 +1310,11 @@ const Wiring = (() => {
     if (connectingFrom) return;
     const hitId = hitTestConnector(x, y);
     if (hitId) {
-      editConnector(hitId);
+      if (state.connectors.find(c => c.id === hitId)) {
+        editConnector(hitId);
+      } else {
+        editComponent(hitId);
+      }
     }
   }
 
@@ -1052,8 +1352,10 @@ const Wiring = (() => {
   /* ---- Init ---- */
   function init() {
     document.getElementById('wire-add-connector').addEventListener('click', addConnector);
+    document.getElementById('wire-add-component').addEventListener('click', addComponent);
     document.getElementById('wire-add-wire').addEventListener('click', addWire);
     document.getElementById('wire-add-pin').addEventListener('click', addPin);
+    document.getElementById('wire-add-comp-pin').addEventListener('click', addComponentPin);
     document.getElementById('wire-import').addEventListener('click', importJSON);
     document.getElementById('wire-export').addEventListener('click', exportJSON);
     document.getElementById('wire-export-bom').addEventListener('click', exportBOM);

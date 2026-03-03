@@ -72,6 +72,7 @@
         </div>
         <div class="toolbar-group">
           <button id="wire-add-connector" class="btn btn-primary">+ Add Connector</button>
+          <button id="wire-add-component" class="btn btn-primary" style="background:#22c55e;border-color:#16a34a;">+ Add Component</button>
           <button id="wire-add-wire" class="btn btn-primary">+ Add Wire</button>
           <button id="wire-import" class="btn">Import JSON</button>
           <button id="wire-export" class="btn">Export JSON</button>
@@ -83,10 +84,12 @@
         <div class="panel panel-left">
           <h2>Connectors</h2>
           <div id="wire-connector-list" class="item-list"></div>
+          <h2 style="margin-top:16px;">Components</h2>
+          <div id="wire-component-list" class="item-list"></div>
         </div>
         <div class="panel panel-right">
           <div id="wire-detail-placeholder" class="placeholder-text">
-            Select a connector to view its pins, or use the Wires table below.
+            Select a connector or component to view its pins.
           </div>
           <div id="wire-detail" class="detail-view" style="display:none;">
             <div class="detail-header">
@@ -104,6 +107,24 @@
                 </tr>
               </thead>
               <tbody id="wire-pin-tbody"></tbody>
+            </table>
+          </div>
+          <div id="wire-comp-detail" class="detail-view" style="display:none;">
+            <div class="detail-header">
+              <h2 id="wire-comp-detail-title"></h2>
+              <button id="wire-add-comp-pin" class="btn btn-sm" style="background:#22c55e;border-color:#16a34a;color:#fff;">+ Add Pin</button>
+            </div>
+            <table class="data-table" id="wire-comp-pin-table">
+              <thead>
+                <tr>
+                  <th>Pin #</th>
+                  <th>Label</th>
+                  <th>Function</th>
+                  <th>Connected To</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="wire-comp-pin-tbody"></tbody>
             </table>
           </div>
         </div>
@@ -134,7 +155,7 @@
           <h2>Wiring Diagram</h2>
           <button id="wire-reset-layout" class="btn btn-sm">Reset Layout</button>
         </div>
-        <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:8px;">Click a pin dot to start a wire, then click another pin to connect. Drag connectors to reposition. Double-click a connector to edit.</p>
+        <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:8px;">Click a pin dot to start a wire, then click another pin to connect. Drag connectors/components to reposition. Double-click to edit.</p>
         <canvas id="wiring-diagram-canvas" width="900" height="350"></canvas>
       </div>
     </section>
