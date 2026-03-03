@@ -440,6 +440,106 @@ const Wiring = (() => {
     Utils.downloadFile('wiring_bom.csv', csv, 'text/csv');
   }
 
+  function exportImage() {
+    const nodes = allNodes();
+    if (nodes.length === 0) {
+      alert('Add connectors or components before exporting an image.');
+      return;
+    }
+
+    ensurePositions();
+    const srcCanvas = document.getElementById('wiring-diagram-canvas');
+    const diagramW = srcCanvas ? srcCanvas.clientWidth : 900;
+    const diagramH = calcCanvasHeight();
+    const aspect = diagramW / diagramH;
+
+    const html =
+      Utils.formField('width', 'Width (px)', 'number', { value: diagramW, min: 100, max: 8000 }) +
+      Utils.formField('height', 'Height (px)', 'number', { value: diagramH, min: 100, max: 8000 }) +
+      '<div class="form-row"><label><input type="checkbox" id="modal-lock-aspect" checked> Lock aspect ratio</label></div>' +
+      '<div class="form-row"><label>Background</label>' +
+        '<select id="modal-bg"><option value="#0f1117">Dark (default)</option><option value="#ffffff">White</option><option value="transparent">Transparent</option></select></div>';
+
+    Utils.showModal('Export as PNG', html, () => {
+      const w = Math.max(100, Math.min(8000, parseInt(Utils.getModalValue('width')) || diagramW));
+      const h = Math.max(100, Math.min(8000, parseInt(Utils.getModalValue('height')) || diagramH));
+      const bg = document.getElementById('modal-bg').value;
+      renderExportImage(w, h, bg, diagramW, diagramH);
+    }, () => {
+      // onReady — wire up aspect-ratio lock
+      const wInput = document.getElementById('modal-width');
+      const hInput = document.getElementById('modal-height');
+      const lockCb = document.getElementById('modal-lock-aspect');
+      let updating = false;
+
+      wInput.addEventListener('input', () => {
+        if (lockCb.checked && !updating) {
+          updating = true;
+          hInput.value = Math.round(parseInt(wInput.value) / aspect) || '';
+          updating = false;
+        }
+      });
+      hInput.addEventListener('input', () => {
+        if (lockCb.checked && !updating) {
+          updating = true;
+          wInput.value = Math.round(parseInt(hInput.value) * aspect) || '';
+          updating = false;
+        }
+      });
+    });
+  }
+
+  function renderExportImage(w, h, bg, diagramW, diagramH) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = w;
+    offscreen.height = h;
+    const ctx = offscreen.getContext('2d');
+
+    // Background
+    if (bg !== 'transparent') {
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // Scale to fit
+    const sx = w / diagramW;
+    const sy = h / diagramH;
+    ctx.scale(sx, sy);
+
+    // Build duplicate wire set
+    const dupIds = new Set();
+    const pairMap = {};
+    for (const wire of state.wires) {
+      const a = wire.fromConnector + '::' + wire.fromPin;
+      const b = wire.toConnector + '::' + wire.toPin;
+      const key = a < b ? a + '<>' + b : b + '<>' + a;
+      if (!pairMap[key]) pairMap[key] = [];
+      pairMap[key].push(wire.id);
+    }
+    for (const ids of Object.values(pairMap)) {
+      if (ids.length > 1) ids.forEach(id => dupIds.add(id));
+    }
+
+    // Draw wires, connectors, components — same as drawWiringDiagram
+    for (const wire of state.wires) {
+      drawWire(ctx, wire, dupIds.has(wire.id));
+    }
+    state.connectors.forEach(conn => drawConnector(ctx, conn));
+    state.components.forEach(comp => drawComponent(ctx, comp));
+
+    // Download
+    offscreen.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wiring_diagram.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }
+
   /* ---- Helpers ---- */
   function getPinLabel(connId, pinId) {
     const conn = state.connectors.find(c => c.id === connId) || state.components.find(c => c.id === connId);
@@ -1359,6 +1459,7 @@ const Wiring = (() => {
     document.getElementById('wire-import').addEventListener('click', importJSON);
     document.getElementById('wire-export').addEventListener('click', exportJSON);
     document.getElementById('wire-export-bom').addEventListener('click', exportBOM);
+    document.getElementById('wire-export-png').addEventListener('click', exportImage);
     document.getElementById('wire-reset-layout').addEventListener('click', resetPositions);
 
     setupCanvasInteraction();
