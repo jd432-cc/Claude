@@ -435,15 +435,35 @@ const Wiring = (() => {
     const tbody = document.getElementById('wire-schedule-tbody');
     tbody.innerHTML = '';
 
+    // Build set of duplicate wire pairs (same two pins, regardless of direction)
+    const duplicateIds = new Set();
+    const pairMap = {};  // "connA::pinA<>connB::pinB" -> [wireId, ...]
+    for (const wire of state.wires) {
+      const a = wire.fromConnector + '::' + wire.fromPin;
+      const b = wire.toConnector + '::' + wire.toPin;
+      const key = a < b ? a + '<>' + b : b + '<>' + a;
+      if (!pairMap[key]) pairMap[key] = [];
+      pairMap[key].push(wire.id);
+    }
+    for (const ids of Object.values(pairMap)) {
+      if (ids.length > 1) ids.forEach(id => duplicateIds.add(id));
+    }
+
     for (const wire of state.wires) {
       const fromLabel = getPinLabel(wire.fromConnector, wire.fromPin);
       const toLabel = getPinLabel(wire.toConnector, wire.toPin);
       const ampacity = Utils.getAWGAmpacity(wire.gauge);
       const ampText = ampacity !== null ? ampacity + ' A' : '?';
+      const isDup = duplicateIds.has(wire.id);
 
       const tr = document.createElement('tr');
+      if (isDup) {
+        tr.style.background = 'rgba(220, 38, 38, 0.15)';
+        tr.style.borderLeft = '3px solid #dc2626';
+      }
+      const dupBadge = isDup ? ' <span style="background:#dc2626;color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;">DUPLICATE</span>' : '';
       tr.innerHTML = `
-        <td><strong>${escHtml(wire.wireId)}</strong></td>
+        <td><strong>${escHtml(wire.wireId)}</strong>${dupBadge}</td>
         <td>${escHtml(fromLabel)}</td>
         <td>${escHtml(toLabel)}</td>
         <td>${wire.gauge} AWG</td>
@@ -602,9 +622,23 @@ const Wiring = (() => {
       return;
     }
 
+    // Build duplicate wire set for diagram highlighting
+    const diagramDupIds = new Set();
+    const diagramPairMap = {};
+    for (const wire of state.wires) {
+      const a = wire.fromConnector + '::' + wire.fromPin;
+      const b = wire.toConnector + '::' + wire.toPin;
+      const key = a < b ? a + '<>' + b : b + '<>' + a;
+      if (!diagramPairMap[key]) diagramPairMap[key] = [];
+      diagramPairMap[key].push(wire.id);
+    }
+    for (const ids of Object.values(diagramPairMap)) {
+      if (ids.length > 1) ids.forEach(id => diagramDupIds.add(id));
+    }
+
     // Draw wires first (behind connectors)
     for (const wire of state.wires) {
-      drawWire(ctx, wire);
+      drawWire(ctx, wire, diagramDupIds.has(wire.id));
     }
 
     // Draw connectors on top
@@ -727,7 +761,7 @@ const Wiring = (() => {
     });
   }
 
-  function drawWire(ctx, wire) {
+  function drawWire(ctx, wire, isDuplicate) {
     const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
     const toConn = state.connectors.find(c => c.id === wire.toConnector);
     if (!fromConn || !toConn) return;
@@ -746,6 +780,18 @@ const Wiring = (() => {
     const x2 = tp.x;
     const y2 = tp.y + PIN_RADIUS + 1;
 
+    // Duplicate wires get a red dashed underline
+    if (isDuplicate) {
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     ctx.strokeStyle = cssColor(wire.color);
     ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
     ctx.beginPath();
@@ -756,24 +802,32 @@ const Wiring = (() => {
     // Wire label at the midpoint
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
-    drawWireLabel(ctx, wire, midX, midY);
+    drawWireLabel(ctx, wire, midX, midY, isDuplicate);
   }
 
-  function drawWireLabel(ctx, wire, x, y) {
+  function drawWireLabel(ctx, wire, x, y, isDuplicate) {
     const isHovered = hoveredWireId === wire.id;
-    const text = wire.wireId;
+    const text = isDuplicate ? '\u26A0 ' + wire.wireId : wire.wireId;
 
     ctx.font = (isHovered ? 'bold ' : '') + '9px monospace';
     const metrics = ctx.measureText(text);
     const pad = 4;
 
-    // Background pill
-    ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.85)';
+    // Background pill — red tint for duplicates
+    if (isDuplicate) {
+      ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
+    } else {
+      ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.85)';
+    }
     roundRect(ctx, x - metrics.width / 2 - pad, y - 7, metrics.width + pad * 2, 14, 3);
     ctx.fill();
 
-    // Text
-    ctx.fillStyle = isHovered ? '#4a9eff' : '#a0a8c0';
+    // Text — red for duplicates
+    if (isDuplicate) {
+      ctx.fillStyle = '#f87171';
+    } else {
+      ctx.fillStyle = isHovered ? '#4a9eff' : '#a0a8c0';
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, x, y);
