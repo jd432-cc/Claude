@@ -14,6 +14,11 @@ const Wiring = (() => {
   let hoveredWireId = null;
   let canvasReady = false;
 
+  // Pin-to-pin wire connection state
+  let connectingFrom = null;    // { connId, pinId } — first pin clicked
+  let mousePos = null;          // { x, y } — current mouse for preview line
+  let hoveredPin = null;        // { connId, pinIdx } — pin under cursor
+
   /* ---- State ---- */
   function getState() { return state; }
 
@@ -171,7 +176,7 @@ const Wiring = (() => {
     return options;
   }
 
-  function addWire() {
+  function addWire(preFrom, preTo) {
     if (state.connectors.length < 1) {
       alert('Add at least one connector before creating wires.');
       return;
@@ -184,10 +189,12 @@ const Wiring = (() => {
     }
 
     const nextWireNum = state.wires.length + 1;
+    const defaultFrom = preFrom || pinOpts[0].value;
+    const defaultTo = preTo || (pinOpts.length > 1 ? pinOpts[1].value : pinOpts[0].value);
 
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: 'W' + nextWireNum }) +
-      Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, pinOpts[0].value) +
-      Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, pinOpts.length > 1 ? pinOpts[1].value : pinOpts[0].value) +
+      Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, defaultFrom) +
+      Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, defaultTo) +
       Utils.formField('gauge', 'Wire Gauge', 'select', { value: '18', options: Utils.getAWGOptions() }) +
       Utils.colorPickerField('color', 'Wire Color', '#dc2626') +
       Utils.formField('length', 'Length (m)', 'number', { value: 1, min: 0.01, step: 0.01 }) +
@@ -503,6 +510,22 @@ const Wiring = (() => {
     };
   }
 
+  /* ---- Hit-test a pin dot ---- */
+  function hitTestPin(mx, my) {
+    const hitRadius = PIN_RADIUS + 4; // slightly generous
+    for (const conn of state.connectors) {
+      for (let pi = 0; pi < conn.pins.length; pi++) {
+        const dp = pinDotPos(conn, pi);
+        if (!dp) continue;
+        const dist = Math.sqrt((mx - dp.x) ** 2 + (my - dp.y) ** 2);
+        if (dist <= hitRadius) {
+          return { connId: conn.id, pinId: conn.pins[pi].id, pinIdx: pi, x: dp.x, y: dp.y };
+        }
+      }
+    }
+    return null;
+  }
+
   /* ---- Assign default positions if missing ---- */
   function ensurePositions() {
     const canvas = document.getElementById('wiring-diagram-canvas');
@@ -588,6 +611,49 @@ const Wiring = (() => {
     connectors.forEach((conn) => {
       drawConnector(ctx, conn);
     });
+
+    // Draw connection preview line when connecting pins
+    if (connectingFrom && mousePos) {
+      const fromConn = state.connectors.find(c => c.id === connectingFrom.connId);
+      if (fromConn) {
+        const fromPinIdx = fromConn.pins.findIndex(p => p.id === connectingFrom.pinId);
+        if (fromPinIdx !== -1) {
+          const fp = pinDotPos(fromConn, fromPinIdx);
+          if (fp) {
+            ctx.strokeStyle = '#4a9eff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(fp.x, fp.y + PIN_RADIUS + 1);
+            ctx.lineTo(mousePos.x, mousePos.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Highlight the source pin
+            ctx.strokeStyle = '#4a9eff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(fp.x, fp.y, PIN_RADIUS + 3, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // Highlight hovered pin
+    if (hoveredPin && !dragState) {
+      const hConn = state.connectors.find(c => c.id === hoveredPin.connId);
+      if (hConn) {
+        const dp = pinDotPos(hConn, hoveredPin.pinIdx);
+        if (dp) {
+          ctx.strokeStyle = connectingFrom ? '#22c55e' : '#4a9eff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(dp.x, dp.y, PIN_RADIUS + 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   function drawConnector(ctx, conn) {
@@ -753,8 +819,40 @@ const Wiring = (() => {
 
   function onCanvasMouseDown(e) {
     const { x, y } = canvasCoords(e);
-    const hitId = hitTestConnector(x, y);
 
+    // Check if clicking a pin dot
+    const pinHit = hitTestPin(x, y);
+
+    if (pinHit) {
+      if (connectingFrom) {
+        // Second click — complete the connection
+        const fromKey = connectingFrom.connId + '::' + connectingFrom.pinId;
+        const toKey = pinHit.connId + '::' + pinHit.pinId;
+        connectingFrom = null;
+        mousePos = null;
+        hoveredPin = null;
+        drawWiringDiagram();
+        addWire(fromKey, toKey);
+        return;
+      }
+      // First click — start connecting
+      connectingFrom = { connId: pinHit.connId, pinId: pinHit.pinId };
+      mousePos = { x: pinHit.x, y: pinHit.y + PIN_RADIUS + 1 };
+      drawWiringDiagram();
+      return;
+    }
+
+    // Clicking on empty space while connecting — cancel
+    if (connectingFrom) {
+      connectingFrom = null;
+      mousePos = null;
+      hoveredPin = null;
+      drawWiringDiagram();
+      return;
+    }
+
+    // Normal connector drag
+    const hitId = hitTestConnector(x, y);
     if (hitId) {
       const pos = connectorPositions[hitId];
       dragState = {
@@ -772,6 +870,18 @@ const Wiring = (() => {
   function onCanvasMouseMove(e) {
     const { x, y } = canvasCoords(e);
 
+    // Update preview line while connecting
+    if (connectingFrom) {
+      mousePos = { x, y };
+      const pinHit = hitTestPin(x, y);
+      const newHovered = pinHit ? { connId: pinHit.connId, pinIdx: pinHit.pinIdx } : null;
+      const changed = (newHovered ? newHovered.connId + newHovered.pinIdx : null) !== (hoveredPin ? hoveredPin.connId + hoveredPin.pinIdx : null);
+      hoveredPin = newHovered;
+      e.target.style.cursor = pinHit ? 'pointer' : 'crosshair';
+      drawWiringDiagram();
+      return;
+    }
+
     if (dragState) {
       const conn = state.connectors.find(c => c.id === dragState.connId);
       const minX = conn ? connBoxWidth(conn) / 2 + 10 : 70;
@@ -783,12 +893,28 @@ const Wiring = (() => {
       return;
     }
 
+    // Check pin hover
+    const pinHit = hitTestPin(x, y);
+    if (pinHit) {
+      const newHovered = { connId: pinHit.connId, pinIdx: pinHit.pinIdx };
+      if (!hoveredPin || hoveredPin.connId !== newHovered.connId || hoveredPin.pinIdx !== newHovered.pinIdx) {
+        hoveredPin = newHovered;
+        drawWiringDiagram();
+      }
+      e.target.style.cursor = 'pointer';
+      return;
+    }
+    if (hoveredPin) {
+      hoveredPin = null;
+      drawWiringDiagram();
+    }
+
     // Hover cursor for connectors
     const hitId = hitTestConnector(x, y);
     e.target.style.cursor = hitId ? 'grab' : 'default';
 
     // Hover detection for wire labels
-    let newHovered = null;
+    let newHoveredWire = null;
     for (const wire of state.wires) {
       const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
       const toConn = state.connectors.find(c => c.id === wire.toConnector);
@@ -809,13 +935,13 @@ const Wiring = (() => {
 
       const dist = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2);
       if (dist < 20) {
-        newHovered = wire.id;
+        newHoveredWire = wire.id;
         break;
       }
     }
 
-    if (newHovered !== hoveredWireId) {
-      hoveredWireId = newHovered;
+    if (newHoveredWire !== hoveredWireId) {
+      hoveredWireId = newHoveredWire;
       drawWiringDiagram();
     }
   }
@@ -830,6 +956,8 @@ const Wiring = (() => {
 
   function onCanvasDblClick(e) {
     const { x, y } = canvasCoords(e);
+    // Don't double-click edit while connecting
+    if (connectingFrom) return;
     const hitId = hitTestConnector(x, y);
     if (hitId) {
       editConnector(hitId);
