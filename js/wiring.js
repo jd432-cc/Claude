@@ -186,12 +186,10 @@ const Wiring = (() => {
     const nextWireNum = state.wires.length + 1;
 
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: 'W' + nextWireNum }) +
-      Utils.formField('from', 'From (Connector:Pin)', 'select', { options: pinOpts, value: pinOpts[0].value }) +
-      Utils.formField('to', 'To (Connector:Pin)', 'select', { options: pinOpts, value: pinOpts.length > 1 ? pinOpts[1].value : pinOpts[0].value }) +
-      '<div class="form-row-inline">' +
-        Utils.formField('gauge', 'Wire Gauge', 'select', { value: '18', options: Utils.getAWGOptions() }) +
-        Utils.formField('color', 'Wire Color', 'select', { value: 'Red', options: Utils.getWireColorOptions() }) +
-      '</div>' +
+      Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, pinOpts[0].value) +
+      Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, pinOpts.length > 1 ? pinOpts[1].value : pinOpts[0].value) +
+      Utils.formField('gauge', 'Wire Gauge', 'select', { value: '18', options: Utils.getAWGOptions() }) +
+      Utils.colorPickerField('color', 'Wire Color', '#dc2626') +
       Utils.formField('length', 'Length (m)', 'number', { value: 1, min: 0.01, step: 0.01 }) +
       Utils.formField('notes', 'Notes', 'text', { value: '' });
 
@@ -214,6 +212,9 @@ const Wiring = (() => {
         notes: Utils.getModalValue('notes').trim()
       });
       render();
+    }, () => {
+      Utils.initSearchSelects({ from: pinOpts, to: pinOpts });
+      Utils.initColorPicker('color');
     });
   }
 
@@ -224,12 +225,10 @@ const Wiring = (() => {
     const pinOpts = buildPinOptions();
 
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: wire.wireId }) +
-      Utils.formField('from', 'From (Connector:Pin)', 'select', { options: pinOpts, value: wire.fromConnector + '::' + wire.fromPin }) +
-      Utils.formField('to', 'To (Connector:Pin)', 'select', { options: pinOpts, value: wire.toConnector + '::' + wire.toPin }) +
-      '<div class="form-row-inline">' +
-        Utils.formField('gauge', 'Wire Gauge', 'select', { value: wire.gauge, options: Utils.getAWGOptions() }) +
-        Utils.formField('color', 'Wire Color', 'select', { value: wire.color, options: Utils.getWireColorOptions() }) +
-      '</div>' +
+      Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, wire.fromConnector + '::' + wire.fromPin) +
+      Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, wire.toConnector + '::' + wire.toPin) +
+      Utils.formField('gauge', 'Wire Gauge', 'select', { value: wire.gauge, options: Utils.getAWGOptions() }) +
+      Utils.colorPickerField('color', 'Wire Color', wire.color) +
       Utils.formField('length', 'Length (m)', 'number', { value: wire.length, min: 0.01, step: 0.01 }) +
       Utils.formField('notes', 'Notes', 'text', { value: wire.notes });
 
@@ -249,6 +248,9 @@ const Wiring = (() => {
       wire.length = parseFloat(Utils.getModalValue('length')) || wire.length;
       wire.notes = Utils.getModalValue('notes').trim();
       render();
+    }, () => {
+      Utils.initSearchSelects({ from: pinOpts, to: pinOpts });
+      Utils.initColorPicker('color');
     });
   }
 
@@ -456,12 +458,15 @@ const Wiring = (() => {
 
   /* ---- Color mapping for display ---- */
   function cssColor(colorName) {
+    // If it's already a hex value, use it directly
+    if (colorName && colorName.startsWith('#')) return colorName;
+    // Legacy named colors
     const map = {
       'Black': '#222', 'Red': '#dc2626', 'White': '#e8e8e8', 'Green': '#16a34a',
       'Blue': '#2563eb', 'Yellow': '#eab308', 'Orange': '#ea580c', 'Brown': '#92400e',
       'Pink': '#ec4899', 'Purple': '#9333ea', 'Grey': '#6b7280', 'Violet': '#7c3aed',
     };
-    const base = colorName.split('/')[0];
+    const base = (colorName || '').split('/')[0];
     return map[base] || '#888';
   }
 
@@ -679,26 +684,12 @@ const Wiring = (() => {
     ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
-
-    // Route downward, across, then up to destination
-    const dy = Math.abs(y2 - y1);
-    const dx = Math.abs(x2 - x1);
-    const drop = Math.max(30, dy * 0.5 + 30); // how far below the pins to route
-
-    if (wire.fromConnector === wire.toConnector) {
-      // Same connector — loop below
-      const loopY = Math.max(y1, y2) + drop;
-      ctx.bezierCurveTo(x1, loopY, x2, loopY, x2, y2);
-    } else {
-      // Different connectors — curve down and across
-      const midY = Math.max(y1, y2) + drop;
-      ctx.bezierCurveTo(x1, midY, x2, midY, x2, y2);
-    }
+    ctx.lineTo(x2, y2);
     ctx.stroke();
 
     // Wire label at the midpoint
     const midX = (x1 + x2) / 2;
-    const midY = Math.max(y1, y2) + drop * 0.7;
+    const midY = (y1 + y2) / 2;
     drawWireLabel(ctx, wire, midX, midY);
   }
 
@@ -813,9 +804,8 @@ const Wiring = (() => {
 
       const y1 = fp.y + PIN_RADIUS + 1;
       const y2 = tp.y + PIN_RADIUS + 1;
-      const drop = Math.max(30, Math.abs(y2 - y1) * 0.5 + 30);
       const midX = (fp.x + tp.x) / 2;
-      const midY = Math.max(y1, y2) + drop * 0.7;
+      const midY = (y1 + y2) / 2;
 
       const dist = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2);
       if (dist < 20) {
