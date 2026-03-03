@@ -15,9 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       document.getElementById(target + '-tab').classList.add('active');
 
-      // Redraw diagrams when switching tabs (canvas sizing)
-      if (target === 'canbus') CANBus.drawTopology();
-      if (target === 'wiring') Wiring.drawWiringDiagram();
+      // Redraw diagrams after the browser has laid out the now-visible tab
+      requestAnimationFrame(() => {
+        if (target === 'canbus') CANBus.drawTopology();
+        if (target === 'wiring') Wiring.drawWiringDiagram();
+      });
     });
   });
 

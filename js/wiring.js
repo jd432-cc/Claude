@@ -8,6 +8,12 @@ const Wiring = (() => {
 
   let selectedConnectorId = null;
 
+  // Diagram layout positions (persisted per connector id)
+  let connectorPositions = {};  // { connId: { x, y } }
+  let dragState = null;         // { connId, offsetX, offsetY }
+  let hoveredWireId = null;
+  let canvasReady = false;
+
   /* ---- State ---- */
   function getState() { return state; }
 
@@ -459,19 +465,102 @@ const Wiring = (() => {
     return map[base] || '#888';
   }
 
+  /* ---- Diagram constants ---- */
+  const CONN_WIDTH = 120;
+  const PIN_SPACING = 20;
+  const PIN_RADIUS = 5;
+  const CONN_PADDING_TOP = 22;
+  const CONN_PADDING_BOTTOM = 10;
+  const DIAGRAM_MARGIN = 50;
+  const DIAGRAM_TOP = 70;
+
+  /* ---- Connector box dimensions ---- */
+  function connBoxHeight(conn) {
+    return CONN_PADDING_TOP + Math.max(1, conn.pins.length) * PIN_SPACING + CONN_PADDING_BOTTOM;
+  }
+
+  /* ---- Assign default positions if missing ---- */
+  function ensurePositions() {
+    const canvas = document.getElementById('wiring-diagram-canvas');
+    const W = canvas ? canvas.clientWidth : 900;
+
+    const unpositioned = state.connectors.filter(c => !connectorPositions[c.id]);
+    if (unpositioned.length === 0) return;
+
+    // Count how many already have positions to find next slot
+    const existing = state.connectors.filter(c => connectorPositions[c.id]);
+    const spacing = Math.max(CONN_WIDTH + 40, (W - DIAGRAM_MARGIN * 2) / Math.max(1, state.connectors.length));
+
+    unpositioned.forEach((conn) => {
+      const idx = state.connectors.indexOf(conn);
+      connectorPositions[conn.id] = {
+        x: DIAGRAM_MARGIN + spacing * idx + spacing / 2,
+        y: DIAGRAM_TOP
+      };
+    });
+
+    // Clean up positions for deleted connectors
+    const ids = new Set(state.connectors.map(c => c.id));
+    for (const key of Object.keys(connectorPositions)) {
+      if (!ids.has(key)) delete connectorPositions[key];
+    }
+  }
+
+  /* ---- Auto-size canvas height ---- */
+  function calcCanvasHeight() {
+    if (state.connectors.length === 0) return 200;
+    let maxBottom = 200;
+    for (const conn of state.connectors) {
+      const pos = connectorPositions[conn.id];
+      if (!pos) continue;
+      const bottom = pos.y + connBoxHeight(conn) + 40;
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    return Math.max(250, maxBottom);
+  }
+
+  /* ---- Pin positions for wire endpoints ---- */
+  function getPinPos(connId, pinId, side) {
+    const conn = state.connectors.find(c => c.id === connId);
+    if (!conn) return null;
+    const pos = connectorPositions[connId];
+    if (!pos) return null;
+    const pinIdx = conn.pins.findIndex(p => p.id === pinId);
+    if (pinIdx === -1) return null;
+
+    const py = pos.y + CONN_PADDING_TOP + pinIdx * PIN_SPACING;
+    if (side === 'left') {
+      return { x: pos.x - CONN_WIDTH / 2 - 2, y: py };
+    }
+    return { x: pos.x + CONN_WIDTH / 2 + 2, y: py };
+  }
+
   /* ---- Wiring Diagram ---- */
   function drawWiringDiagram() {
     const canvas = document.getElementById('wiring-diagram-canvas');
     if (!canvas) return;
+
+    // Skip drawing if the canvas is in a hidden tab (0 width)
+    if (canvas.clientWidth === 0) {
+      canvasReady = false;
+      return;
+    }
+    canvasReady = true;
+
+    ensurePositions();
+
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
 
-    canvas.width = canvas.clientWidth * dpr;
-    canvas.height = canvas.clientHeight * dpr;
-    ctx.scale(dpr, dpr);
-
     const W = canvas.clientWidth;
-    const H = canvas.clientHeight;
+    const H = calcCanvasHeight();
+
+    // Set the CSS height to match content
+    canvas.style.height = H + 'px';
+
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
     const connectors = state.connectors;
@@ -479,104 +568,307 @@ const Wiring = (() => {
       ctx.fillStyle = '#8890a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText('Add connectors and wires to see the diagram', W / 2, H / 2);
       return;
     }
 
-    // Layout connectors in a row
-    const margin = 40;
-    const connWidth = 100;
-    const connSpacing = (W - margin * 2) / connectors.length;
-    const pinRadius = 4;
-    const pinSpacing = 18;
-    const connTopY = 60;
-
-    const connPositions = {};
-
-    connectors.forEach((conn, i) => {
-      const cx = margin + connSpacing * i + connSpacing / 2;
-      const maxPins = conn.pins.length;
-      const boxH = Math.max(50, maxPins * pinSpacing + 20);
-
-      // Connector box
-      ctx.fillStyle = selectedConnectorId === conn.id ? '#2a3a5a' : '#1a1d27';
-      ctx.strokeStyle = selectedConnectorId === conn.id ? '#4a9eff' : '#333750';
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, cx - connWidth / 2, connTopY, connWidth, boxH, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // Connector label
-      ctx.fillStyle = '#e0e4f0';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(truncate(conn.name, 14), cx, connTopY - 10);
-
-      ctx.fillStyle = '#8890a8';
-      ctx.font = '9px monospace';
-      ctx.fillText(conn.type, cx, connTopY - 1);
-
-      // Pins
-      connPositions[conn.id] = {};
-      conn.pins.forEach((pin, pi) => {
-        const py = connTopY + 16 + pi * pinSpacing;
-        const px = cx;
-
-        connPositions[conn.id][pin.id] = { x: px, y: py };
-
-        // Pin dot
-        ctx.fillStyle = '#4a9eff';
-        ctx.beginPath();
-        ctx.arc(px - connWidth / 2 + 12, py, pinRadius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pin label
-        ctx.fillStyle = '#c0c4d0';
-        ctx.font = '9px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(pin.number + ': ' + truncate(pin.label, 10), px - connWidth / 2 + 20, py + 3);
-      });
-    });
-
-    // Draw wires
+    // Draw wires first (behind connectors)
     for (const wire of state.wires) {
-      const fromPos = connPositions[wire.fromConnector] && connPositions[wire.fromConnector][wire.fromPin];
-      const toPos = connPositions[wire.toConnector] && connPositions[wire.toConnector][wire.toPin];
-      if (!fromPos || !toPos) continue;
+      drawWire(ctx, wire);
+    }
 
-      const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
-      const toConn = state.connectors.find(c => c.id === wire.toConnector);
-      if (!fromConn || !toConn) continue;
+    // Draw connectors
+    connectors.forEach((conn) => {
+      drawConnector(ctx, conn);
+    });
+  }
 
-      const fromConnIdx = connectors.indexOf(fromConn);
-      const toConnIdx = connectors.indexOf(toConn);
+  function drawConnector(ctx, conn) {
+    const pos = connectorPositions[conn.id];
+    if (!pos) return;
 
-      const fromCx = margin + connSpacing * fromConnIdx + connSpacing / 2;
-      const toCx = margin + connSpacing * toConnIdx + connSpacing / 2;
+    const boxW = CONN_WIDTH;
+    const boxH = connBoxHeight(conn);
+    const x = pos.x - boxW / 2;
+    const y = pos.y;
 
-      const x1 = fromCx + connWidth / 2 + 2;
-      const y1 = fromPos.y;
-      const x2 = toCx - connWidth / 2 - 2;
-      const y2 = toPos.y;
+    const isSelected = selectedConnectorId === conn.id;
+    const isDragging = dragState && dragState.connId === conn.id;
 
-      // Use wire color
+    // Shadow when dragging
+    if (isDragging) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(74,158,255,0.3)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+    }
+
+    // Connector box
+    ctx.fillStyle = isSelected ? '#2a3a5a' : '#1a1d27';
+    ctx.strokeStyle = isSelected ? '#4a9eff' : '#444870';
+    ctx.lineWidth = isSelected ? 2 : 1.5;
+    roundRect(ctx, x, y, boxW, boxH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    if (isDragging) ctx.restore();
+
+    // Connector label above box
+    ctx.fillStyle = '#e0e4f0';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(truncate(conn.name, 16), pos.x, y - 14);
+
+    ctx.fillStyle = '#8890a8';
+    ctx.font = '9px monospace';
+    ctx.fillText(conn.type, pos.x, y - 3);
+
+    // Pins
+    conn.pins.forEach((pin, pi) => {
+      const py = y + CONN_PADDING_TOP + pi * PIN_SPACING;
+
+      // Left-side pin dot
+      ctx.fillStyle = '#4a9eff';
+      ctx.beginPath();
+      ctx.arc(x + 14, py, PIN_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right-side pin dot
+      ctx.beginPath();
+      ctx.arc(x + boxW - 14, py, PIN_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pin label
+      ctx.fillStyle = '#c0c8d8';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const label = pin.number + (pin.label !== 'Pin ' + pin.number ? ': ' + truncate(pin.label, 7) : '');
+      ctx.fillText(label, pos.x, py);
+    });
+  }
+
+  function drawWire(ctx, wire) {
+    const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
+    const toConn = state.connectors.find(c => c.id === wire.toConnector);
+    if (!fromConn || !toConn) return;
+
+    const fromPos = connectorPositions[wire.fromConnector];
+    const toPos = connectorPositions[wire.toConnector];
+    if (!fromPos || !toPos) return;
+
+    const fromPinIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
+    const toPinIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
+    if (fromPinIdx === -1 || toPinIdx === -1) return;
+
+    // Determine which side of each connector the wire exits from
+    // Wire exits from the side closest to the other connector
+    let x1, y1, x2, y2;
+    const fromPinY = fromPos.y + CONN_PADDING_TOP + fromPinIdx * PIN_SPACING;
+    const toPinY = toPos.y + CONN_PADDING_TOP + toPinIdx * PIN_SPACING;
+
+    if (wire.fromConnector === wire.toConnector) {
+      // Same connector — loop out the right side
+      x1 = fromPos.x + CONN_WIDTH / 2 + 2;
+      y1 = fromPinY;
+      x2 = toPos.x + CONN_WIDTH / 2 + 2;
+      y2 = toPinY;
+
       ctx.strokeStyle = cssColor(wire.color);
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
       ctx.beginPath();
       ctx.moveTo(x1, y1);
-
-      // Bezier curve for routing
-      const cpOffset = Math.abs(x2 - x1) * 0.4;
-      ctx.bezierCurveTo(x1 + cpOffset, y1, x2 - cpOffset, y2, x2, y2);
+      const loopOut = 40;
+      ctx.bezierCurveTo(x1 + loopOut, y1, x2 + loopOut, y2, x2, y2);
       ctx.stroke();
 
       // Wire label
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2 - 6;
-      ctx.fillStyle = '#c0c4d0';
-      ctx.font = '8px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(wire.wireId, midX, midY);
+      const midX = x1 + loopOut;
+      const midY = (y1 + y2) / 2;
+      drawWireLabel(ctx, wire, midX, midY);
+      return;
+    }
+
+    // Different connectors — exit from the side facing the other connector
+    if (fromPos.x < toPos.x) {
+      // from is left of to: exit right side of from, left side of to
+      x1 = fromPos.x + CONN_WIDTH / 2 + 2;
+      x2 = toPos.x - CONN_WIDTH / 2 - 2;
+    } else {
+      // from is right of to: exit left side of from, right side of to
+      x1 = fromPos.x - CONN_WIDTH / 2 - 2;
+      x2 = toPos.x + CONN_WIDTH / 2 + 2;
+    }
+    y1 = fromPinY;
+    y2 = toPinY;
+
+    ctx.strokeStyle = cssColor(wire.color);
+    ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+
+    const dx = Math.abs(x2 - x1);
+    const cpOffset = Math.max(30, dx * 0.35);
+    const cpDir1 = x1 < x2 ? 1 : -1;
+    const cpDir2 = x2 > x1 ? -1 : 1;
+    ctx.bezierCurveTo(x1 + cpOffset * cpDir1, y1, x2 + cpOffset * cpDir2, y2, x2, y2);
+    ctx.stroke();
+
+    // Wire label at midpoint of the bezier
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2 - 8;
+    drawWireLabel(ctx, wire, midX, midY);
+  }
+
+  function drawWireLabel(ctx, wire, x, y) {
+    const isHovered = hoveredWireId === wire.id;
+    const text = wire.wireId;
+
+    ctx.font = (isHovered ? 'bold ' : '') + '9px monospace';
+    const metrics = ctx.measureText(text);
+    const pad = 3;
+
+    // Background pill
+    ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.8)';
+    roundRect(ctx, x - metrics.width / 2 - pad, y - 7, metrics.width + pad * 2, 14, 3);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = isHovered ? '#4a9eff' : '#a0a8c0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  /* ---- Mouse interaction on canvas ---- */
+  function setupCanvasInteraction() {
+    const canvas = document.getElementById('wiring-diagram-canvas');
+    if (!canvas) return;
+
+    canvas.addEventListener('mousedown', onCanvasMouseDown);
+    canvas.addEventListener('mousemove', onCanvasMouseMove);
+    canvas.addEventListener('mouseup', onCanvasMouseUp);
+    canvas.addEventListener('mouseleave', onCanvasMouseUp);
+    canvas.addEventListener('dblclick', onCanvasDblClick);
+
+    // Set cursor style
+    canvas.style.cursor = 'default';
+  }
+
+  function canvasCoords(e) {
+    const canvas = document.getElementById('wiring-diagram-canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function hitTestConnector(mx, my) {
+    for (const conn of state.connectors) {
+      const pos = connectorPositions[conn.id];
+      if (!pos) continue;
+      const x = pos.x - CONN_WIDTH / 2;
+      const y = pos.y;
+      const h = connBoxHeight(conn);
+      if (mx >= x && mx <= x + CONN_WIDTH && my >= y && my <= y + h) {
+        return conn.id;
+      }
+    }
+    return null;
+  }
+
+  function onCanvasMouseDown(e) {
+    const { x, y } = canvasCoords(e);
+    const hitId = hitTestConnector(x, y);
+
+    if (hitId) {
+      const pos = connectorPositions[hitId];
+      dragState = {
+        connId: hitId,
+        offsetX: x - pos.x,
+        offsetY: y - pos.y
+      };
+      // Also select this connector in the sidebar
+      selectedConnectorId = hitId;
+      renderConnectorList();
+      renderConnectorDetail();
+      e.target.style.cursor = 'grabbing';
+    }
+  }
+
+  function onCanvasMouseMove(e) {
+    const { x, y } = canvasCoords(e);
+
+    if (dragState) {
+      // Move the connector
+      connectorPositions[dragState.connId] = {
+        x: Math.max(CONN_WIDTH / 2 + 10, x - dragState.offsetX),
+        y: Math.max(30, y - dragState.offsetY)
+      };
+      drawWiringDiagram();
+      return;
+    }
+
+    // Hover: check for connectors
+    const hitId = hitTestConnector(x, y);
+    e.target.style.cursor = hitId ? 'grab' : 'default';
+
+    // Hover: check for wires (proximity to wire midpoints)
+    let newHovered = null;
+    for (const wire of state.wires) {
+      const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
+      const toConn = state.connectors.find(c => c.id === wire.toConnector);
+      if (!fromConn || !toConn) continue;
+      const fPos = connectorPositions[wire.fromConnector];
+      const tPos = connectorPositions[wire.toConnector];
+      if (!fPos || !tPos) continue;
+
+      const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
+      const tIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
+      if (fIdx === -1 || tIdx === -1) continue;
+
+      // Approximate midpoint
+      const fy = fPos.y + CONN_PADDING_TOP + fIdx * PIN_SPACING;
+      const ty = tPos.y + CONN_PADDING_TOP + tIdx * PIN_SPACING;
+      let mx2, my2;
+      if (wire.fromConnector === wire.toConnector) {
+        mx2 = fPos.x + CONN_WIDTH / 2 + 40;
+        my2 = (fy + ty) / 2;
+      } else {
+        mx2 = (fPos.x + tPos.x) / 2;
+        my2 = (fy + ty) / 2 - 8;
+      }
+
+      const dist = Math.sqrt((x - mx2) ** 2 + (y - my2) ** 2);
+      if (dist < 20) {
+        newHovered = wire.id;
+        break;
+      }
+    }
+
+    if (newHovered !== hoveredWireId) {
+      hoveredWireId = newHovered;
+      drawWiringDiagram();
+    }
+  }
+
+  function onCanvasMouseUp(e) {
+    if (dragState) {
+      dragState = null;
+      e.target.style.cursor = 'default';
+      drawWiringDiagram();
+    }
+  }
+
+  function onCanvasDblClick(e) {
+    const { x, y } = canvasCoords(e);
+    const hitId = hitTestConnector(x, y);
+    if (hitId) {
+      editConnector(hitId);
     }
   }
 
@@ -604,6 +896,13 @@ const Wiring = (() => {
     return d.innerHTML;
   }
 
+  /* ---- Reset positions (e.g. after import or when user wants auto-layout) ---- */
+  function resetPositions() {
+    connectorPositions = {};
+    ensurePositions();
+    drawWiringDiagram();
+  }
+
   /* ---- Init ---- */
   function init() {
     document.getElementById('wire-add-connector').addEventListener('click', addConnector);
@@ -612,10 +911,14 @@ const Wiring = (() => {
     document.getElementById('wire-import').addEventListener('click', importJSON);
     document.getElementById('wire-export').addEventListener('click', exportJSON);
     document.getElementById('wire-export-bom').addEventListener('click', exportBOM);
+    document.getElementById('wire-reset-layout').addEventListener('click', resetPositions);
 
-    window.addEventListener('resize', drawWiringDiagram);
+    setupCanvasInteraction();
+    window.addEventListener('resize', () => {
+      if (canvasReady) drawWiringDiagram();
+    });
     render();
   }
 
-  return { init, getState, setState, render, drawWiringDiagram };
+  return { init, getState, setState, render, drawWiringDiagram, resetPositions };
 })();
