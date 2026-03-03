@@ -466,17 +466,36 @@ const Wiring = (() => {
   }
 
   /* ---- Diagram constants ---- */
-  const CONN_WIDTH = 120;
-  const PIN_SPACING = 20;
+  const PIN_H_SPACING = 24;    // horizontal spacing between pin dots
   const PIN_RADIUS = 5;
-  const CONN_PADDING_TOP = 22;
-  const CONN_PADDING_BOTTOM = 10;
+  const CONN_BOX_HEIGHT = 40;  // fixed box height (name + type inside)
+  const CONN_H_PADDING = 16;   // left/right padding inside box for pins
+  const PIN_STUB_LEN = 12;     // stub line from box bottom to dot
   const DIAGRAM_MARGIN = 50;
-  const DIAGRAM_TOP = 70;
+  const DIAGRAM_TOP = 50;
 
-  /* ---- Connector box dimensions ---- */
-  function connBoxHeight(conn) {
-    return CONN_PADDING_TOP + Math.max(1, conn.pins.length) * PIN_SPACING + CONN_PADDING_BOTTOM;
+  /* ---- Connector box width (adapts to pin count) ---- */
+  function connBoxWidth(conn) {
+    const pinsW = Math.max(1, conn.pins.length) * PIN_H_SPACING;
+    return Math.max(100, pinsW + CONN_H_PADDING * 2);
+  }
+
+  /* ---- Bottom of connector (below pin dots) ---- */
+  function connTotalHeight() {
+    return CONN_BOX_HEIGHT + PIN_STUB_LEN + PIN_RADIUS * 2 + 14; // box + stub + dot + pin number
+  }
+
+  /* ---- Get the x position of a pin dot (bottom of connector) ---- */
+  function pinDotPos(conn, pinIdx) {
+    const pos = connectorPositions[conn.id];
+    if (!pos) return null;
+    const boxW = connBoxWidth(conn);
+    const pinsW = (conn.pins.length - 1) * PIN_H_SPACING;
+    const startX = pos.x - pinsW / 2;
+    return {
+      x: startX + pinIdx * PIN_H_SPACING,
+      y: pos.y + CONN_BOX_HEIGHT + PIN_STUB_LEN + PIN_RADIUS
+    };
   }
 
   /* ---- Assign default positions if missing ---- */
@@ -487,9 +506,9 @@ const Wiring = (() => {
     const unpositioned = state.connectors.filter(c => !connectorPositions[c.id]);
     if (unpositioned.length === 0) return;
 
-    // Count how many already have positions to find next slot
-    const existing = state.connectors.filter(c => connectorPositions[c.id]);
-    const spacing = Math.max(CONN_WIDTH + 40, (W - DIAGRAM_MARGIN * 2) / Math.max(1, state.connectors.length));
+    // Space connectors evenly across the canvas width
+    const totalConns = state.connectors.length;
+    const spacing = (W - DIAGRAM_MARGIN * 2) / Math.max(1, totalConns);
 
     unpositioned.forEach((conn) => {
       const idx = state.connectors.indexOf(conn);
@@ -513,26 +532,10 @@ const Wiring = (() => {
     for (const conn of state.connectors) {
       const pos = connectorPositions[conn.id];
       if (!pos) continue;
-      const bottom = pos.y + connBoxHeight(conn) + 40;
+      const bottom = pos.y + connTotalHeight() + 120; // extra space for wire routing below
       if (bottom > maxBottom) maxBottom = bottom;
     }
-    return Math.max(250, maxBottom);
-  }
-
-  /* ---- Pin positions for wire endpoints ---- */
-  function getPinPos(connId, pinId, side) {
-    const conn = state.connectors.find(c => c.id === connId);
-    if (!conn) return null;
-    const pos = connectorPositions[connId];
-    if (!pos) return null;
-    const pinIdx = conn.pins.findIndex(p => p.id === pinId);
-    if (pinIdx === -1) return null;
-
-    const py = pos.y + CONN_PADDING_TOP + pinIdx * PIN_SPACING;
-    if (side === 'left') {
-      return { x: pos.x - CONN_WIDTH / 2 - 2, y: py };
-    }
-    return { x: pos.x + CONN_WIDTH / 2 + 2, y: py };
+    return Math.max(300, maxBottom);
   }
 
   /* ---- Wiring Diagram ---- */
@@ -555,9 +558,7 @@ const Wiring = (() => {
     const W = canvas.clientWidth;
     const H = calcCanvasHeight();
 
-    // Set the CSS height to match content
     canvas.style.height = H + 'px';
-
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
@@ -578,7 +579,7 @@ const Wiring = (() => {
       drawWire(ctx, wire);
     }
 
-    // Draw connectors
+    // Draw connectors on top
     connectors.forEach((conn) => {
       drawConnector(ctx, conn);
     });
@@ -588,8 +589,8 @@ const Wiring = (() => {
     const pos = connectorPositions[conn.id];
     if (!pos) return;
 
-    const boxW = CONN_WIDTH;
-    const boxH = connBoxHeight(conn);
+    const boxW = connBoxWidth(conn);
+    const boxH = CONN_BOX_HEIGHT;
     const x = pos.x - boxW / 2;
     const y = pos.y;
 
@@ -615,39 +616,43 @@ const Wiring = (() => {
 
     if (isDragging) ctx.restore();
 
-    // Connector label above box
+    // Connector name (inside box, top)
     ctx.fillStyle = '#e0e4f0';
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(truncate(conn.name, 16), pos.x, y - 14);
+    ctx.textBaseline = 'top';
+    ctx.fillText(truncate(conn.name, 18), pos.x, y + 8);
 
+    // Connector type (inside box, below name)
     ctx.fillStyle = '#8890a8';
     ctx.font = '9px monospace';
-    ctx.fillText(conn.type, pos.x, y - 3);
+    ctx.fillText(conn.type, pos.x, y + 24);
 
-    // Pins
+    // Pins — dots along the bottom edge
     conn.pins.forEach((pin, pi) => {
-      const py = y + CONN_PADDING_TOP + pi * PIN_SPACING;
+      const dp = pinDotPos(conn, pi);
+      if (!dp) return;
 
-      // Left-side pin dot
+      // Stub line from box bottom to dot
+      ctx.strokeStyle = '#444870';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(dp.x, y + boxH);
+      ctx.lineTo(dp.x, dp.y);
+      ctx.stroke();
+
+      // Pin dot
       ctx.fillStyle = '#4a9eff';
       ctx.beginPath();
-      ctx.arc(x + 14, py, PIN_RADIUS, 0, Math.PI * 2);
+      ctx.arc(dp.x, dp.y, PIN_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
-      // Right-side pin dot
-      ctx.beginPath();
-      ctx.arc(x + boxW - 14, py, PIN_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pin label
+      // Pin number below dot
       ctx.fillStyle = '#c0c8d8';
-      ctx.font = '10px monospace';
+      ctx.font = '9px monospace';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const label = pin.number + (pin.label !== 'Pin ' + pin.number ? ': ' + truncate(pin.label, 7) : '');
-      ctx.fillText(label, pos.x, py);
+      ctx.textBaseline = 'top';
+      ctx.fillText(String(pin.number), dp.x, dp.y + PIN_RADIUS + 2);
     });
   }
 
@@ -656,70 +661,44 @@ const Wiring = (() => {
     const toConn = state.connectors.find(c => c.id === wire.toConnector);
     if (!fromConn || !toConn) return;
 
-    const fromPos = connectorPositions[wire.fromConnector];
-    const toPos = connectorPositions[wire.toConnector];
-    if (!fromPos || !toPos) return;
-
     const fromPinIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
     const toPinIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
     if (fromPinIdx === -1 || toPinIdx === -1) return;
 
-    // Determine which side of each connector the wire exits from
-    // Wire exits from the side closest to the other connector
-    let x1, y1, x2, y2;
-    const fromPinY = fromPos.y + CONN_PADDING_TOP + fromPinIdx * PIN_SPACING;
-    const toPinY = toPos.y + CONN_PADDING_TOP + toPinIdx * PIN_SPACING;
+    const fp = pinDotPos(fromConn, fromPinIdx);
+    const tp = pinDotPos(toConn, toPinIdx);
+    if (!fp || !tp) return;
 
-    if (wire.fromConnector === wire.toConnector) {
-      // Same connector — loop out the right side
-      x1 = fromPos.x + CONN_WIDTH / 2 + 2;
-      y1 = fromPinY;
-      x2 = toPos.x + CONN_WIDTH / 2 + 2;
-      y2 = toPinY;
-
-      ctx.strokeStyle = cssColor(wire.color);
-      ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      const loopOut = 40;
-      ctx.bezierCurveTo(x1 + loopOut, y1, x2 + loopOut, y2, x2, y2);
-      ctx.stroke();
-
-      // Wire label
-      const midX = x1 + loopOut;
-      const midY = (y1 + y2) / 2;
-      drawWireLabel(ctx, wire, midX, midY);
-      return;
-    }
-
-    // Different connectors — exit from the side facing the other connector
-    if (fromPos.x < toPos.x) {
-      // from is left of to: exit right side of from, left side of to
-      x1 = fromPos.x + CONN_WIDTH / 2 + 2;
-      x2 = toPos.x - CONN_WIDTH / 2 - 2;
-    } else {
-      // from is right of to: exit left side of from, right side of to
-      x1 = fromPos.x - CONN_WIDTH / 2 - 2;
-      x2 = toPos.x + CONN_WIDTH / 2 + 2;
-    }
-    y1 = fromPinY;
-    y2 = toPinY;
+    // Start below the pin dot
+    const x1 = fp.x;
+    const y1 = fp.y + PIN_RADIUS + 1;
+    const x2 = tp.x;
+    const y2 = tp.y + PIN_RADIUS + 1;
 
     ctx.strokeStyle = cssColor(wire.color);
     ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
 
+    // Route downward, across, then up to destination
+    const dy = Math.abs(y2 - y1);
     const dx = Math.abs(x2 - x1);
-    const cpOffset = Math.max(30, dx * 0.35);
-    const cpDir1 = x1 < x2 ? 1 : -1;
-    const cpDir2 = x2 > x1 ? -1 : 1;
-    ctx.bezierCurveTo(x1 + cpOffset * cpDir1, y1, x2 + cpOffset * cpDir2, y2, x2, y2);
+    const drop = Math.max(30, dy * 0.5 + 30); // how far below the pins to route
+
+    if (wire.fromConnector === wire.toConnector) {
+      // Same connector — loop below
+      const loopY = Math.max(y1, y2) + drop;
+      ctx.bezierCurveTo(x1, loopY, x2, loopY, x2, y2);
+    } else {
+      // Different connectors — curve down and across
+      const midY = Math.max(y1, y2) + drop;
+      ctx.bezierCurveTo(x1, midY, x2, midY, x2, y2);
+    }
     ctx.stroke();
 
-    // Wire label at midpoint of the bezier
+    // Wire label at the midpoint
     const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2 - 8;
+    const midY = Math.max(y1, y2) + drop * 0.7;
     drawWireLabel(ctx, wire, midX, midY);
   }
 
@@ -729,10 +708,10 @@ const Wiring = (() => {
 
     ctx.font = (isHovered ? 'bold ' : '') + '9px monospace';
     const metrics = ctx.measureText(text);
-    const pad = 3;
+    const pad = 4;
 
     // Background pill
-    ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.8)';
+    ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.85)';
     roundRect(ctx, x - metrics.width / 2 - pad, y - 7, metrics.width + pad * 2, 14, 3);
     ctx.fill();
 
@@ -753,8 +732,6 @@ const Wiring = (() => {
     canvas.addEventListener('mouseup', onCanvasMouseUp);
     canvas.addEventListener('mouseleave', onCanvasMouseUp);
     canvas.addEventListener('dblclick', onCanvasDblClick);
-
-    // Set cursor style
     canvas.style.cursor = 'default';
   }
 
@@ -768,13 +745,15 @@ const Wiring = (() => {
   }
 
   function hitTestConnector(mx, my) {
+    // Hit test includes the box and the pin area below it
     for (const conn of state.connectors) {
       const pos = connectorPositions[conn.id];
       if (!pos) continue;
-      const x = pos.x - CONN_WIDTH / 2;
+      const boxW = connBoxWidth(conn);
+      const x = pos.x - boxW / 2;
       const y = pos.y;
-      const h = connBoxHeight(conn);
-      if (mx >= x && mx <= x + CONN_WIDTH && my >= y && my <= y + h) {
+      const totalH = connTotalHeight();
+      if (mx >= x && mx <= x + boxW && my >= y && my <= y + totalH) {
         return conn.id;
       }
     }
@@ -792,7 +771,6 @@ const Wiring = (() => {
         offsetX: x - pos.x,
         offsetY: y - pos.y
       };
-      // Also select this connector in the sidebar
       selectedConnectorId = hitId;
       renderConnectorList();
       renderConnectorDetail();
@@ -804,46 +782,42 @@ const Wiring = (() => {
     const { x, y } = canvasCoords(e);
 
     if (dragState) {
-      // Move the connector
+      const conn = state.connectors.find(c => c.id === dragState.connId);
+      const minX = conn ? connBoxWidth(conn) / 2 + 10 : 70;
       connectorPositions[dragState.connId] = {
-        x: Math.max(CONN_WIDTH / 2 + 10, x - dragState.offsetX),
-        y: Math.max(30, y - dragState.offsetY)
+        x: Math.max(minX, x - dragState.offsetX),
+        y: Math.max(20, y - dragState.offsetY)
       };
       drawWiringDiagram();
       return;
     }
 
-    // Hover: check for connectors
+    // Hover cursor for connectors
     const hitId = hitTestConnector(x, y);
     e.target.style.cursor = hitId ? 'grab' : 'default';
 
-    // Hover: check for wires (proximity to wire midpoints)
+    // Hover detection for wire labels
     let newHovered = null;
     for (const wire of state.wires) {
       const fromConn = state.connectors.find(c => c.id === wire.fromConnector);
       const toConn = state.connectors.find(c => c.id === wire.toConnector);
       if (!fromConn || !toConn) continue;
-      const fPos = connectorPositions[wire.fromConnector];
-      const tPos = connectorPositions[wire.toConnector];
-      if (!fPos || !tPos) continue;
 
       const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
       const tIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
       if (fIdx === -1 || tIdx === -1) continue;
 
-      // Approximate midpoint
-      const fy = fPos.y + CONN_PADDING_TOP + fIdx * PIN_SPACING;
-      const ty = tPos.y + CONN_PADDING_TOP + tIdx * PIN_SPACING;
-      let mx2, my2;
-      if (wire.fromConnector === wire.toConnector) {
-        mx2 = fPos.x + CONN_WIDTH / 2 + 40;
-        my2 = (fy + ty) / 2;
-      } else {
-        mx2 = (fPos.x + tPos.x) / 2;
-        my2 = (fy + ty) / 2 - 8;
-      }
+      const fp = pinDotPos(fromConn, fIdx);
+      const tp = pinDotPos(toConn, tIdx);
+      if (!fp || !tp) continue;
 
-      const dist = Math.sqrt((x - mx2) ** 2 + (y - my2) ** 2);
+      const y1 = fp.y + PIN_RADIUS + 1;
+      const y2 = tp.y + PIN_RADIUS + 1;
+      const drop = Math.max(30, Math.abs(y2 - y1) * 0.5 + 30);
+      const midX = (fp.x + tp.x) / 2;
+      const midY = Math.max(y1, y2) + drop * 0.7;
+
+      const dist = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2);
       if (dist < 20) {
         newHovered = wire.id;
         break;
