@@ -332,7 +332,7 @@ const Wiring = (() => {
     return opts;
   }
 
-  function addWire(preFrom, preTo) {
+  function addWire(preFrom, preTo, preRouteNode) {
     if (state.connectors.length < 1 && state.components.length < 1) {
       alert('Add at least one connector or component before creating wires.');
       return;
@@ -356,7 +356,7 @@ const Wiring = (() => {
       Utils.formField('gauge', 'Wire Gauge', 'select', { value: '18', options: Utils.getAWGOptions() }) +
       Utils.colorPickerField('color', 'Wire Color', '#dc2626') +
       Utils.formField('length', 'Length (m)', 'number', { value: 1, min: 0.01, step: 0.01 }) +
-      Utils.formField('routeNode', 'Route Through Node', 'select', { value: '', options: rnOpts }) +
+      Utils.formField('routeNode', 'Route Through Node', 'select', { value: preRouteNode || '', options: rnOpts }) +
       Utils.formField('notes', 'Notes', 'text', { value: '' });
 
     Utils.showModal('Add Wire', html, () => {
@@ -879,32 +879,13 @@ const Wiring = (() => {
   }
 
   function getWireLabelPos(wire) {
-    const fromConn = findNode(wire.fromConnector);
-    const toConn = findNode(wire.toConnector);
-    if (!fromConn || !toConn) return null;
-    const fIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
-    const tIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
-    if (fIdx === -1 || tIdx === -1) return null;
-    const fp = pinDotPos(fromConn, fIdx);
-    const tp = pinDotPos(toConn, tIdx);
-    if (!fp || !tp) return null;
-
-    const x1 = fp.x, y1 = fp.y + PIN_RADIUS + 1;
-    const x2 = tp.x, y2 = tp.y + PIN_RADIUS + 1;
-
-    const rn = wire.routeNode ? state.routeNodes.find(n => n.id === wire.routeNode) : null;
-    const rnPos = rn ? connectorPositions[rn.id] : null;
-
-    if (rnPos) {
-      const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
-      const barLeft = rnPos.x - (rn.width || 200) / 2;
-      const barRight = rnPos.x + (rn.width || 200) / 2;
-      const entryX = Math.max(barLeft, Math.min(barRight, x1));
-      const exitX = Math.max(barLeft, Math.min(barRight, x2));
-      // Midpoint of first segment (pin to bar)
-      return { x: (x1 + entryX) / 2, y: (y1 + barY) / 2 };
-    }
-    return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+    const segs = wirePathSegments(wire);
+    if (!segs) return null;
+    const midSeg = Math.floor(segs.length / 2);
+    return {
+      x: (segs[midSeg - 1].x + segs[midSeg].x) / 2,
+      y: (segs[midSeg - 1].y + segs[midSeg].y) / 2
+    };
   }
 
   /* ---- Color mapping for display ---- */
@@ -1107,11 +1088,29 @@ const Wiring = (() => {
         if (fromPinIdx !== -1) {
           const fp = pinDotPos(fromNode, fromPinIdx);
           if (fp) {
+            const startX = fp.x, startY = fp.y + PIN_RADIUS + 1;
+
             ctx.strokeStyle = '#4a9eff';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 4]);
             ctx.beginPath();
-            ctx.moveTo(fp.x, fp.y + PIN_RADIUS + 1);
+            ctx.moveTo(startX, startY);
+
+            // If a route node has been anchored, draw through it
+            if (connectingFrom.routeNodeId) {
+              const rn = state.routeNodes.find(n => n.id === connectingFrom.routeNodeId);
+              const rnPos = rn ? connectorPositions[rn.id] : null;
+              if (rnPos) {
+                const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
+                const barLeft = rnPos.x - (rn.width || 200) / 2;
+                const barRight = rnPos.x + (rn.width || 200) / 2;
+                const entryX = Math.max(barLeft, Math.min(barRight, startX));
+                const exitX = Math.max(barLeft, Math.min(barRight, mousePos.x));
+                ctx.lineTo(entryX, barY);
+                ctx.lineTo(exitX, barY);
+              }
+            }
+
             ctx.lineTo(mousePos.x, mousePos.y);
             ctx.stroke();
             ctx.setLineDash([]);
@@ -1122,6 +1121,22 @@ const Wiring = (() => {
             ctx.beginPath();
             ctx.arc(fp.x, fp.y, PIN_RADIUS + 3, 0, Math.PI * 2);
             ctx.stroke();
+
+            // Highlight the anchored route node
+            if (connectingFrom.routeNodeId) {
+              const rn = state.routeNodes.find(n => n.id === connectingFrom.routeNodeId);
+              const rnPos = rn ? connectorPositions[rn.id] : null;
+              if (rnPos) {
+                ctx.strokeStyle = '#a78bfa';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.rect(rnPos.x - (rn.width || 200) / 2 - 2, rnPos.y - 2,
+                         (rn.width || 200) + 4, ROUTE_NODE_HEIGHT + 4);
+                ctx.stroke();
+                ctx.setLineDash([]);
+              }
+            }
           }
         }
       }
@@ -1289,6 +1304,15 @@ const Wiring = (() => {
     const h = ROUTE_NODE_HEIGHT;
     const x = pos.x - w / 2;
     const y = pos.y;
+    const isDragging = dragState && dragState.connId === rn.id;
+
+    if (isDragging) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(124,58,237,0.3)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+    }
 
     // Bar fill
     ctx.fillStyle = '#2d1f4e';
@@ -1299,7 +1323,9 @@ const Wiring = (() => {
     ctx.fill();
     ctx.stroke();
 
-    // Hatch pattern for visual distinction
+    if (isDragging) ctx.restore();
+
+    // Hatch pattern
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, w, h);
@@ -1333,65 +1359,62 @@ const Wiring = (() => {
     }
   }
 
-  function drawWire(ctx, wire, isDuplicate) {
+  function wirePathSegments(wire) {
     const fromConn = findNode(wire.fromConnector);
     const toConn = findNode(wire.toConnector);
-    if (!fromConn || !toConn) return;
+    if (!fromConn || !toConn) return null;
 
     const fromPinIdx = fromConn.pins.findIndex(p => p.id === wire.fromPin);
     const toPinIdx = toConn.pins.findIndex(p => p.id === wire.toPin);
-    if (fromPinIdx === -1 || toPinIdx === -1) return;
+    if (fromPinIdx === -1 || toPinIdx === -1) return null;
 
     const fp = pinDotPos(fromConn, fromPinIdx);
     const tp = pinDotPos(toConn, toPinIdx);
-    if (!fp || !tp) return;
+    if (!fp || !tp) return null;
 
-    // Start below the pin dot
-    const x1 = fp.x;
-    const y1 = fp.y + PIN_RADIUS + 1;
-    const x2 = tp.x;
-    const y2 = tp.y + PIN_RADIUS + 1;
+    const x1 = fp.x, y1 = fp.y + PIN_RADIUS + 1;
+    const x2 = tp.x, y2 = tp.y + PIN_RADIUS + 1;
 
-    // Check if wire routes through a node
     const rn = wire.routeNode ? state.routeNodes.find(n => n.id === wire.routeNode) : null;
     const rnPos = rn ? connectorPositions[rn.id] : null;
 
-    // Build path segments
-    const segments = [];
     if (rnPos) {
-      // Route through the bar: pin1 → bar entry → bar exit → pin2
       const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
       const barLeft = rnPos.x - (rn.width || 200) / 2;
       const barRight = rnPos.x + (rn.width || 200) / 2;
-      // Clamp entry/exit x to bar bounds
       const entryX = Math.max(barLeft, Math.min(barRight, x1));
       const exitX = Math.max(barLeft, Math.min(barRight, x2));
-      segments.push({ x: x1, y: y1 }, { x: entryX, y: barY }, { x: exitX, y: barY }, { x: x2, y: y2 });
-    } else {
-      segments.push({ x: x1, y: y1 }, { x: x2, y: y2 });
+      return [
+        { x: x1, y: y1 }, { x: entryX, y: barY },
+        { x: exitX, y: barY }, { x: x2, y: y2 }
+      ];
     }
+    return [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+  }
 
-    // Draw duplicate underline
-    if (isDuplicate) {
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 4;
-      ctx.setLineDash([6, 4]);
+  function drawWire(ctx, wire, isDuplicate) {
+    const segments = wirePathSegments(wire);
+    if (!segments) return;
+
+    const drawPath = () => {
       ctx.beginPath();
       ctx.moveTo(segments[0].x, segments[0].y);
       for (let i = 1; i < segments.length; i++) ctx.lineTo(segments[i].x, segments[i].y);
       ctx.stroke();
+    };
+
+    if (isDuplicate) {
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([6, 4]);
+      drawPath();
       ctx.setLineDash([]);
     }
 
-    // Draw wire
     ctx.strokeStyle = cssColor(wire.color);
     ctx.lineWidth = hoveredWireId === wire.id ? 3 : 1.8;
-    ctx.beginPath();
-    ctx.moveTo(segments[0].x, segments[0].y);
-    for (let i = 1; i < segments.length; i++) ctx.lineTo(segments[i].x, segments[i].y);
-    ctx.stroke();
+    drawPath();
 
-    // Wire label at the midpoint of the full path
     const midSeg = Math.floor(segments.length / 2);
     const midX = (segments[midSeg - 1].x + segments[midSeg].x) / 2;
     const midY = (segments[midSeg - 1].y + segments[midSeg].y) / 2;
@@ -1489,14 +1512,15 @@ const Wiring = (() => {
 
     if (pinHit) {
       if (connectingFrom) {
-        // Second click — complete the connection
+        // Second click on a pin — complete the connection
         const fromKey = connectingFrom.connId + '::' + connectingFrom.pinId;
         const toKey = pinHit.connId + '::' + pinHit.pinId;
+        const throughNode = connectingFrom.routeNodeId || null;
         connectingFrom = null;
         mousePos = null;
         hoveredPin = null;
         drawWiringDiagram();
-        addWire(fromKey, toKey);
+        addWire(fromKey, toKey, throughNode);
         return;
       }
       // First click — start connecting
@@ -1506,8 +1530,15 @@ const Wiring = (() => {
       return;
     }
 
-    // Clicking on empty space while connecting — cancel
+    // While connecting, clicking a routing node anchors the wire through it
     if (connectingFrom) {
+      const rnHitId = hitTestRouteNode(x, y);
+      if (rnHitId) {
+        connectingFrom.routeNodeId = rnHitId;
+        drawWiringDiagram();
+        return;
+      }
+      // Clicking empty space — cancel
       connectingFrom = null;
       mousePos = null;
       hoveredPin = null;
@@ -1560,10 +1591,9 @@ const Wiring = (() => {
     if (connectingFrom) {
       mousePos = { x, y };
       const pinHit = hitTestPin(x, y);
-      const newHovered = pinHit ? { connId: pinHit.connId, pinIdx: pinHit.pinIdx } : null;
-      const changed = (newHovered ? newHovered.connId + newHovered.pinIdx : null) !== (hoveredPin ? hoveredPin.connId + hoveredPin.pinIdx : null);
-      hoveredPin = newHovered;
-      e.target.style.cursor = pinHit ? 'pointer' : 'crosshair';
+      const rnHit = !pinHit ? hitTestRouteNode(x, y) : null;
+      hoveredPin = pinHit ? { connId: pinHit.connId, pinIdx: pinHit.pinIdx } : null;
+      e.target.style.cursor = pinHit ? 'pointer' : (rnHit ? 'cell' : 'crosshair');
       drawWiringDiagram();
       return;
     }
