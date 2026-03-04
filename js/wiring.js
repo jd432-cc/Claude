@@ -23,6 +23,7 @@ const Wiring = (() => {
   let connectingFrom = null;    // { connId, pinId } — first pin clicked
   let mousePos = null;          // { x, y } — current mouse for preview line
   let hoveredPin = null;        // { connId, pinIdx } — pin under cursor
+  let collapsedGroups = new Set(); // group ids that are collapsed in sidebar
 
   /* ---- State ---- */
   function getState() { return state; }
@@ -880,15 +881,23 @@ const Wiring = (() => {
       }
     }
 
-    // Render grouped connectors with headers
+    // Render grouped connectors with collapsible headers
     for (const group of state.connectorGroups) {
       const items = grouped[group.id];
       if (!items || items.length === 0) continue;
+      const isCollapsed = collapsedGroups.has(group.id);
       const header = document.createElement('div');
-      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:2px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;';
-      header.textContent = group.name;
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
+      header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
+      header.addEventListener('click', () => {
+        if (collapsedGroups.has(group.id)) collapsedGroups.delete(group.id);
+        else collapsedGroups.add(group.id);
+        renderConnectorList();
+      });
       container.appendChild(header);
-      for (const conn of items) renderConnectorCard(container, conn);
+      if (!isCollapsed) {
+        for (const conn of items) renderConnectorCard(container, conn);
+      }
     }
 
     // Render ungrouped connectors
@@ -965,11 +974,19 @@ const Wiring = (() => {
     for (const group of state.connectorGroups) {
       const items = grouped[group.id];
       if (!items || items.length === 0) continue;
+      const isCollapsed = collapsedGroups.has(group.id);
       const header = document.createElement('div');
-      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:2px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;';
-      header.textContent = group.name;
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
+      header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
+      header.addEventListener('click', () => {
+        if (collapsedGroups.has(group.id)) collapsedGroups.delete(group.id);
+        else collapsedGroups.add(group.id);
+        renderComponentList();
+      });
       container.appendChild(header);
-      for (const comp of items) renderComponentCard(container, comp);
+      if (!isCollapsed) {
+        for (const comp of items) renderComponentCard(container, comp);
+      }
     }
 
     for (const comp of ungrouped) renderComponentCard(container, comp);
@@ -1112,7 +1129,7 @@ const Wiring = (() => {
 
     // Build set of duplicate wire pairs (same two pins, regardless of direction)
     const duplicateIds = new Set();
-    const pairMap = {};  // "connA::pinA<>connB::pinB" -> [wireId, ...]
+    const pairMap = {};
     for (const wire of state.wires) {
       const a = wire.fromConnector + '::' + wire.fromPin;
       const b = wire.toConnector + '::' + wire.toPin;
@@ -1124,7 +1141,19 @@ const Wiring = (() => {
       if (ids.length > 1) ids.forEach(id => duplicateIds.add(id));
     }
 
+    // Group wires by wire group for collapsible sections
+    const wiresByGroup = {};
+    const ungroupedWires = [];
     for (const wire of state.wires) {
+      if (wire.wireGroup && state.wireGroups.find(g => g.id === wire.wireGroup)) {
+        if (!wiresByGroup[wire.wireGroup]) wiresByGroup[wire.wireGroup] = [];
+        wiresByGroup[wire.wireGroup].push(wire);
+      } else {
+        ungroupedWires.push(wire);
+      }
+    }
+
+    const renderWireRow = (wire) => {
       const fromLabel = getPinLabel(wire.fromConnector, wire.fromPin);
       const toLabel = getPinLabel(wire.toConnector, wire.toPin);
       const ampacity = Utils.getAWGAmpacity(wire.gauge);
@@ -1155,11 +1184,33 @@ const Wiring = (() => {
           <button class="btn btn-sm btn-danger" data-action="delete-wire">&times;</button>
         </td>
       `;
-
       tr.querySelector('[data-action="edit-wire"]').addEventListener('click', () => editWire(wire.id));
       tr.querySelector('[data-action="delete-wire"]').addEventListener('click', () => deleteWire(wire.id));
       tbody.appendChild(tr);
+    };
+
+    // Render grouped wires with collapsible headers
+    for (const group of state.wireGroups) {
+      const wires = wiresByGroup[group.id];
+      if (!wires || wires.length === 0) continue;
+      const isCollapsed = collapsedGroups.has('wg-' + group.id);
+      const headerTr = document.createElement('tr');
+      headerTr.style.cssText = 'cursor:pointer;user-select:none;';
+      headerTr.innerHTML = `<td colspan="10" style="border-left:3px solid ${group.color};padding:6px 10px;font-weight:bold;font-size:0.8rem;color:#a0a8c0;background:rgba(255,255,255,0.03);"><span style="display:inline-block;transition:transform 0.15s;transform:rotate(${isCollapsed ? '0' : '90'}deg);font-size:0.6rem;margin-right:4px;">&#9654;</span>${escHtml(group.name)} <span style="font-weight:normal;opacity:0.6;">(${wires.length})</span></td>`;
+      headerTr.addEventListener('click', () => {
+        const key = 'wg-' + group.id;
+        if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+        else collapsedGroups.add(key);
+        renderWireSchedule();
+      });
+      tbody.appendChild(headerTr);
+      if (!isCollapsed) {
+        for (const wire of wires) renderWireRow(wire);
+      }
     }
+
+    // Render ungrouped wires
+    for (const wire of ungroupedWires) renderWireRow(wire);
   }
 
   function getWireLabelPos(wire) {
