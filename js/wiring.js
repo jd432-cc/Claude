@@ -683,7 +683,7 @@ const Wiring = (() => {
       Utils.formField('height', 'Height (px)', 'number', { value: diagramH, min: 100, max: 8000 }) +
       '<div class="form-row"><label><input type="checkbox" id="modal-lock-aspect" checked> Lock aspect ratio</label></div>' +
       '<div class="form-row"><label>Background</label>' +
-        '<select id="modal-bg"><option value="#0f1117">Dark (default)</option><option value="#ffffff">White</option><option value="transparent">Transparent</option></select></div>';
+        '<select id="modal-bg"><option value="#080c24">Dark (default)</option><option value="#ffffff">White</option><option value="transparent">Transparent</option></select></div>';
 
     Utils.showModal('Export as PNG', html, () => {
       const w = Math.max(100, Math.min(8000, parseInt(Utils.getModalValue('width')) || diagramW));
@@ -889,7 +889,7 @@ const Wiring = (() => {
       const collapseKey = 'conn-' + group.id;
       const isCollapsed = collapsedGroups.has(collapseKey);
       const header = document.createElement('div');
-      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#8088a8;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
       header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
       header.addEventListener('click', () => {
         if (collapsedGroups.has(collapseKey)) collapsedGroups.delete(collapseKey);
@@ -979,7 +979,7 @@ const Wiring = (() => {
       const collapseKey = 'comp-' + group.id;
       const isCollapsed = collapsedGroups.has(collapseKey);
       const header = document.createElement('div');
-      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#8088a8;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
       header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
       header.addEventListener('click', () => {
         if (collapsedGroups.has(collapseKey)) collapsedGroups.delete(collapseKey);
@@ -1199,7 +1199,7 @@ const Wiring = (() => {
       const isCollapsed = collapsedGroups.has('wg-' + group.id);
       const headerTr = document.createElement('tr');
       headerTr.style.cssText = 'cursor:pointer;user-select:none;';
-      headerTr.innerHTML = `<td colspan="10" style="border-left:3px solid ${group.color};padding:6px 10px;font-weight:bold;font-size:0.8rem;color:#a0a8c0;background:rgba(255,255,255,0.03);"><span style="display:inline-block;transition:transform 0.15s;transform:rotate(${isCollapsed ? '0' : '90'}deg);font-size:0.6rem;margin-right:4px;">&#9654;</span>${escHtml(group.name)} <span style="font-weight:normal;opacity:0.6;">(${wires.length})</span></td>`;
+      headerTr.innerHTML = `<td colspan="10" style="border-left:3px solid ${group.color};padding:6px 10px;font-weight:bold;font-size:0.8rem;color:#8088a8;background:rgba(255,255,255,0.03);"><span style="display:inline-block;transition:transform 0.15s;transform:rotate(${isCollapsed ? '0' : '90'}deg);font-size:0.6rem;margin-right:4px;">&#9654;</span>${escHtml(group.name)} <span style="font-weight:normal;opacity:0.6;">(${wires.length})</span></td>`;
       headerTr.addEventListener('click', () => {
         const key = 'wg-' + group.id;
         if (collapsedGroups.has(key)) collapsedGroups.delete(key);
@@ -1383,7 +1383,7 @@ const Wiring = (() => {
 
     const nodes = allNodes();
     if (nodes.length === 0 && state.routeNodes.length === 0) {
-      ctx.fillStyle = '#8890a8';
+      ctx.fillStyle = '#8088a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1433,7 +1433,7 @@ const Wiring = (() => {
           if (fp) {
             const startX = fp.x, startY = fp.y + PIN_RADIUS + 1;
 
-            ctx.strokeStyle = '#4a9eff';
+            ctx.strokeStyle = '#d4a800';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 4]);
             ctx.beginPath();
@@ -1456,7 +1456,7 @@ const Wiring = (() => {
             ctx.setLineDash([]);
 
             // Highlight the source pin
-            ctx.strokeStyle = '#4a9eff';
+            ctx.strokeStyle = '#d4a800';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(fp.x, fp.y, PIN_RADIUS + 3, 0, Math.PI * 2);
@@ -1470,7 +1470,7 @@ const Wiring = (() => {
                 ctx.save();
                 ctx.translate(geo.cx, geo.cy);
                 ctx.rotate(geo.rot);
-                ctx.strokeStyle = '#a78bfa';
+                ctx.strokeStyle = '#c0a850';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
@@ -1491,7 +1491,7 @@ const Wiring = (() => {
       if (hNode) {
         const dp = pinDotPos(hNode, hoveredPin.pinIdx);
         if (dp) {
-          ctx.strokeStyle = connectingFrom ? '#22c55e' : '#4a9eff';
+          ctx.strokeStyle = connectingFrom ? '#e8c020' : '#d4a800';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(dp.x, dp.y, PIN_RADIUS + 3, 0, Math.PI * 2);
@@ -1516,7 +1516,7 @@ const Wiring = (() => {
     // Shadow when dragging
     if (isDragging) {
       ctx.save();
-      ctx.shadowColor = 'rgba(74,158,255,0.3)';
+      ctx.shadowColor = 'rgba(212,168,0,0.3)';
       ctx.shadowBlur = 12;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 4;
@@ -1525,8 +1525,8 @@ const Wiring = (() => {
     const group = conn.group ? state.connectorGroups.find(g => g.id === conn.group) : null;
 
     // Connector box
-    ctx.fillStyle = isSelected ? '#2a3a5a' : '#1a1d27';
-    ctx.strokeStyle = group ? group.color : (isSelected ? '#4a9eff' : '#444870');
+    ctx.fillStyle = isSelected ? '#1a2550' : '#0f1535';
+    ctx.strokeStyle = group ? group.color : (isSelected ? '#d4a800' : '#283060');
     ctx.lineWidth = isSelected ? 2 : 1.5;
     roundRect(ctx, x, y, boxW, boxH, 6);
     ctx.fill();
@@ -1546,14 +1546,14 @@ const Wiring = (() => {
     if (isDragging) ctx.restore();
 
     // Connector name (inside box, top)
-    ctx.fillStyle = '#e0e4f0';
+    ctx.fillStyle = '#e8eaf0';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(truncate(conn.name, 18), pos.x, y + 8);
 
     // Connector type (inside box, below name)
-    ctx.fillStyle = '#8890a8';
+    ctx.fillStyle = '#8088a8';
     ctx.font = '9px monospace';
     ctx.fillText(conn.type, pos.x, y + 24);
 
@@ -1563,7 +1563,7 @@ const Wiring = (() => {
       if (!dp) return;
 
       // Stub line from box bottom to dot
-      ctx.strokeStyle = '#444870';
+      ctx.strokeStyle = '#283060';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(dp.x, y + boxH);
@@ -1571,13 +1571,13 @@ const Wiring = (() => {
       ctx.stroke();
 
       // Pin dot
-      ctx.fillStyle = '#4a9eff';
+      ctx.fillStyle = '#d4a800';
       ctx.beginPath();
       ctx.arc(dp.x, dp.y, PIN_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
       // Pin number below dot
-      ctx.fillStyle = '#c0c8d8';
+      ctx.fillStyle = '#c0b890';
       ctx.font = '9px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -1600,7 +1600,7 @@ const Wiring = (() => {
     // Shadow when dragging
     if (isDragging) {
       ctx.save();
-      ctx.shadowColor = 'rgba(34,197,94,0.3)';
+      ctx.shadowColor = 'rgba(42,110,158,0.3)';
       ctx.shadowBlur = 12;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 4;
@@ -1608,9 +1608,9 @@ const Wiring = (() => {
 
     const group = comp.group ? state.connectorGroups.find(g => g.id === comp.group) : null;
 
-    // Component box — sharp rectangle, green accent
-    ctx.fillStyle = isSelected ? '#1e3a2a' : '#1a1d27';
-    ctx.strokeStyle = group ? group.color : (isSelected ? '#22c55e' : '#3d6b50');
+    // Component box — sharp rectangle, steel blue accent
+    ctx.fillStyle = isSelected ? '#0f2538' : '#0f1535';
+    ctx.strokeStyle = group ? group.color : (isSelected ? '#3a8ab0' : '#1e4a68');
     ctx.lineWidth = isSelected ? 2 : 1.5;
     ctx.beginPath();
     ctx.rect(x, y, boxW, boxH);
@@ -1631,7 +1631,7 @@ const Wiring = (() => {
     if (isDragging) ctx.restore();
 
     // Component name (inside box)
-    ctx.fillStyle = '#e0f0e4';
+    ctx.fillStyle = '#d8eaf0';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1643,21 +1643,21 @@ const Wiring = (() => {
       if (!dp) return;
 
       // Stub line from box bottom to dot
-      ctx.strokeStyle = '#3d6b50';
+      ctx.strokeStyle = '#1e4a68';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(dp.x, y + boxH);
       ctx.lineTo(dp.x, dp.y);
       ctx.stroke();
 
-      // Pin dot — green for components
-      ctx.fillStyle = '#22c55e';
+      // Pin dot — steel blue for components
+      ctx.fillStyle = '#3a8ab0';
       ctx.beginPath();
       ctx.arc(dp.x, dp.y, PIN_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
       // Pin number below dot
-      ctx.fillStyle = '#c0c8d8';
+      ctx.fillStyle = '#c0b890';
       ctx.font = '9px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -1678,15 +1678,15 @@ const Wiring = (() => {
     ctx.rotate(geo.rot);
 
     if (isDragging) {
-      ctx.shadowColor = 'rgba(124,58,237,0.3)';
+      ctx.shadowColor = 'rgba(160,136,48,0.3)';
       ctx.shadowBlur = 12;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 4;
     }
 
     // Bar fill
-    ctx.fillStyle = '#2d1f4e';
-    ctx.strokeStyle = '#7c3aed';
+    ctx.fillStyle = '#1a1808';
+    ctx.strokeStyle = '#a08830';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.rect(-w / 2, -h / 2, w, h);
@@ -1703,7 +1703,7 @@ const Wiring = (() => {
     ctx.beginPath();
     ctx.rect(-w / 2, -h / 2, w, h);
     ctx.clip();
-    ctx.strokeStyle = 'rgba(124, 58, 237, 0.25)';
+    ctx.strokeStyle = 'rgba(160, 136, 48, 0.25)';
     ctx.lineWidth = 1;
     for (let hx = -w / 2 - h; hx < w / 2 + h; hx += 8) {
       ctx.beginPath();
@@ -1719,7 +1719,7 @@ const Wiring = (() => {
     const labelOffset = h / 2 + 5;
     const labelX = geo.cx - Math.sin(geo.rot) * labelOffset;
     const labelY = geo.cy - Math.cos(geo.rot) * labelOffset;
-    ctx.fillStyle = '#c4b5fd';
+    ctx.fillStyle = '#d4c890';
     ctx.font = 'bold 9px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
@@ -1732,7 +1732,7 @@ const Wiring = (() => {
       const badgeX = geo.cx + Math.sin(geo.rot) * badgeOffset;
       const badgeY = geo.cy + Math.cos(geo.rot) * badgeOffset;
       const badge = wireCount + ' wire' + (wireCount !== 1 ? 's' : '');
-      ctx.fillStyle = '#8b5cf6';
+      ctx.fillStyle = '#a08830';
       ctx.font = '8px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -1831,7 +1831,7 @@ const Wiring = (() => {
     if (isDuplicate) {
       ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
     } else {
-      ctx.fillStyle = isHovered ? 'rgba(74,158,255,0.15)' : 'rgba(15,17,23,0.85)';
+      ctx.fillStyle = isHovered ? 'rgba(212,168,0,0.15)' : 'rgba(8,12,36,0.85)';
     }
     roundRect(ctx, x - metrics.width / 2 - pad, y - 7, metrics.width + pad * 2, 14, 3);
     ctx.fill();
@@ -1840,7 +1840,7 @@ const Wiring = (() => {
     if (isDuplicate) {
       ctx.fillStyle = '#f87171';
     } else {
-      ctx.fillStyle = isHovered ? '#4a9eff' : '#a0a8c0';
+      ctx.fillStyle = isHovered ? '#d4a800' : '#8088a8';
     }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

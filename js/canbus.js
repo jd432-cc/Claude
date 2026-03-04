@@ -468,7 +468,7 @@ const CANBus = (() => {
 
     const nodes = state.nodes;
     if (nodes.length === 0) {
-      ctx.fillStyle = '#8890a8';
+      ctx.fillStyle = '#8088a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Add nodes to see the bus topology', W / 2, H / 2);
@@ -481,7 +481,7 @@ const CANBus = (() => {
     const busLeft = busMargin;
     const busRight = W - busMargin;
 
-    ctx.strokeStyle = '#4a9eff';
+    ctx.strokeStyle = '#d4a800';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(busLeft, busY);
@@ -493,11 +493,11 @@ const CANBus = (() => {
     drawResistor(ctx, busRight, busY, 'right');
 
     // Draw CAN-H / CAN-L labels
-    ctx.fillStyle = '#4a9eff';
+    ctx.fillStyle = '#d4a800';
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('CAN-H', W / 2, busY - 8);
-    ctx.fillStyle = '#22c55e';
+    ctx.fillStyle = '#3a8ab0';
     ctx.fillText('CAN-L', W / 2, busY + 18);
 
     // Draw nodes
@@ -511,7 +511,7 @@ const CANBus = (() => {
       const ny = busY + aboveBelow * 60;
 
       // Stub line
-      ctx.strokeStyle = '#555';
+      ctx.strokeStyle = '#3a4a70';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(cx, busY);
@@ -519,34 +519,34 @@ const CANBus = (() => {
       ctx.stroke();
 
       // Node box
-      ctx.fillStyle = selectedNodeId === node.id ? '#2a3a5a' : '#1a1d27';
-      ctx.strokeStyle = selectedNodeId === node.id ? '#4a9eff' : '#333750';
+      ctx.fillStyle = selectedNodeId === node.id ? '#1a2550' : '#0f1535';
+      ctx.strokeStyle = selectedNodeId === node.id ? '#d4a800' : '#283060';
       ctx.lineWidth = 1.5;
       roundRect(ctx, cx - nodeW / 2, ny - nodeH / 2, nodeW, nodeH, 6);
       ctx.fill();
       ctx.stroke();
 
       // Node label
-      ctx.fillStyle = '#e0e4f0';
+      ctx.fillStyle = '#e8eaf0';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(truncate(node.name, 12), cx, ny - 6);
 
-      ctx.fillStyle = '#8890a8';
+      ctx.fillStyle = '#8088a8';
       ctx.font = '10px monospace';
       ctx.fillText(node.address, cx, ny + 10);
     });
   }
 
   function drawResistor(ctx, x, y, side) {
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = '#d4a800';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     const offset = side === 'left' ? -20 : 20;
     ctx.fillText('120Ω', x + offset, y - 12);
 
-    ctx.strokeStyle = '#f59e0b';
+    ctx.strokeStyle = '#d4a800';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     const dx = side === 'left' ? -1 : 1;
