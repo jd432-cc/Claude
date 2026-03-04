@@ -5,7 +5,7 @@ const Wiring = (() => {
     connectors: [],   // { id, name, type, pins: [{ id, number, label, func }] }
     components: [],   // { id, name, pins: [{ id, number, label, func }] }
     wires: [],        // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes, routeNode? }
-    routeNodes: []    // { id, name, width }
+    routeNodes: []    // { id, name, width, rotation }
   };
 
   let selectedConnectorId = null;
@@ -209,16 +209,55 @@ const Wiring = (() => {
   }
 
   /* ---- Route Nodes ---- */
-  const ROUTE_NODE_HEIGHT = 10;
+  const ROUTE_NODE_BASE_HEIGHT = 10;
+  const WIRE_SPACING = 5; // pixels between wires through same node
+
+  function routeNodeHeight(rn) {
+    const wireCount = state.wires.filter(w => w.routeNode === rn.id).length;
+    if (wireCount <= 1) return ROUTE_NODE_BASE_HEIGHT;
+    return ROUTE_NODE_BASE_HEIGHT + (wireCount - 1) * WIRE_SPACING;
+  }
+
+  function routeNodeBarGeometry(rn) {
+    const pos = connectorPositions[rn.id];
+    if (!pos) return null;
+    const w = rn.width || 200;
+    const h = routeNodeHeight(rn);
+    const rot = (rn.rotation || 0) * Math.PI / 180;
+    return { cx: pos.x, cy: pos.y + h / 2, w, h, rot };
+  }
+
+  // Get the two endpoints of the bar's centre-line in canvas coords
+  function barEndpoints(geo) {
+    const dx = Math.cos(geo.rot) * geo.w / 2;
+    const dy = Math.sin(geo.rot) * geo.w / 2;
+    return {
+      left:  { x: geo.cx - dx, y: geo.cy - dy },
+      right: { x: geo.cx + dx, y: geo.cy + dy }
+    };
+  }
+
+  // Project a point onto the bar's centre-line, returning clamped bar position + perpendicular offset
+  function projectOntoBar(geo, px, py) {
+    const dx = Math.cos(geo.rot);
+    const dy = Math.sin(geo.rot);
+    const vx = px - geo.cx;
+    const vy = py - geo.cy;
+    let t = vx * dx + vy * dy; // projection along bar axis
+    t = Math.max(-geo.w / 2, Math.min(geo.w / 2, t));
+    return { x: geo.cx + t * dx, y: geo.cy + t * dy };
+  }
 
   function addRouteNode() {
     const html = Utils.formField('name', 'Node Name', 'text', { value: '' }) +
-      Utils.formField('width', 'Bar Width (px)', 'number', { value: 200, min: 40, max: 2000 });
+      Utils.formField('width', 'Bar Width (px)', 'number', { value: 200, min: 40, max: 2000 }) +
+      Utils.formField('rotation', 'Rotation (degrees)', 'number', { value: 0, min: -180, max: 180 });
 
     Utils.showModal('Add Routing Node', html, () => {
       const name = Utils.getModalValue('name').trim() || 'Node';
       const width = parseInt(Utils.getModalValue('width')) || 200;
-      state.routeNodes.push({ id: Utils.uid('rn'), name, width });
+      const rotation = parseInt(Utils.getModalValue('rotation')) || 0;
+      state.routeNodes.push({ id: Utils.uid('rn'), name, width, rotation });
       render();
     });
   }
@@ -228,11 +267,13 @@ const Wiring = (() => {
     if (!node) return;
 
     const html = Utils.formField('name', 'Node Name', 'text', { value: node.name }) +
-      Utils.formField('width', 'Bar Width (px)', 'number', { value: node.width, min: 40, max: 2000 });
+      Utils.formField('width', 'Bar Width (px)', 'number', { value: node.width, min: 40, max: 2000 }) +
+      Utils.formField('rotation', 'Rotation (degrees)', 'number', { value: node.rotation || 0, min: -180, max: 180 });
 
     Utils.showModal('Edit Routing Node', html, () => {
       node.name = Utils.getModalValue('name').trim() || node.name;
       node.width = parseInt(Utils.getModalValue('width')) || node.width;
+      node.rotation = parseInt(Utils.getModalValue('rotation')) || 0;
       render();
     });
   }
@@ -810,7 +851,7 @@ const Wiring = (() => {
       card.innerHTML = `
         <div>
           <div class="item-name">${escHtml(rn.name)}</div>
-          <div class="item-sub">${wireCount} wire${wireCount !== 1 ? 's' : ''} · ${rn.width}px wide</div>
+          <div class="item-sub">${wireCount} wire${wireCount !== 1 ? 's' : ''} · ${rn.width}px · ${rn.rotation || 0}°</div>
         </div>
         <div class="item-actions">
           <button title="Edit" data-action="edit">&#9998;</button>
@@ -1006,7 +1047,12 @@ const Wiring = (() => {
     for (const rn of state.routeNodes) {
       const pos = connectorPositions[rn.id];
       if (!pos) continue;
-      const bottom = pos.y + ROUTE_NODE_HEIGHT + 80;
+      const h = routeNodeHeight(rn);
+      const w = rn.width || 200;
+      const rot = (rn.rotation || 0) * Math.PI / 180;
+      // Bounding box of the rotated bar
+      const bboxH = Math.abs(w * Math.sin(rot)) + Math.abs(h * Math.cos(rot));
+      const bottom = pos.y + bboxH / 2 + 80;
       if (bottom > maxBottom) maxBottom = bottom;
     }
     return Math.max(300, maxBottom);
@@ -1099,15 +1145,12 @@ const Wiring = (() => {
             // If a route node has been anchored, draw through it
             if (connectingFrom.routeNodeId) {
               const rn = state.routeNodes.find(n => n.id === connectingFrom.routeNodeId);
-              const rnPos = rn ? connectorPositions[rn.id] : null;
-              if (rnPos) {
-                const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
-                const barLeft = rnPos.x - (rn.width || 200) / 2;
-                const barRight = rnPos.x + (rn.width || 200) / 2;
-                const entryX = Math.max(barLeft, Math.min(barRight, startX));
-                const exitX = Math.max(barLeft, Math.min(barRight, mousePos.x));
-                ctx.lineTo(entryX, barY);
-                ctx.lineTo(exitX, barY);
+              const geo = rn ? routeNodeBarGeometry(rn) : null;
+              if (geo) {
+                const entry = projectOntoBar(geo, startX, startY);
+                const exit = projectOntoBar(geo, mousePos.x, mousePos.y);
+                ctx.lineTo(entry.x, entry.y);
+                ctx.lineTo(exit.x, exit.y);
               }
             }
 
@@ -1125,16 +1168,19 @@ const Wiring = (() => {
             // Highlight the anchored route node
             if (connectingFrom.routeNodeId) {
               const rn = state.routeNodes.find(n => n.id === connectingFrom.routeNodeId);
-              const rnPos = rn ? connectorPositions[rn.id] : null;
-              if (rnPos) {
+              const geo = rn ? routeNodeBarGeometry(rn) : null;
+              if (geo) {
+                ctx.save();
+                ctx.translate(geo.cx, geo.cy);
+                ctx.rotate(geo.rot);
                 ctx.strokeStyle = '#a78bfa';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
-                ctx.rect(rnPos.x - (rn.width || 200) / 2 - 2, rnPos.y - 2,
-                         (rn.width || 200) + 4, ROUTE_NODE_HEIGHT + 4);
+                ctx.rect(-geo.w / 2 - 2, -geo.h / 2 - 2, geo.w + 4, geo.h + 4);
                 ctx.stroke();
                 ctx.setLineDash([]);
+                ctx.restore();
               }
             }
           }
@@ -1297,17 +1343,18 @@ const Wiring = (() => {
   }
 
   function drawRouteNode(ctx, rn) {
-    const pos = connectorPositions[rn.id];
-    if (!pos) return;
+    const geo = routeNodeBarGeometry(rn);
+    if (!geo) return;
 
-    const w = rn.width || 200;
-    const h = ROUTE_NODE_HEIGHT;
-    const x = pos.x - w / 2;
-    const y = pos.y;
+    const w = geo.w;
+    const h = geo.h;
     const isDragging = dragState && dragState.connId === rn.id;
 
+    ctx.save();
+    ctx.translate(geo.cx, geo.cy);
+    ctx.rotate(geo.rot);
+
     if (isDragging) {
-      ctx.save();
       ctx.shadowColor = 'rgba(124,58,237,0.3)';
       ctx.shadowBlur = 12;
       ctx.shadowOffsetX = 0;
@@ -1319,44 +1366,66 @@ const Wiring = (() => {
     ctx.strokeStyle = '#7c3aed';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.rect(x, y, w, h);
+    ctx.rect(-w / 2, -h / 2, w, h);
     ctx.fill();
     ctx.stroke();
 
-    if (isDragging) ctx.restore();
+    if (isDragging) {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
 
     // Hatch pattern
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, w, h);
+    ctx.rect(-w / 2, -h / 2, w, h);
     ctx.clip();
     ctx.strokeStyle = 'rgba(124, 58, 237, 0.25)';
     ctx.lineWidth = 1;
-    for (let hx = x - h; hx < x + w + h; hx += 8) {
+    for (let hx = -w / 2 - h; hx < w / 2 + h; hx += 8) {
       ctx.beginPath();
-      ctx.moveTo(hx, y + h);
-      ctx.lineTo(hx + h, y);
+      ctx.moveTo(hx, h / 2);
+      ctx.lineTo(hx + h, -h / 2);
       ctx.stroke();
     }
     ctx.restore();
 
-    // Label above the bar
+    ctx.restore(); // undo translate+rotate
+
+    // Label above the bar (in screen space, always horizontal)
+    const labelOffset = h / 2 + 5;
+    const labelX = geo.cx - Math.sin(geo.rot) * labelOffset;
+    const labelY = geo.cy - Math.cos(geo.rot) * labelOffset;
     ctx.fillStyle = '#c4b5fd';
     ctx.font = 'bold 9px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(truncate(rn.name, 24), pos.x, y - 3);
+    ctx.fillText(truncate(rn.name, 24), labelX, labelY);
 
-    // Wire count badge
+    // Wire count badge (below bar, always horizontal)
     const wireCount = state.wires.filter(w => w.routeNode === rn.id).length;
     if (wireCount > 0) {
+      const badgeOffset = h / 2 + 3;
+      const badgeX = geo.cx + Math.sin(geo.rot) * badgeOffset;
+      const badgeY = geo.cy + Math.cos(geo.rot) * badgeOffset;
       const badge = wireCount + ' wire' + (wireCount !== 1 ? 's' : '');
       ctx.fillStyle = '#8b5cf6';
       ctx.font = '8px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(badge, pos.x, y + h + 2);
+      ctx.fillText(badge, badgeX, badgeY);
     }
+  }
+
+  // Compute the perpendicular offset for a wire through a route node (for spacing)
+  function wireNodeOffset(wire, rn) {
+    const wiresThrough = state.wires.filter(w => w.routeNode === rn.id);
+    const idx = wiresThrough.indexOf(wire);
+    if (idx === -1) return 0;
+    const count = wiresThrough.length;
+    if (count <= 1) return 0;
+    // Centre the group: offsets are -N/2 ... +N/2 * WIRE_SPACING
+    return (idx - (count - 1) / 2) * WIRE_SPACING;
   }
 
   function wirePathSegments(wire) {
@@ -1376,17 +1445,23 @@ const Wiring = (() => {
     const x2 = tp.x, y2 = tp.y + PIN_RADIUS + 1;
 
     const rn = wire.routeNode ? state.routeNodes.find(n => n.id === wire.routeNode) : null;
-    const rnPos = rn ? connectorPositions[rn.id] : null;
+    const geo = rn ? routeNodeBarGeometry(rn) : null;
 
-    if (rnPos) {
-      const barY = rnPos.y + ROUTE_NODE_HEIGHT / 2;
-      const barLeft = rnPos.x - (rn.width || 200) / 2;
-      const barRight = rnPos.x + (rn.width || 200) / 2;
-      const entryX = Math.max(barLeft, Math.min(barRight, x1));
-      const exitX = Math.max(barLeft, Math.min(barRight, x2));
+    if (geo) {
+      // Project pin positions onto the rotated bar axis
+      const entry = projectOntoBar(geo, x1, y1);
+      const exit = projectOntoBar(geo, x2, y2);
+
+      // Perpendicular offset for wire spacing
+      const offset = wireNodeOffset(wire, rn);
+      const perpX = -Math.sin(geo.rot) * offset;
+      const perpY = Math.cos(geo.rot) * offset;
+
       return [
-        { x: x1, y: y1 }, { x: entryX, y: barY },
-        { x: exitX, y: barY }, { x: x2, y: y2 }
+        { x: x1, y: y1 },
+        { x: entry.x + perpX, y: entry.y + perpY },
+        { x: exit.x + perpX, y: exit.y + perpY },
+        { x: x2, y: y2 }
       ];
     }
     return [{ x: x1, y: y1 }, { x: x2, y: y2 }];
@@ -1489,15 +1564,19 @@ const Wiring = (() => {
 
   function hitTestRouteNode(mx, my) {
     for (const rn of state.routeNodes) {
-      const pos = connectorPositions[rn.id];
-      if (!pos) continue;
-      const w = rn.width || 200;
-      const h = ROUTE_NODE_HEIGHT;
-      // Generous hit area: include label above and badge below
-      const x = pos.x - w / 2;
-      const hitTop = pos.y - 16;
-      const hitBot = pos.y + h + 16;
-      if (mx >= x && mx <= x + w && my >= hitTop && my <= hitBot) {
+      const geo = routeNodeBarGeometry(rn);
+      if (!geo) continue;
+      // Transform mouse into the bar's local coordinate system
+      const dx = mx - geo.cx;
+      const dy = my - geo.cy;
+      const cosR = Math.cos(-geo.rot);
+      const sinR = Math.sin(-geo.rot);
+      const localX = dx * cosR - dy * sinR;
+      const localY = dx * sinR + dy * cosR;
+      // Generous hit area: 16px padding around the bar
+      const pad = 16;
+      if (localX >= -geo.w / 2 - pad && localX <= geo.w / 2 + pad &&
+          localY >= -geo.h / 2 - pad && localY <= geo.h / 2 + pad) {
         return rn.id;
       }
     }
@@ -1603,7 +1682,11 @@ const Wiring = (() => {
       const rn = state.routeNodes.find(r => r.id === dragState.connId);
       let minX = 70;
       if (node) minX = connBoxWidth(node) / 2 + 10;
-      else if (rn) minX = (rn.width || 200) / 2 + 10;
+      else if (rn) {
+        const rot = (rn.rotation || 0) * Math.PI / 180;
+        const bboxW = Math.abs((rn.width || 200) * Math.cos(rot)) + Math.abs(routeNodeHeight(rn) * Math.sin(rot));
+        minX = bboxW / 2 + 10;
+      }
       connectorPositions[dragState.connId] = {
         x: Math.max(minX, x - dragState.offsetX),
         y: Math.max(20, y - dragState.offsetY)
