@@ -36,6 +36,7 @@ const Wiring = (() => {
     if (!state.wireGroups) state.wireGroups = [];
     selectedConnectorId = null;
     selectedComponentId = null;
+    collapsedGroups.clear();
     render();
   }
 
@@ -885,13 +886,14 @@ const Wiring = (() => {
     for (const group of state.connectorGroups) {
       const items = grouped[group.id];
       if (!items || items.length === 0) continue;
-      const isCollapsed = collapsedGroups.has(group.id);
+      const collapseKey = 'conn-' + group.id;
+      const isCollapsed = collapsedGroups.has(collapseKey);
       const header = document.createElement('div');
       header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
       header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
       header.addEventListener('click', () => {
-        if (collapsedGroups.has(group.id)) collapsedGroups.delete(group.id);
-        else collapsedGroups.add(group.id);
+        if (collapsedGroups.has(collapseKey)) collapsedGroups.delete(collapseKey);
+        else collapsedGroups.add(collapseKey);
         renderConnectorList();
       });
       container.appendChild(header);
@@ -974,13 +976,14 @@ const Wiring = (() => {
     for (const group of state.connectorGroups) {
       const items = grouped[group.id];
       if (!items || items.length === 0) continue;
-      const isCollapsed = collapsedGroups.has(group.id);
+      const collapseKey = 'comp-' + group.id;
+      const isCollapsed = collapsedGroups.has(collapseKey);
       const header = document.createElement('div');
       header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:4px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;';
       header.innerHTML = '<span style="display:inline-block;transition:transform 0.15s;transform:rotate(' + (isCollapsed ? '0' : '90') + 'deg);font-size:0.6rem;">&#9654;</span> ' + escHtml(group.name) + ' <span style="font-weight:normal;opacity:0.6;">(' + items.length + ')</span>';
       header.addEventListener('click', () => {
-        if (collapsedGroups.has(group.id)) collapsedGroups.delete(group.id);
-        else collapsedGroups.add(group.id);
+        if (collapsedGroups.has(collapseKey)) collapsedGroups.delete(collapseKey);
+        else collapsedGroups.add(collapseKey);
         renderComponentList();
       });
       container.appendChild(header);
@@ -1616,8 +1619,13 @@ const Wiring = (() => {
 
     // Group color stripe at top of box
     if (group) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, boxW, 4);
+      ctx.clip();
       ctx.fillStyle = group.color;
       ctx.fillRect(x, y, boxW, 4);
+      ctx.restore();
     }
 
     if (isDragging) ctx.restore();

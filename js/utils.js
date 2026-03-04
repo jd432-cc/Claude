@@ -52,7 +52,7 @@ const Utils = (() => {
       input = `<textarea id="modal-${name}" name="${name}" rows="3">${opts.value || ''}</textarea>`;
     } else {
       const val = opts.value !== undefined ? opts.value : '';
-      const extra = type === 'number' ? ` step="${opts.step || 'any'}" min="${opts.min !== undefined ? opts.min : ''}" max="${opts.max !== undefined ? opts.max : ''}"` : '';
+      const extra = type === 'number' ? ` step="${opts.step || 'any'}"${opts.min !== undefined ? ' min="' + opts.min + '"' : ''}${opts.max !== undefined ? ' max="' + opts.max + '"' : ''}` : '';
       input = `<input type="${type}" id="modal-${name}" name="${name}" value="${val}"${extra}>`;
     }
     return `<div class="form-row"><label for="modal-${name}">${label}</label>${input}</div>`;
