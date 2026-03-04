@@ -2,10 +2,12 @@
 
 const Wiring = (() => {
   let state = {
-    connectors: [],   // { id, name, type, pins: [{ id, number, label, func }] }
-    components: [],   // { id, name, pins: [{ id, number, label, func }] }
-    wires: [],        // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes, routeNode? }
-    routeNodes: []    // { id, name, width, rotation }
+    connectors: [],      // { id, name, type, group?, pins: [{ id, number, label, func }] }
+    components: [],      // { id, name, group?, pins: [{ id, number, label, func }] }
+    wires: [],           // { id, wireId, fromConnector, fromPin, toConnector, toPin, gauge, color, length, notes, routeNode?, wireGroup? }
+    routeNodes: [],      // { id, name, width, rotation }
+    connectorGroups: [], // { id, name, color }
+    wireGroups: []       // { id, name, color }
   };
 
   let selectedConnectorId = null;
@@ -29,6 +31,8 @@ const Wiring = (() => {
     state = newState;
     if (!state.components) state.components = [];
     if (!state.routeNodes) state.routeNodes = [];
+    if (!state.connectorGroups) state.connectorGroups = [];
+    if (!state.wireGroups) state.wireGroups = [];
     selectedConnectorId = null;
     selectedComponentId = null;
     render();
@@ -52,7 +56,8 @@ const Wiring = (() => {
           { value: 'Other', label: 'Other' },
         ]
       }) +
-      Utils.formField('pinCount', 'Number of Pins', 'number', { value: 4, min: 1, max: 200, step: 1 });
+      Utils.formField('pinCount', 'Number of Pins', 'number', { value: 4, min: 1, max: 200, step: 1 }) +
+      Utils.formField('group', 'Connector Group', 'select', { value: '', options: buildConnectorGroupOptions() });
 
     Utils.showModal('Add Connector', html, () => {
       const name = Utils.getModalValue('name').trim();
@@ -62,12 +67,10 @@ const Wiring = (() => {
       for (let i = 1; i <= pinCount; i++) {
         pins.push({ id: Utils.uid('pin'), number: i, label: 'Pin ' + i, func: '' });
       }
-      state.connectors.push({
-        id: Utils.uid('conn'),
-        name,
-        type: Utils.getModalValue('type'),
-        pins
-      });
+      const connObj = { id: Utils.uid('conn'), name, type: Utils.getModalValue('type'), pins };
+      const groupVal = Utils.getModalValue('group');
+      if (groupVal) connObj.group = groupVal;
+      state.connectors.push(connObj);
       render();
     });
   }
@@ -91,11 +94,14 @@ const Wiring = (() => {
           { value: 'Splice', label: 'Splice' },
           { value: 'Other', label: 'Other' },
         ]
-      });
+      }) +
+      Utils.formField('group', 'Connector Group', 'select', { value: conn.group || '', options: buildConnectorGroupOptions() });
 
     Utils.showModal('Edit Connector', html, () => {
       conn.name = Utils.getModalValue('name').trim() || conn.name;
       conn.type = Utils.getModalValue('type');
+      const groupVal = Utils.getModalValue('group');
+      if (groupVal) { conn.group = groupVal; } else { delete conn.group; }
       render();
     });
   }
@@ -117,7 +123,8 @@ const Wiring = (() => {
   /* ---- Components ---- */
   function addComponent() {
     const html = Utils.formField('name', 'Component Name', 'text', { value: '' }) +
-      Utils.formField('pinCount', 'Number of Pins', 'number', { value: 2, min: 1, max: 200 });
+      Utils.formField('pinCount', 'Number of Pins', 'number', { value: 2, min: 1, max: 200 }) +
+      Utils.formField('group', 'Connector Group', 'select', { value: '', options: buildConnectorGroupOptions() });
 
     Utils.showModal('Add Component', html, () => {
       const name = Utils.getModalValue('name').trim() || 'Component';
@@ -126,7 +133,10 @@ const Wiring = (() => {
       for (let i = 1; i <= pinCount; i++) {
         pins.push({ id: Utils.uid('pin'), number: i, label: 'Pin ' + i, func: '' });
       }
-      state.components.push({ id: Utils.uid('comp'), name, pins });
+      const compObj = { id: Utils.uid('comp'), name, pins };
+      const groupVal = Utils.getModalValue('group');
+      if (groupVal) compObj.group = groupVal;
+      state.components.push(compObj);
       render();
     });
   }
@@ -135,10 +145,13 @@ const Wiring = (() => {
     const comp = state.components.find(c => c.id === compId);
     if (!comp) return;
 
-    const html = Utils.formField('name', 'Component Name', 'text', { value: comp.name });
+    const html = Utils.formField('name', 'Component Name', 'text', { value: comp.name }) +
+      Utils.formField('group', 'Connector Group', 'select', { value: comp.group || '', options: buildConnectorGroupOptions() });
 
     Utils.showModal('Edit Component', html, () => {
       comp.name = Utils.getModalValue('name').trim() || comp.name;
+      const groupVal = Utils.getModalValue('group');
+      if (groupVal) { comp.group = groupVal; } else { delete comp.group; }
       render();
     });
   }
@@ -288,6 +301,105 @@ const Wiring = (() => {
     render();
   }
 
+  /* ---- Connector Groups ---- */
+  function buildConnectorGroupOptions() {
+    const opts = [{ value: '', label: '(No Group)' }];
+    for (const g of state.connectorGroups) {
+      opts.push({ value: g.id, label: g.name });
+    }
+    return opts;
+  }
+
+  function addConnectorGroup() {
+    const html = Utils.formField('name', 'Group Name', 'text', { value: '' }) +
+      Utils.colorPickerField('color', 'Group Color', '#3b82f6');
+
+    Utils.showModal('Add Connector Group', html, () => {
+      const name = Utils.getModalValue('name').trim();
+      if (!name) return;
+      const color = Utils.getModalValue('color');
+      state.connectorGroups.push({ id: Utils.uid('cg'), name, color });
+      render();
+    }, () => {
+      Utils.initColorPicker('color');
+    });
+  }
+
+  function editConnectorGroup(groupId) {
+    const group = state.connectorGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const html = Utils.formField('name', 'Group Name', 'text', { value: group.name }) +
+      Utils.colorPickerField('color', 'Group Color', group.color);
+
+    Utils.showModal('Edit Connector Group', html, () => {
+      group.name = Utils.getModalValue('name').trim() || group.name;
+      group.color = Utils.getModalValue('color');
+      render();
+    }, () => {
+      Utils.initColorPicker('color');
+    });
+  }
+
+  function deleteConnectorGroup(groupId) {
+    for (const conn of state.connectors) {
+      if (conn.group === groupId) delete conn.group;
+    }
+    for (const comp of state.components) {
+      if (comp.group === groupId) delete comp.group;
+    }
+    state.connectorGroups = state.connectorGroups.filter(g => g.id !== groupId);
+    render();
+  }
+
+  /* ---- Wire Groups ---- */
+  function buildWireGroupOptions() {
+    const opts = [{ value: '', label: '(No Group)' }];
+    for (const g of state.wireGroups) {
+      opts.push({ value: g.id, label: g.name });
+    }
+    return opts;
+  }
+
+  function addWireGroup() {
+    const html = Utils.formField('name', 'Group Name', 'text', { value: '' }) +
+      Utils.colorPickerField('color', 'Group Color', '#f59e0b');
+
+    Utils.showModal('Add Wire Group', html, () => {
+      const name = Utils.getModalValue('name').trim();
+      if (!name) return;
+      const color = Utils.getModalValue('color');
+      state.wireGroups.push({ id: Utils.uid('wg'), name, color });
+      render();
+    }, () => {
+      Utils.initColorPicker('color');
+    });
+  }
+
+  function editWireGroup(groupId) {
+    const group = state.wireGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const html = Utils.formField('name', 'Group Name', 'text', { value: group.name }) +
+      Utils.colorPickerField('color', 'Group Color', group.color);
+
+    Utils.showModal('Edit Wire Group', html, () => {
+      group.name = Utils.getModalValue('name').trim() || group.name;
+      group.color = Utils.getModalValue('color');
+      render();
+    }, () => {
+      Utils.initColorPicker('color');
+    });
+  }
+
+  function deleteWireGroup(groupId) {
+    for (const wire of state.wires) {
+      if (wire.wireGroup === groupId) delete wire.wireGroup;
+    }
+    state.wireGroups = state.wireGroups.filter(g => g.id !== groupId);
+    render();
+  }
+
   /* ---- Pins ---- */
   function addPin() {
     if (!selectedConnectorId) return;
@@ -391,6 +503,8 @@ const Wiring = (() => {
 
     const rnOpts = buildRouteNodeOptions();
 
+    const wgOpts = buildWireGroupOptions();
+
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: 'W' + nextWireNum }) +
       Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, defaultFrom) +
       Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, defaultTo) +
@@ -398,6 +512,7 @@ const Wiring = (() => {
       Utils.colorPickerField('color', 'Wire Color', '#dc2626') +
       Utils.formField('length', 'Length (m)', 'number', { value: 1, min: 0.01, step: 0.01 }) +
       Utils.formField('routeNode', 'Route Through Node', 'select', { value: preRouteNode || '', options: rnOpts }) +
+      Utils.formField('wireGroup', 'Wire Group', 'select', { value: '', options: wgOpts }) +
       Utils.formField('notes', 'Notes', 'text', { value: '' });
 
     Utils.showModal('Add Wire', html, () => {
@@ -406,6 +521,7 @@ const Wiring = (() => {
       const [fromConn, fromPin] = fromVal.split('::');
       const [toConn, toPin] = toVal.split('::');
       const rnVal = Utils.getModalValue('routeNode');
+      const wgVal = Utils.getModalValue('wireGroup');
 
       const wireObj = {
         id: Utils.uid('wire'),
@@ -420,6 +536,7 @@ const Wiring = (() => {
         notes: Utils.getModalValue('notes').trim()
       };
       if (rnVal) wireObj.routeNode = rnVal;
+      if (wgVal) wireObj.wireGroup = wgVal;
       state.wires.push(wireObj);
       render();
     }, () => {
@@ -435,6 +552,8 @@ const Wiring = (() => {
     const pinOpts = buildPinOptions();
     const rnOpts = buildRouteNodeOptions();
 
+    const wgOpts = buildWireGroupOptions();
+
     const html = Utils.formField('wireId', 'Wire ID / Label', 'text', { value: wire.wireId }) +
       Utils.searchSelectField('from', 'From (Connector:Pin)', pinOpts, wire.fromConnector + '::' + wire.fromPin) +
       Utils.searchSelectField('to', 'To (Connector:Pin)', pinOpts, wire.toConnector + '::' + wire.toPin) +
@@ -442,6 +561,7 @@ const Wiring = (() => {
       Utils.colorPickerField('color', 'Wire Color', wire.color) +
       Utils.formField('length', 'Length (m)', 'number', { value: wire.length, min: 0.01, step: 0.01 }) +
       Utils.formField('routeNode', 'Route Through Node', 'select', { value: wire.routeNode || '', options: rnOpts }) +
+      Utils.formField('wireGroup', 'Wire Group', 'select', { value: wire.wireGroup || '', options: wgOpts }) +
       Utils.formField('notes', 'Notes', 'text', { value: wire.notes });
 
     Utils.showModal('Edit Wire', html, () => {
@@ -450,6 +570,7 @@ const Wiring = (() => {
       const [fromConn, fromPin] = fromVal.split('::');
       const [toConn, toPin] = toVal.split('::');
       const rnVal = Utils.getModalValue('routeNode');
+      const wgVal = Utils.getModalValue('wireGroup');
 
       wire.wireId = Utils.getModalValue('wireId').trim() || wire.wireId;
       wire.fromConnector = fromConn;
@@ -461,6 +582,7 @@ const Wiring = (() => {
       wire.length = parseFloat(Utils.getModalValue('length')) || wire.length;
       wire.notes = Utils.getModalValue('notes').trim();
       if (rnVal) { wire.routeNode = rnVal; } else { delete wire.routeNode; }
+      if (wgVal) { wire.wireGroup = wgVal; } else { delete wire.wireGroup; }
       render();
     }, () => {
       Utils.initSearchSelects({ from: pinOpts, to: pinOpts });
@@ -492,13 +614,14 @@ const Wiring = (() => {
   }
 
   function exportBOM() {
-    const rows = [['Wire ID', 'From', 'To', 'Gauge (AWG)', 'Color', 'Length (m)', 'Max Current (A)', 'Notes']];
+    const rows = [['Wire ID', 'Wire Group', 'From', 'To', 'Gauge (AWG)', 'Color', 'Length (m)', 'Max Current (A)', 'Notes']];
 
     for (const wire of state.wires) {
       const fromLabel = getPinLabel(wire.fromConnector, wire.fromPin);
       const toLabel = getPinLabel(wire.toConnector, wire.toPin);
       const ampacity = Utils.getAWGAmpacity(wire.gauge) || '?';
-      rows.push([wire.wireId, fromLabel, toLabel, wire.gauge, wire.color, wire.length, ampacity, wire.notes]);
+      const wg = wire.wireGroup ? state.wireGroups.find(g => g.id === wire.wireGroup) : null;
+      rows.push([wire.wireId, wg ? wg.name : '', fromLabel, toLabel, wire.gauge, wire.color, wire.length, ampacity, wire.notes]);
     }
 
     // Summary by gauge and color
@@ -674,27 +797,33 @@ const Wiring = (() => {
 
   /* ---- Render ---- */
   function render() {
+    renderConnectorGroupList();
     renderConnectorList();
     renderConnectorDetail();
     renderComponentList();
     renderComponentDetail();
     renderRouteNodeList();
+    renderWireGroupList();
     renderWireSchedule();
     updateStats();
     drawWiringDiagram();
   }
 
-  function renderConnectorList() {
-    const container = document.getElementById('wire-connector-list');
+  function renderConnectorGroupList() {
+    const container = document.getElementById('wire-conn-group-list');
+    if (!container) return;
     container.innerHTML = '';
 
-    for (const conn of state.connectors) {
+    for (const group of state.connectorGroups) {
+      const count = state.connectors.filter(c => c.group === group.id).length +
+        state.components.filter(c => c.group === group.id).length;
       const card = document.createElement('div');
-      card.className = 'item-card' + (selectedConnectorId === conn.id ? ' selected' : '');
+      card.className = 'item-card';
+      card.style.borderLeft = '3px solid ' + group.color;
       card.innerHTML = `
         <div>
-          <div class="item-name">${escHtml(conn.name)}</div>
-          <div class="item-sub">${escHtml(conn.type)} &middot; ${conn.pins.length} pins</div>
+          <div class="item-name">${escHtml(group.name)}</div>
+          <div class="item-sub">${count} item${count !== 1 ? 's' : ''}</div>
         </div>
         <div class="item-actions">
           <button title="Edit" data-action="edit">&#9998;</button>
@@ -703,12 +832,67 @@ const Wiring = (() => {
       `;
       card.addEventListener('click', (e) => {
         const action = e.target.dataset.action;
-        if (action === 'edit') { e.stopPropagation(); editConnector(conn.id); }
-        else if (action === 'delete') { e.stopPropagation(); deleteConnector(conn.id); }
-        else selectConnector(conn.id);
+        if (action === 'edit') { e.stopPropagation(); editConnectorGroup(group.id); }
+        else if (action === 'delete') { e.stopPropagation(); deleteConnectorGroup(group.id); }
       });
       container.appendChild(card);
     }
+  }
+
+  function renderConnectorCard(container, conn) {
+    const group = conn.group ? state.connectorGroups.find(g => g.id === conn.group) : null;
+    const card = document.createElement('div');
+    card.className = 'item-card' + (selectedConnectorId === conn.id ? ' selected' : '');
+    if (group) card.style.borderLeft = '3px solid ' + group.color;
+    const groupBadge = group ? ` <span style="background:${group.color};color:#fff;font-size:0.6rem;padding:1px 4px;border-radius:3px;vertical-align:middle;">${escHtml(group.name)}</span>` : '';
+    card.innerHTML = `
+      <div>
+        <div class="item-name">${escHtml(conn.name)}${groupBadge}</div>
+        <div class="item-sub">${escHtml(conn.type)} &middot; ${conn.pins.length} pins</div>
+      </div>
+      <div class="item-actions">
+        <button title="Edit" data-action="edit">&#9998;</button>
+        <button title="Delete" data-action="delete">&times;</button>
+      </div>
+    `;
+    card.addEventListener('click', (e) => {
+      const action = e.target.dataset.action;
+      if (action === 'edit') { e.stopPropagation(); editConnector(conn.id); }
+      else if (action === 'delete') { e.stopPropagation(); deleteConnector(conn.id); }
+      else selectConnector(conn.id);
+    });
+    container.appendChild(card);
+  }
+
+  function renderConnectorList() {
+    const container = document.getElementById('wire-connector-list');
+    container.innerHTML = '';
+
+    // Group connectors by their connector group
+    const grouped = {};
+    const ungrouped = [];
+    for (const conn of state.connectors) {
+      if (conn.group && state.connectorGroups.find(g => g.id === conn.group)) {
+        if (!grouped[conn.group]) grouped[conn.group] = [];
+        grouped[conn.group].push(conn);
+      } else {
+        ungrouped.push(conn);
+      }
+    }
+
+    // Render grouped connectors with headers
+    for (const group of state.connectorGroups) {
+      const items = grouped[group.id];
+      if (!items || items.length === 0) continue;
+      const header = document.createElement('div');
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:2px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;';
+      header.textContent = group.name;
+      container.appendChild(header);
+      for (const conn of items) renderConnectorCard(container, conn);
+    }
+
+    // Render ungrouped connectors
+    for (const conn of ungrouped) renderConnectorCard(container, conn);
   }
 
   function renderConnectorDetail() {
@@ -767,27 +951,53 @@ const Wiring = (() => {
     if (!container) return;
     container.innerHTML = '';
 
+    const grouped = {};
+    const ungrouped = [];
     for (const comp of state.components) {
-      const card = document.createElement('div');
-      card.className = 'item-card' + (selectedComponentId === comp.id ? ' selected' : '');
-      card.innerHTML = `
-        <div>
-          <div class="item-name">${escHtml(comp.name)}</div>
-          <div class="item-sub">${comp.pins.length} pins</div>
-        </div>
-        <div class="item-actions">
-          <button title="Edit" data-action="edit">&#9998;</button>
-          <button title="Delete" data-action="delete">&times;</button>
-        </div>
-      `;
-      card.addEventListener('click', (e) => {
-        const action = e.target.dataset.action;
-        if (action === 'edit') { e.stopPropagation(); editComponent(comp.id); }
-        else if (action === 'delete') { e.stopPropagation(); deleteComponent(comp.id); }
-        else selectComponent(comp.id);
-      });
-      container.appendChild(card);
+      if (comp.group && state.connectorGroups.find(g => g.id === comp.group)) {
+        if (!grouped[comp.group]) grouped[comp.group] = [];
+        grouped[comp.group].push(comp);
+      } else {
+        ungrouped.push(comp);
+      }
     }
+
+    for (const group of state.connectorGroups) {
+      const items = grouped[group.id];
+      if (!items || items.length === 0) continue;
+      const header = document.createElement('div');
+      header.style.cssText = 'border-left:3px solid ' + group.color + ';padding:2px 8px;margin:4px 0 2px;font-size:0.75rem;color:#a0a8c0;font-weight:bold;';
+      header.textContent = group.name;
+      container.appendChild(header);
+      for (const comp of items) renderComponentCard(container, comp);
+    }
+
+    for (const comp of ungrouped) renderComponentCard(container, comp);
+  }
+
+  function renderComponentCard(container, comp) {
+    const group = comp.group ? state.connectorGroups.find(g => g.id === comp.group) : null;
+    const card = document.createElement('div');
+    card.className = 'item-card' + (selectedComponentId === comp.id ? ' selected' : '');
+    if (group) card.style.borderLeft = '3px solid ' + group.color;
+    const groupBadge = group ? ` <span style="background:${group.color};color:#fff;font-size:0.6rem;padding:1px 4px;border-radius:3px;vertical-align:middle;">${escHtml(group.name)}</span>` : '';
+    card.innerHTML = `
+      <div>
+        <div class="item-name">${escHtml(comp.name)}${groupBadge}</div>
+        <div class="item-sub">${comp.pins.length} pins</div>
+      </div>
+      <div class="item-actions">
+        <button title="Edit" data-action="edit">&#9998;</button>
+        <button title="Delete" data-action="delete">&times;</button>
+      </div>
+    `;
+    card.addEventListener('click', (e) => {
+      const action = e.target.dataset.action;
+      if (action === 'edit') { e.stopPropagation(); editComponent(comp.id); }
+      else if (action === 'delete') { e.stopPropagation(); deleteComponent(comp.id); }
+      else selectComponent(comp.id);
+    });
+    container.appendChild(card);
   }
 
   function renderComponentDetail() {
@@ -867,6 +1077,35 @@ const Wiring = (() => {
     }
   }
 
+  function renderWireGroupList() {
+    const container = document.getElementById('wire-wire-group-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const group of state.wireGroups) {
+      const count = state.wires.filter(w => w.wireGroup === group.id).length;
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.style.borderLeft = '3px solid ' + group.color;
+      card.innerHTML = `
+        <div>
+          <div class="item-name">${escHtml(group.name)}</div>
+          <div class="item-sub">${count} wire${count !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="item-actions">
+          <button title="Edit" data-action="edit">&#9998;</button>
+          <button title="Delete" data-action="delete">&times;</button>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'edit') { e.stopPropagation(); editWireGroup(group.id); }
+        else if (action === 'delete') { e.stopPropagation(); deleteWireGroup(group.id); }
+      });
+      container.appendChild(card);
+    }
+  }
+
   function renderWireSchedule() {
     const tbody = document.getElementById('wire-schedule-tbody');
     tbody.innerHTML = '';
@@ -892,6 +1131,9 @@ const Wiring = (() => {
       const ampText = ampacity !== null ? ampacity + ' A' : '?';
       const isDup = duplicateIds.has(wire.id);
 
+      const wg = wire.wireGroup ? state.wireGroups.find(g => g.id === wire.wireGroup) : null;
+      const wgBadge = wg ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${wg.color};margin-right:4px;vertical-align:middle;"></span>${escHtml(wg.name)}` : '—';
+
       const tr = document.createElement('tr');
       if (isDup) {
         tr.style.background = 'rgba(220, 38, 38, 0.15)';
@@ -900,6 +1142,7 @@ const Wiring = (() => {
       const dupBadge = isDup ? ' <span style="background:#dc2626;color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;">DUPLICATE</span>' : '';
       tr.innerHTML = `
         <td><strong>${escHtml(wire.wireId)}</strong>${dupBadge}</td>
+        <td style="font-size:0.8rem;">${wgBadge}</td>
         <td>${escHtml(fromLabel)}</td>
         <td>${escHtml(toLabel)}</td>
         <td>${wire.gauge} AWG</td>
@@ -1225,13 +1468,26 @@ const Wiring = (() => {
       ctx.shadowOffsetY = 4;
     }
 
+    const group = conn.group ? state.connectorGroups.find(g => g.id === conn.group) : null;
+
     // Connector box
     ctx.fillStyle = isSelected ? '#2a3a5a' : '#1a1d27';
-    ctx.strokeStyle = isSelected ? '#4a9eff' : '#444870';
+    ctx.strokeStyle = group ? group.color : (isSelected ? '#4a9eff' : '#444870');
     ctx.lineWidth = isSelected ? 2 : 1.5;
     roundRect(ctx, x, y, boxW, boxH, 6);
     ctx.fill();
     ctx.stroke();
+
+    // Group color stripe at top of box
+    if (group) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, x, y, boxW, 4, 6);
+      ctx.clip();
+      ctx.fillStyle = group.color;
+      ctx.fillRect(x, y, boxW, 4);
+      ctx.restore();
+    }
 
     if (isDragging) ctx.restore();
 
@@ -1296,14 +1552,22 @@ const Wiring = (() => {
       ctx.shadowOffsetY = 4;
     }
 
+    const group = comp.group ? state.connectorGroups.find(g => g.id === comp.group) : null;
+
     // Component box — sharp rectangle, green accent
     ctx.fillStyle = isSelected ? '#1e3a2a' : '#1a1d27';
-    ctx.strokeStyle = isSelected ? '#22c55e' : '#3d6b50';
+    ctx.strokeStyle = group ? group.color : (isSelected ? '#22c55e' : '#3d6b50');
     ctx.lineWidth = isSelected ? 2 : 1.5;
     ctx.beginPath();
     ctx.rect(x, y, boxW, boxH);
     ctx.fill();
     ctx.stroke();
+
+    // Group color stripe at top of box
+    if (group) {
+      ctx.fillStyle = group.color;
+      ctx.fillRect(x, y, boxW, 4);
+    }
 
     if (isDragging) ctx.restore();
 
@@ -1800,6 +2064,8 @@ const Wiring = (() => {
     document.getElementById('wire-add-wire').addEventListener('click', addWire);
     document.getElementById('wire-add-pin').addEventListener('click', addPin);
     document.getElementById('wire-add-comp-pin').addEventListener('click', addComponentPin);
+    document.getElementById('wire-add-conn-group').addEventListener('click', addConnectorGroup);
+    document.getElementById('wire-add-wire-group').addEventListener('click', addWireGroup);
     document.getElementById('wire-import').addEventListener('click', importJSON);
     document.getElementById('wire-export').addEventListener('click', exportJSON);
     document.getElementById('wire-export-bom').addEventListener('click', exportBOM);

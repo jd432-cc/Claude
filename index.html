@@ -84,12 +84,22 @@
 
       <div class="split-layout">
         <div class="panel panel-left">
-          <h2>Connectors</h2>
+          <div class="detail-header" style="margin-bottom:4px;">
+            <h2>Connector Groups</h2>
+            <button id="wire-add-conn-group" class="btn btn-sm" style="background:#3b82f6;border-color:#2563eb;color:#fff;">+ Group</button>
+          </div>
+          <div id="wire-conn-group-list" class="item-list"></div>
+          <h2 style="margin-top:12px;">Connectors</h2>
           <div id="wire-connector-list" class="item-list"></div>
           <h2 style="margin-top:16px;">Components</h2>
           <div id="wire-component-list" class="item-list"></div>
           <h2 style="margin-top:16px;">Routing Nodes</h2>
           <div id="wire-route-node-list" class="item-list"></div>
+          <div class="detail-header" style="margin-top:16px;margin-bottom:4px;">
+            <h2>Wire Groups</h2>
+            <button id="wire-add-wire-group" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#fff;">+ Group</button>
+          </div>
+          <div id="wire-wire-group-list" class="item-list"></div>
         </div>
         <div class="panel panel-right">
           <div id="wire-detail-placeholder" class="placeholder-text">
@@ -140,6 +150,7 @@
           <thead>
             <tr>
               <th>Wire ID</th>
+              <th>Group</th>
               <th>From (Connector:Pin)</th>
               <th>To (Connector:Pin)</th>
               <th>Gauge (AWG)</th>
