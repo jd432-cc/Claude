@@ -3,7 +3,8 @@
 const CANBus = (() => {
   let state = {
     bitrate: 500000,
-    nodes: [],      // { id, name, address, messages: [{ id, msgId, name, dlc, cycleTime, direction, signals: [{ id, name, startBit, bitLength, byteOrder, valueType, factor, offset, min, max, unit }] }] }
+    nodes: [],      // { id, name, address, branchId?, messages: [...] }
+    branches: []    // { id, name, sourceNodeId }
   };
 
   let selectedNodeId = null;
@@ -13,25 +14,98 @@ const CANBus = (() => {
 
   function setState(newState) {
     state = newState;
+    if (!state.branches) state.branches = [];
     selectedNodeId = null;
+    render();
+  }
+
+  /* ---- Helpers ---- */
+  function mainBusNodes() {
+    return state.nodes.filter(n => !n.branchId);
+  }
+
+  function branchNodes(branchId) {
+    return state.nodes.filter(n => n.branchId === branchId);
+  }
+
+  /* ---- Branches ---- */
+  function addBranch() {
+    const mainNodes = mainBusNodes();
+    if (mainNodes.length === 0) {
+      alert('Add at least one node to the main bus first.');
+      return;
+    }
+
+    const sourceOpts = mainNodes.map(n => ({ value: n.id, label: n.name + ' (' + n.address + ')' }));
+    const html = Utils.formField('branchName', 'Branch Name', 'text', { value: '' }) +
+      Utils.searchSelectField('branchSource', 'Branch From (Node)', sourceOpts, sourceOpts[0].value);
+
+    Utils.showModal('Add Branch', html, () => {
+      const name = Utils.getModalValue('branchName').trim();
+      const sourceNodeId = Utils.getModalValue('branchSource');
+      if (!name || !sourceNodeId) return;
+      state.branches.push({
+        id: Utils.uid('branch'),
+        name,
+        sourceNodeId
+      });
+      render();
+    }, () => {
+      Utils.initSearchSelects({ branchSource: sourceOpts });
+    });
+  }
+
+  function editBranch(branchId) {
+    const branch = state.branches.find(b => b.id === branchId);
+    if (!branch) return;
+
+    const mainNodes = mainBusNodes();
+    const sourceOpts = mainNodes.map(n => ({ value: n.id, label: n.name + ' (' + n.address + ')' }));
+    const html = Utils.formField('branchName', 'Branch Name', 'text', { value: branch.name }) +
+      Utils.searchSelectField('branchSource', 'Branch From (Node)', sourceOpts, branch.sourceNodeId);
+
+    Utils.showModal('Edit Branch', html, () => {
+      branch.name = Utils.getModalValue('branchName').trim() || branch.name;
+      branch.sourceNodeId = Utils.getModalValue('branchSource') || branch.sourceNodeId;
+      render();
+    }, () => {
+      Utils.initSearchSelects({ branchSource: sourceOpts });
+    });
+  }
+
+  function deleteBranch(branchId) {
+    // Move branch nodes back to main bus
+    state.nodes.forEach(n => {
+      if (n.branchId === branchId) delete n.branchId;
+    });
+    state.branches = state.branches.filter(b => b.id !== branchId);
     render();
   }
 
   /* ---- Nodes ---- */
   function addNode() {
+    const branchOpts = [{ value: '', label: 'Main Bus' }]
+      .concat(state.branches.map(b => ({ value: b.id, label: 'Branch: ' + b.name })));
+
     const html = Utils.formField('name', 'Node Name', 'text', { value: '' }) +
-                 Utils.formField('address', 'Node Address (hex)', 'text', { value: '0x00' });
+                 Utils.formField('address', 'Node Address (hex)', 'text', { value: '0x00' }) +
+                 (state.branches.length > 0
+                   ? Utils.formField('branch', 'Place On', 'select', { value: '', options: branchOpts })
+                   : '');
 
     Utils.showModal('Add Node (ECU)', html, () => {
       const name = Utils.getModalValue('name').trim();
       const address = Utils.getModalValue('address').trim();
       if (!name) return;
-      state.nodes.push({
+      const node = {
         id: Utils.uid('node'),
         name,
         address,
         messages: []
-      });
+      };
+      const branchId = state.branches.length > 0 ? Utils.getModalValue('branch') : '';
+      if (branchId) node.branchId = branchId;
+      state.nodes.push(node);
       render();
     });
   }
@@ -40,17 +114,38 @@ const CANBus = (() => {
     const node = state.nodes.find(n => n.id === nodeId);
     if (!node) return;
 
+    // Only allow moving to branch if node is not a branch source
+    const isBranchSource = state.branches.some(b => b.sourceNodeId === nodeId);
+    const branchOpts = [{ value: '', label: 'Main Bus' }]
+      .concat(state.branches.map(b => ({ value: b.id, label: 'Branch: ' + b.name })));
+
     const html = Utils.formField('name', 'Node Name', 'text', { value: node.name }) +
-                 Utils.formField('address', 'Node Address (hex)', 'text', { value: node.address });
+                 Utils.formField('address', 'Node Address (hex)', 'text', { value: node.address }) +
+                 (!isBranchSource && state.branches.length > 0
+                   ? Utils.formField('branch', 'Place On', 'select', { value: node.branchId || '', options: branchOpts })
+                   : '');
 
     Utils.showModal('Edit Node', html, () => {
       node.name = Utils.getModalValue('name').trim() || node.name;
       node.address = Utils.getModalValue('address').trim() || node.address;
+      if (!isBranchSource && state.branches.length > 0) {
+        const branchId = Utils.getModalValue('branch');
+        if (branchId) node.branchId = branchId;
+        else delete node.branchId;
+      }
       render();
     });
   }
 
   function deleteNode(nodeId) {
+    // Remove any branches that source from this node
+    const orphanBranches = state.branches.filter(b => b.sourceNodeId === nodeId);
+    for (const b of orphanBranches) {
+      state.nodes.forEach(n => {
+        if (n.branchId === b.id) delete n.branchId;
+      });
+    }
+    state.branches = state.branches.filter(b => b.sourceNodeId !== nodeId);
     state.nodes = state.nodes.filter(n => n.id !== nodeId);
     if (selectedNodeId === nodeId) selectedNodeId = null;
     render();
@@ -290,6 +385,7 @@ const CANBus = (() => {
       try {
         const data = JSON.parse(content);
         if (data.nodes && Array.isArray(data.nodes)) {
+          if (!data.branches) data.branches = [];
           setState(data);
         }
       } catch (e) {
@@ -332,27 +428,70 @@ const CANBus = (() => {
     const container = document.getElementById('can-node-list');
     container.innerHTML = '';
 
-    for (const node of state.nodes) {
-      const card = document.createElement('div');
-      card.className = 'item-card' + (selectedNodeId === node.id ? ' selected' : '');
-      card.innerHTML = `
-        <div>
-          <div class="item-name">${escHtml(node.name)}</div>
-          <div class="item-sub">${escHtml(node.address)} &middot; ${node.messages.length} msg</div>
-        </div>
-        <div class="item-actions">
-          <button title="Edit" data-action="edit">&#9998;</button>
-          <button title="Delete" data-action="delete">&times;</button>
-        </div>
-      `;
-      card.addEventListener('click', (e) => {
-        const action = e.target.dataset.action;
-        if (action === 'edit') { e.stopPropagation(); editNode(node.id); }
-        else if (action === 'delete') { e.stopPropagation(); deleteNode(node.id); }
-        else selectNode(node.id);
-      });
-      container.appendChild(card);
+    // Main bus header
+    const mainHeader = document.createElement('div');
+    mainHeader.style.cssText = 'font-size:0.75rem;color:#8088a8;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;padding:4px 0 4px 2px;border-bottom:1px solid #283060;margin-bottom:4px;';
+    mainHeader.textContent = 'Main Bus';
+    container.appendChild(mainHeader);
+
+    // Main bus nodes
+    for (const node of mainBusNodes()) {
+      const isBranchSrc = state.branches.some(b => b.sourceNodeId === node.id);
+      container.appendChild(buildNodeCard(node, isBranchSrc ? '\u2442' : ''));
     }
+
+    // Branch sections
+    for (const branch of state.branches) {
+      const bNodes = branchNodes(branch.id);
+      const sourceNode = state.nodes.find(n => n.id === branch.sourceNodeId);
+
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:0.75rem;color:#3a8ab0;font-weight:bold;padding:6px 2px 4px;border-bottom:1px solid #1e4a68;margin-top:10px;margin-bottom:4px;cursor:default;';
+      header.innerHTML = '<span>\u2514 ' + escHtml(branch.name) +
+        (sourceNode ? ' <span style="color:#8088a8;font-weight:normal;">from ' + escHtml(sourceNode.name) + '</span>' : '') +
+        '</span>' +
+        '<span class="item-actions" style="display:flex;gap:2px;">' +
+          '<button data-action="edit-branch" title="Edit" style="background:none;border:none;color:#8088a8;cursor:pointer;font-size:0.85rem;padding:2px 4px;">&#9998;</button>' +
+          '<button data-action="delete-branch" title="Delete" style="background:none;border:none;color:#8088a8;cursor:pointer;font-size:0.85rem;padding:2px 4px;">&times;</button>' +
+        '</span>';
+
+      header.querySelector('[data-action="edit-branch"]').addEventListener('click', () => editBranch(branch.id));
+      header.querySelector('[data-action="delete-branch"]').addEventListener('click', () => deleteBranch(branch.id));
+      container.appendChild(header);
+
+      for (const node of bNodes) {
+        container.appendChild(buildNodeCard(node, ''));
+      }
+
+      if (bNodes.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-size:0.78rem;color:#8088a8;font-style:italic;padding:4px 12px;';
+        empty.textContent = 'No nodes on this branch';
+        container.appendChild(empty);
+      }
+    }
+  }
+
+  function buildNodeCard(node, badge) {
+    const card = document.createElement('div');
+    card.className = 'item-card' + (selectedNodeId === node.id ? ' selected' : '');
+    card.innerHTML = `
+      <div>
+        <div class="item-name">${badge ? '<span style="color:#3a8ab0;margin-right:4px;" title="Branch source">' + badge + '</span>' : ''}${escHtml(node.name)}</div>
+        <div class="item-sub">${escHtml(node.address)} &middot; ${node.messages.length} msg</div>
+      </div>
+      <div class="item-actions">
+        <button title="Edit" data-action="edit">&#9998;</button>
+        <button title="Delete" data-action="delete">&times;</button>
+      </div>
+    `;
+    card.addEventListener('click', (e) => {
+      const action = e.target.dataset.action;
+      if (action === 'edit') { e.stopPropagation(); editNode(node.id); }
+      else if (action === 'delete') { e.stopPropagation(); deleteNode(node.id); }
+      else selectNode(node.id);
+    });
+    return card;
   }
 
   function renderDetail() {
@@ -457,6 +596,11 @@ const CANBus = (() => {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
 
+    // Dynamic height: base 250 + 120 per branch row
+    const branchCount = state.branches.length;
+    const desiredH = 250 + branchCount * 120;
+    canvas.style.height = desiredH + 'px';
+
     canvas.width = canvas.clientWidth * dpr;
     canvas.height = canvas.clientHeight * dpr;
     ctx.scale(dpr, dpr);
@@ -466,8 +610,8 @@ const CANBus = (() => {
 
     ctx.clearRect(0, 0, W, H);
 
-    const nodes = state.nodes;
-    if (nodes.length === 0) {
+    const mNodes = mainBusNodes();
+    if (mNodes.length === 0 && state.branches.length === 0) {
       ctx.fillStyle = '#8088a8';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
@@ -475,68 +619,159 @@ const CANBus = (() => {
       return;
     }
 
-    // Draw bus line
-    const busY = H / 2;
     const busMargin = 60;
     const busLeft = busMargin;
     const busRight = W - busMargin;
-
-    ctx.strokeStyle = '#d4a800';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(busLeft, busY);
-    ctx.lineTo(busRight, busY);
-    ctx.stroke();
-
-    // Termination resistors
-    drawResistor(ctx, busLeft, busY, 'left');
-    drawResistor(ctx, busRight, busY, 'right');
-
-    // Draw CAN-H / CAN-L labels
-    ctx.fillStyle = '#d4a800';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('CAN-H', W / 2, busY - 8);
-    ctx.fillStyle = '#3a8ab0';
-    ctx.fillText('CAN-L', W / 2, busY + 18);
-
-    // Draw nodes
-    const spacing = (busRight - busLeft) / (nodes.length + 1);
     const nodeW = 90;
     const nodeH = 40;
 
-    nodes.forEach((node, i) => {
-      const cx = busLeft + spacing * (i + 1);
+    // Main bus Y — push up if there are branches, to leave room below
+    const mainBusY = branchCount > 0 ? 80 : H / 2;
+
+    // ---- Draw main bus line ----
+    ctx.strokeStyle = '#d4a800';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(busLeft, mainBusY);
+    ctx.lineTo(busRight, mainBusY);
+    ctx.stroke();
+
+    // Termination resistors
+    drawResistor(ctx, busLeft, mainBusY, 'left');
+    drawResistor(ctx, busRight, mainBusY, 'right');
+
+    // CAN-H / CAN-L labels
+    ctx.fillStyle = '#d4a800';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CAN-H', W / 2, mainBusY - 8);
+    ctx.fillStyle = '#3a8ab0';
+    ctx.fillText('CAN-L', W / 2, mainBusY + 18);
+
+    // ---- Compute main bus node positions ----
+    const mainSpacing = mNodes.length > 0 ? (busRight - busLeft) / (mNodes.length + 1) : 0;
+    const mainNodePositions = {};
+
+    mNodes.forEach((node, i) => {
+      const cx = busLeft + mainSpacing * (i + 1);
       const aboveBelow = i % 2 === 0 ? -1 : 1;
-      const ny = busY + aboveBelow * 60;
+      // If branches exist, all main nodes go above the bus to keep below clear
+      const ny = branchCount > 0
+        ? mainBusY - 55
+        : mainBusY + aboveBelow * 60;
+
+      mainNodePositions[node.id] = { cx, ny };
 
       // Stub line
       ctx.strokeStyle = '#3a4a70';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cx, busY);
+      ctx.moveTo(cx, mainBusY);
       ctx.lineTo(cx, ny);
       ctx.stroke();
 
-      // Node box
-      ctx.fillStyle = selectedNodeId === node.id ? '#1a2550' : '#0f1535';
-      ctx.strokeStyle = selectedNodeId === node.id ? '#d4a800' : '#283060';
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, cx - nodeW / 2, ny - nodeH / 2, nodeW, nodeH, 6);
+      drawNodeBox(ctx, node, cx, ny, nodeW, nodeH);
+    });
+
+    // ---- Draw branches ----
+    state.branches.forEach((branch, bi) => {
+      const sourcePos = mainNodePositions[branch.sourceNodeId];
+      if (!sourcePos) return;
+
+      const bNodes = branchNodes(branch.id);
+      const branchY = mainBusY + 80 + bi * 120;
+
+      // Junction dot on main bus
+      ctx.fillStyle = '#d4a800';
+      ctx.beginPath();
+      ctx.arc(sourcePos.cx, mainBusY, 5, 0, Math.PI * 2);
       ctx.fill();
+
+      // Vertical drop line from main bus to branch line
+      ctx.strokeStyle = '#3a8ab0';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(sourcePos.cx, mainBusY);
+      ctx.lineTo(sourcePos.cx, branchY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Branch bus line
+      const branchLeft = Math.max(busLeft, sourcePos.cx - 180);
+      const branchRight = Math.min(busRight, sourcePos.cx + 180);
+
+      ctx.strokeStyle = '#3a8ab0';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(branchLeft, branchY);
+      ctx.lineTo(branchRight, branchY);
       ctx.stroke();
 
-      // Node label
-      ctx.fillStyle = '#e8eaf0';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(truncate(node.name, 12), cx, ny - 6);
+      // Branch label
+      ctx.fillStyle = '#3a8ab0';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(branch.name, branchLeft + 2, branchY - 10);
 
-      ctx.fillStyle = '#8088a8';
-      ctx.font = '10px monospace';
-      ctx.fillText(node.address, cx, ny + 10);
+      // Branch termination (small dots)
+      ctx.fillStyle = '#3a8ab0';
+      ctx.beginPath();
+      ctx.arc(branchLeft, branchY, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(branchRight, branchY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Branch nodes
+      if (bNodes.length > 0) {
+        const bSpacing = (branchRight - branchLeft) / (bNodes.length + 1);
+        bNodes.forEach((node, ni) => {
+          const cx = branchLeft + bSpacing * (ni + 1);
+          const ny = branchY + 55;
+
+          // Stub
+          ctx.strokeStyle = '#3a4a70';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(cx, branchY);
+          ctx.lineTo(cx, ny);
+          ctx.stroke();
+
+          drawNodeBox(ctx, node, cx, ny, nodeW, nodeH);
+        });
+      }
     });
+  }
+
+  function drawNodeBox(ctx, node, cx, ny, nodeW, nodeH) {
+    const isSelected = selectedNodeId === node.id;
+    const isBranchSource = state.branches.some(b => b.sourceNodeId === node.id);
+
+    ctx.fillStyle = isSelected ? '#1a2550' : '#0f1535';
+    ctx.strokeStyle = isSelected ? '#d4a800' : (isBranchSource ? '#3a8ab0' : '#283060');
+    ctx.lineWidth = isSelected ? 2 : 1.5;
+    roundRect(ctx, cx - nodeW / 2, ny - nodeH / 2, nodeW, nodeH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Branch source indicator — small colored dot top-right
+    if (isBranchSource) {
+      ctx.fillStyle = '#3a8ab0';
+      ctx.beginPath();
+      ctx.arc(cx + nodeW / 2 - 6, ny - nodeH / 2 + 6, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#e8eaf0';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(truncate(node.name, 12), cx, ny - 6);
+
+    ctx.fillStyle = '#8088a8';
+    ctx.font = '10px monospace';
+    ctx.fillText(node.address, cx, ny + 10);
   }
 
   function drawResistor(ctx, x, y, side) {
@@ -544,7 +779,7 @@ const CANBus = (() => {
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     const offset = side === 'left' ? -20 : 20;
-    ctx.fillText('120Ω', x + offset, y - 12);
+    ctx.fillText('120\u03A9', x + offset, y - 12);
 
     ctx.strokeStyle = '#d4a800';
     ctx.lineWidth = 1.5;
@@ -573,7 +808,7 @@ const CANBus = (() => {
   }
 
   function truncate(str, len) {
-    return str.length > len ? str.slice(0, len - 1) + '…' : str;
+    return str.length > len ? str.slice(0, len - 1) + '\u2026' : str;
   }
 
   function escHtml(str) {
@@ -585,6 +820,7 @@ const CANBus = (() => {
   /* ---- Init ---- */
   function init() {
     document.getElementById('can-add-node').addEventListener('click', addNode);
+    document.getElementById('can-add-branch').addEventListener('click', addBranch);
     document.getElementById('can-add-message').addEventListener('click', addMessage);
     document.getElementById('can-export').addEventListener('click', exportJSON);
     document.getElementById('can-import').addEventListener('click', importJSON);
