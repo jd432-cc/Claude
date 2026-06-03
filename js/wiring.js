@@ -679,15 +679,15 @@ const Wiring = (() => {
     const aspect = diagramW / diagramH;
 
     const html =
-      Utils.formField('width', 'Width (px)', 'number', { value: diagramW, min: 100, max: 8000 }) +
-      Utils.formField('height', 'Height (px)', 'number', { value: diagramH, min: 100, max: 8000 }) +
+      Utils.formField('width', 'Width (px)', 'number', { value: diagramW, min: 100 }) +
+      Utils.formField('height', 'Height (px)', 'number', { value: diagramH, min: 100 }) +
       '<div class="form-row"><label><input type="checkbox" id="modal-lock-aspect" checked> Lock aspect ratio</label></div>' +
       '<div class="form-row"><label>Background</label>' +
         '<select id="modal-bg"><option value="#080c24">Dark (default)</option><option value="#ffffff">White</option><option value="transparent">Transparent</option></select></div>';
 
     Utils.showModal('Export as PNG', html, () => {
-      const w = Math.max(100, Math.min(8000, parseInt(Utils.getModalValue('width')) || diagramW));
-      const h = Math.max(100, Math.min(8000, parseInt(Utils.getModalValue('height')) || diagramH));
+      const w = Math.max(100, parseInt(Utils.getModalValue('width')) || diagramW);
+      const h = Math.max(100, parseInt(Utils.getModalValue('height')) || diagramH);
       const bg = document.getElementById('modal-bg').value;
       renderExportImage(w, h, bg, diagramW, diagramH);
     }, () => {
