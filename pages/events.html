@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events — OUMF</title>
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="../index.html">OUMF</a>
+    <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="cars.html">Our Cars</a></li>
+      <li><a href="events.html" class="active">Events</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="sponsors.html">Sponsors</a></li>
+      <li><a href="join.html">Join Us</a></li>
+      <li><a href="../planner.html">Planner Tool</a></li>
+    </ul>
+  </nav>
+
+  <section class="page-hero">
+    <h1><span>Events</span></h1>
+    <p>Upcoming competitions, socials, and team milestones throughout the year.</p>
+  </section>
+
+  <div class="page-body">
+    <div class="placeholder-box">
+      <h3>Coming Soon</h3>
+      <p>This page is under construction. Check back soon for our event calendar and competition schedule.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Oxford Universities Motorsport Foundation &middot; <a href="about.html">About</a> &middot; <a href="sponsors.html">Sponsors</a> &middot; <a href="join.html">Join Us</a></p>
+  </footer>
+
+  <script>
+    document.querySelector('.nav-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
