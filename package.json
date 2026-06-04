@@ -19,7 +19,8 @@
       "js/**/*"
     ],
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "signAndEditExecutable": false
     }
   },
   "devDependencies": {
