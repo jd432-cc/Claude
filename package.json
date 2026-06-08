@@ -1,0 +1,31 @@
+{
+  "name": "oumf-canbus-wiring-planner",
+  "version": "0.1.0",
+  "description": "CAN Bus & Wiring Loom Planner for OUMF",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "build-win": "electron-builder --win portable --x64"
+  },
+  "author": "OUMF",
+  "license": "MIT",
+  "build": {
+    "appId": "org.oumf.planner",
+    "productName": "OUMF Planner",
+    "files": [
+      "electron-main.js",
+      "index.html",
+      "css/**/*",
+      "js/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2"
+  }
+}
