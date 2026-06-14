@@ -29,6 +29,10 @@ RLCAB001 cable).
 Switch pages by **swiping** left/right or tapping the **TRIP / TIMER / CFG**
 tabs (top right).
 
+A **GPS-lock indicator** sits under the title on every page: a coloured dot
+(green = lock, red = no fix) plus live text showing the satellite count and fix
+quality (`GPS LOCK: 11 sat (fix 3)` / `GPS: searching... (4 sat)`).
+
 ### TRIPMETER (Brantz International Tripmeter)
 - **TOTAL** and **INTERMEDIATE** distance, derived by integrating GNSS ground
   speed; **Speed** and **Calibration** readouts.
@@ -38,7 +42,8 @@ tabs (top right).
 
 ### RALLY TIMER (Brantz Timer V2)
 - **Time of day** in `24Hr / 12Hr / 10Hr-decimal / 100th` formats (+ a small
-  analog clock), GNSS-sourced (UTC; set `TZ_OFFSET_H` for local time).
+  analog clock), GNSS-sourced (UTC; set `TZ_OFFSET_H` for local time). The clock
+  shows `--:--:--` until a GPS fix is acquired; the stopwatch needs no fix.
 - **Stopwatch** with the 4 Brantz modes, cycled by `Mode`:
   - **Standard** – start / stop / hold / reset.
   - **Regularity** – free-runs; a press holds the display ~32 s then internally
@@ -66,6 +71,8 @@ and **Reset** button, in addition to the on-screen buttons.
 | Brantz function | VBOX Touch implementation |
 |---|---|
 | Real-time clock (24/12/10/100th) | `gnss.h/m/s/cs()` formatted per mode |
+| GPS-lock indicator | `gnss.quality()` + `gnss.sat_count()`, shown as dot + text |
+| UI / clock / stopwatch refresh | `vts.Timer(100, True)` 10 Hz tick (works without a fix) |
 | Stopwatch timing | `vts.Chrono` monotonic time; 4-mode state machine |
 | 32-second hold | timestamp + `HOLD_MS` compare |
 | Start/Stop LED states | `vts.leds(*[r,g,b]*4)` with time-based flashing |
@@ -96,6 +103,9 @@ and **Reset** button, in addition to the on-screen buttons.
 - Logic tests against stubbed hardware (clock formats, all stopwatch modes,
   distance integration with calibration/units/freeze/direction, and the
   settings save/load round-trip) — all pass.
+- Tick/GPS tests — the 10 Hz `ui_tick` updates the stopwatch and clock with **no**
+  GNSS callback firing, the lock indicator flips on `gnss.quality()` changes, and
+  `main()` wires the periodic timer — all pass.
 - On-hardware execution was **not** performed here (the `gui/vts/gnss/vbox/...`
   modules exist only on the VBOX Touch); correctness is argued via the mapping
   above and the tests.
