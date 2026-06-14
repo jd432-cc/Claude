@@ -27,7 +27,6 @@ TZ_OFFSET_H = 0                 # UTC -> local hours (GPS time is UTC)
 CFG_PATH = '/sd/brantz.cfg'
 HOLD_MS = 32000                 # regularity / jogularity 32 s hold
 M_PER_MILE = 1609.344
-GPS_TIMEOUT_MS = 2000           # no GNSS data for this long => not locked
 
 MODE_NAMES = ['Standard', 'Regularity', 'Jogularity', 'Std-Cumul']
 CLOCKFMT_NAMES = ['24Hr', '12Hr', '10Hr', '100th']
@@ -44,9 +43,10 @@ RED = (70, 0, 0)
 class S:
     page = 0                    # 0 main, 1 config
     last_ms = 0
-    last_gnss_ms = -100000      # time of last GNSS callback (for lock detect)
     gps_locked = False
     timer = None
+    tod_ms = 0                  # GPS time of day (ms since UTC midnight)
+    sats = 0
 
     # Distance (single GPS-integrated trip value)
     units = 'km'
@@ -88,7 +88,7 @@ bright_disp = ['Hi']
 clkfmt_disp = ['24Hr']
 swfmt_disp = ['MM:SS']
 autostart_disp = ['OFF 00:00:00']
-gps_disp = ['Sats: 0  Fix: 0']
+gps_disp = ['Sats: 0']
 
 clock = vts.Chrono()
 
@@ -187,12 +187,23 @@ def dist_step():
     return 0.01 * (1000.0 if S.units == 'km' else M_PER_MILE)
 
 
-# --- Clock ------------------------------------------------------------------
-def fmt_clock():
-    h = (gnss.h() + TZ_OFFSET_H) % 24
-    m = gnss.m()
-    s = gnss.s()
-    c = gnss.cs()
+# --- Clock (time of day from the VBOX sample's tod_ms) ----------------------
+def tod_local_ms(tod_ms):
+    return (tod_ms + TZ_OFFSET_H * 3600000) % 86400000
+
+
+def tod_hms(tod_ms):
+    total_s = tod_local_ms(tod_ms) // 1000
+    return (total_s // 3600) % 24, (total_s // 60) % 60, total_s % 60
+
+
+def fmt_clock(tod_ms):
+    t = tod_local_ms(tod_ms)
+    total_s = t // 1000
+    h = (total_s // 3600) % 24
+    m = (total_s // 60) % 60
+    s = total_s % 60
+    c = (t % 1000) // 10
     f = S.clock_fmt
     if f == 0:
         return '{:02d}:{:02d}:{:02d}'.format(h, m, s)
@@ -288,44 +299,40 @@ def fmt_sw(ms):
     return '{:d}:{:02d}.{:1d}'.format(total_s // 60, total_s % 60, (ms % 1000) // 100)
 
 
-# --- GNSS data callback (registering it makes the gnss.* getters live) ------
-def on_gnss():
-    S.last_gnss_ms = now_ms()
-
-
 # --- Periodic UI tick (10 Hz, runs with or without a GPS fix) ---------------
 def ui_tick():
     now = now_ms()
     dt = (now - S.last_ms) / 1000.0
     S.last_ms = now
 
-    locked = (now - S.last_gnss_ms) < GPS_TIMEOUT_MS
-    try:
-        sats = gnss.sat_count()
-        q = gnss.quality()
-    except Exception:
-        sats, q = 0, 0
-    gps_disp[0] = 'Sats: {}  Fix: {}'.format(sats, q)
+    # Satellites, time of day and speed all come from the VBOX sample
+    sample = vbox.get_sample()
+    if sample is None:
+        locked = False
+        speed = 0.0
+        S.sats = 0
+        S.tod_ms = 0
+    else:
+        S.sats = getattr(sample, 'sats_used', 0)
+        S.tod_ms = getattr(sample, 'tod_ms', 0)
+        speed = getattr(sample, 'speed_gnd_mps', 0.0)
+        locked = S.tod_ms > 0
+    gps_disp[0] = 'Sats: {}'.format(S.sats)
     if locked != S.gps_locked:
         S.gps_locked = locked
         draw()
 
-    speed = 0.0
-    try:
-        speed = vbox.get_sample().speed_gnd_mps
-    except Exception:
-        speed = 0.0
     integrate(dt, speed)
 
     spd_disp[0] = '{:.1f} {}'.format(
         speed * (3.6 if S.units == 'km' else 2.23694),
         'km/h' if S.units == 'km' else 'mph')
     dist_disp[0] = '{:.2f} {}'.format(dist_in_units(S.dist_m), S.units)
-    clock_disp[0] = fmt_clock() if locked else '--:--:--'
+    clock_disp[0] = fmt_clock(S.tod_ms) if locked else '--:--:--'
 
     # Auto-start (needs a valid GPS time)
     if locked and S.autostart_en and not sw_is_started():
-        if (gnss.h(), gnss.m(), gnss.s()) == S.autostart_hms:
+        if tod_hms(S.tod_ms) == S.autostart_hms:
             if not S.autostart_fired:
                 S.autostart_fired = True
                 sw_press()
@@ -595,20 +602,24 @@ def main():
         vts.delay_ms(100)
         waited += 100
 
+    # tod_ms lives in the STD source; fall back to BASIC if unavailable
     try:
-        vbox.init(vbox.VBOX_SRC_GNSS_BASIC)
-    except Exception as e:
-        print('vbox init failed:', e)
-    try:
-        gnss.new_data_callback(on_gnss)
-    except Exception as e:
-        print('gnss callback failed:', e)
+        vbox.init(vbox.VBOX_SRC_GNSS_STD)
+    except Exception:
+        try:
+            vbox.init(vbox.VBOX_SRC_GNSS_BASIC)
+        except Exception as e:
+            print('vbox init failed:', e)
 
     vts.Timer.destroy_all()
     S.timer = vts.Timer(100, True)
     S.timer.set_callback(ui_tick)
 
     draw()
+
+    # Keep the script alive so the timer callbacks keep running
+    while True:
+        vts.delay_ms(100)
 
 
 if __name__ == '__main__':

@@ -29,14 +29,14 @@ RLCAB001 cable).
 Two screens — **MAIN** and **CFG** — switched by **swiping** left/right or
 tapping the **MAIN / CFG** tabs (top right).
 
-A **GPS indicator** sits under the title: a coloured dot (green = receiving GPS
-data, red = none) plus live text showing satellite count and fix quality
-(`Sats: 11  Fix: 3`).
+A **GPS indicator** sits under the title: a coloured dot (green = valid GPS time,
+red = none) plus the live satellite count (`Sats: 11`), both read from the VBOX
+sample (`sats_used`).
 
 ### MAIN
-- **Time of day** (from GPS) in the configured `24Hr / 12Hr / 10Hr-decimal /
-  100th` format. Shows `--:--:--` until GPS data is being received; the stopwatch
-  needs no fix.
+- **Time of day** from the GPS sample (`tod_ms`) in the configured `24Hr / 12Hr /
+  10Hr-decimal / 100th` format. Shows `--:--:--` until the GPS time is valid; the
+  stopwatch needs no fix.
 - **Stopwatch** (large) with the active mode label; the 4 Brantz modes are:
   - **Standard** – start / stop / hold / reset.
   - **Regularity** – free-runs; a press holds the display ~32 s then internally
@@ -67,8 +67,8 @@ and **Reset** button, in addition to the on-screen buttons.
 
 | Function | VBOX Touch implementation |
 |---|---|
-| Time of day (24/12/10/100th) | `gnss.h/m/s/cs()` formatted per mode |
-| GPS indicator / lock | `gnss.new_data_callback` activates the `gnss.*` getters; lock = data seen < 2 s; shows `gnss.sat_count()` + `gnss.quality()` |
+| Time of day (24/12/10/100th) | `vbox.get_sample().tod_ms` (ms since UTC midnight) formatted per mode |
+| GPS indicator / lock | `vbox.get_sample().sats_used` for satellites; locked when `tod_ms > 0` |
 | UI / clock / stopwatch refresh | `vts.Timer(100, True)` 10 Hz tick (works without a fix) |
 | Stopwatch timing | `vts.Chrono` monotonic time; 4-mode state machine |
 | 32-second hold | timestamp + `HOLD_MS` compare |
@@ -84,9 +84,12 @@ and **Reset** button, in addition to the on-screen buttons.
 
 - Distance and time both come from **GPS**; there is no wheel-sensor calibration
   (removed — GPS provides the distance directly).
-- The `gnss.*` getters only return data once `gnss.new_data_callback` is
-  registered, so the app registers it at start-up; GPS "lock" is inferred from
-  that callback firing (more reliable than `gnss.quality()`, which can read 0).
+- Satellites and time of day are read from the **VBOX sample** — `sats_used` and
+  `tod_ms` (**milliseconds** since UTC midnight, converted to H:M:S) — not the
+  `gnss.*` getters, which read 0 on the unit. `vbox.init` uses
+  `VBOX_SRC_GNSS_STD` (where `tod_ms` lives) and falls back to
+  `VBOX_SRC_GNSS_BASIC`; a keep-alive loop holds the script open so the 10 Hz
+  timer keeps running. GPS "lock" = `tod_ms > 0`.
 - Brightness is emulated by scaling drawn intensity and LED output (the examples
   expose no backlight-PWM register).
 - Clock time is GPS **UTC**; set `TZ_OFFSET_H` at the top of `main.py` for local
@@ -98,14 +101,15 @@ and **Reset** button, in addition to the on-screen buttons.
 
 - `python3 -m py_compile main.py` — compiles cleanly.
 - Import/API scan — every `gui/vts/gnss/vbox/digitalio` symbol used is present in
-  the official examples; no other modules are imported.
+  the official examples or the two user-supplied working scripts; no other modules
+  are imported.
 - Logic tests against stubbed hardware (clock formats, all stopwatch modes,
   distance integration, units, brightness/LED scaling, and the settings
   save/load round-trip) — all pass.
-- Tick/GPS tests — the 10 Hz `ui_tick` updates the stopwatch and distance with
-  **no** GNSS data; once the GNSS callback fires the clock + satellite count
-  appear **even when `gnss.quality()` is 0**, and lock drops after a 2 s data gap;
-  `main()` registers the GNSS callback and wires the periodic timer — all pass.
+- Sample/GPS tests — `tod_ms` (e.g. `52420000` ms → `14:33:40`) drives the clock,
+  `sats_used` drives the satellite count, lock follows `tod_ms > 0`, a `None`
+  sample blanks the clock, distance integrates from the sample speed, and `main()`
+  inits `VBOX_SRC_GNSS_STD` first and wires the 10 Hz timer — all pass.
 - On-hardware execution was **not** performed here (the `gui/vts/gnss/vbox/...`
   modules exist only on the VBOX Touch); correctness is argued via the mapping
   above and the tests.
