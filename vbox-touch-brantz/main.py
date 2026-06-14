@@ -1,16 +1,15 @@
 ##
 # @file    main.py
-# @brief   Brantz Rallymeter emulator for the VBOX Motorsport Touch
+# @brief   Rally Computer for the VBOX Motorsport Touch
 #
-# Recreates the core functions of two Brantz rally instruments on a VBOX Touch:
-#   * Brantz International Tripmeter  - total/intermediate distance, calibration,
-#     zero, freeze, count up/down, manual edit, km/mile.
-#   * Brantz Timer V2 (BR32V2)        - real-time clock (24/12/10hr/100th) and a
-#     stopwatch with 4 modes (Standard, Regularity, Jogularity, Std-Cumulative),
-#     auto-start, brightness, Start/Stop LED states.
+# A combined rally instrument inspired by two Brantz devices, on a VBOX Touch:
+#   * Time of day (from GPS) in 24/12/10hr/100th formats
+#   * Stopwatch with 4 modes (Standard, Regularity, Jogularity, Std-Cumulative)
+#   * Distance travelled (integrated from GPS ground speed)
 #
+# MAIN screen shows everything with minimal controls; CFG holds the settings.
 # Uses only API demonstrated by the official VBOX Touch python examples:
-#   gui, vts, gnss, vbox, digitalio, os, math.
+#   gui, vts, gnss, vbox, digitalio.
 #
 # Deploy: copy this file as main.py to the root of the SD card, insert, power on.
 #
@@ -24,16 +23,17 @@ import digitalio
 # --- Constants --------------------------------------------------------------
 SCREEN_W = 800
 SCREEN_H = 480
-TZ_OFFSET_H = 0                 # UTC -> local hours, GNSS time is UTC
+TZ_OFFSET_H = 0                 # UTC -> local hours (GPS time is UTC)
 CFG_PATH = '/sd/brantz.cfg'
-HOLD_MS = 32000                 # Brantz regularity/jogularity 32 s hold
+HOLD_MS = 32000                 # regularity / jogularity 32 s hold
 M_PER_MILE = 1609.344
+GPS_TIMEOUT_MS = 2000           # no GNSS data for this long => not locked
 
 MODE_NAMES = ['Standard', 'Regularity', 'Jogularity', 'Std-Cumul']
 CLOCKFMT_NAMES = ['24Hr', '12Hr', '10Hr', '100th']
 SWFMT_NAMES = ['MM:SS', 'Sec']
 BRIGHT_NAMES = ['Lo', 'Med', 'Hi', 'Off']
-BRIGHT_FG = [90, 170, 255]      # foreground intensity for Lo/Med/Hi
+BRIGHT_FG = [90, 170, 255]      # display/LED intensity for Lo/Med/Hi
 BG = gui.RGB(0, 28, 48)
 
 GREEN = (0, 70, 0)
@@ -42,18 +42,17 @@ RED = (70, 0, 0)
 
 # --- State ------------------------------------------------------------------
 class S:
-    page = 0                    # 0 trip, 1 timer, 2 config
+    page = 0                    # 0 main, 1 config
     last_ms = 0
+    last_gnss_ms = -100000      # time of last GNSS callback (for lock detect)
+    gps_locked = False
+    timer = None
 
-    # Tripmeter
+    # Distance (single GPS-integrated trip value)
     units = 'km'
-    cal = 1.000
-    total_m = 0.0
-    inter_m = 0.0
-    freeze = False
-    direction = 1               # +1 count up, -1 count down
+    dist_m = 0.0
 
-    # Timer / clock
+    # Clock / display
     clock_fmt = 0
     sw_fmt = 0
     brightness = 2
@@ -77,26 +76,19 @@ class S:
     last_in0 = True
     last_in1 = True
 
-    # GPS lock + periodic UI timer
-    gps_locked = False
-    timer = None
-
 
 # --- Live display values (mutable 1-element lists bound into the GUI) -------
 clock_disp = ['--:--:--']
 sw_disp = ['0:00.0']
 mode_disp = [MODE_NAMES[0]]
-total_disp = ['000.00']
-inter_disp = ['00.00']
-spd_disp = ['0.0']
-cal_disp = ['1.000']
+dist_disp = ['0.00 km']
+spd_disp = ['0.0 km/h']
 units_disp = ['km']
 bright_disp = ['Hi']
 clkfmt_disp = ['24Hr']
 swfmt_disp = ['MM:SS']
 autostart_disp = ['OFF 00:00:00']
-clock_secs = [0]
-gps_disp = ['GPS: no fix']
+gps_disp = ['Sats: 0  Fix: 0']
 
 clock = vts.Chrono()
 
@@ -107,12 +99,27 @@ def now_ms():
 
 # --- Colours / brightness ---------------------------------------------------
 def fg_rgb():
-    return (BRIGHT_FG[S.brightness], BRIGHT_FG[S.brightness], BRIGHT_FG[S.brightness])
+    v = BRIGHT_FG[S.brightness] if S.brightness < 3 else 0
+    return (v, v, v)
 
 
-# --- LEDs -------------------------------------------------------------------
+# --- LEDs (also scaled by the brightness setting) ---------------------------
 def set_leds(rgb):
-    vts.leds(*list(rgb) * 4)
+    if S.brightness == 3:
+        vts.leds(*[0] * 12)
+        return
+    f = BRIGHT_FG[S.brightness] / 255.0
+    c = (int(rgb[0] * f), int(rgb[1] * f), int(rgb[2] * f))
+    vts.leds(*list(c) * 4)
+
+
+def update_leds(now, state):
+    if state == 'run':
+        set_leds(GREEN)
+    elif state == 'stopped':
+        set_leds(RED)
+    else:
+        set_leds(GREEN if (now // 300) % 2 else RED)
 
 
 # --- Persistence ------------------------------------------------------------
@@ -122,7 +129,6 @@ def save_cfg(*_):
     try:
         with open(CFG_PATH, 'w') as f:
             f.write('units={}\n'.format(S.units))
-            f.write('cal={:.3f}\n'.format(S.cal))
             f.write('clock_fmt={}\n'.format(S.clock_fmt))
             f.write('sw_fmt={}\n'.format(S.sw_fmt))
             f.write('mode={}\n'.format(S.mode))
@@ -147,8 +153,6 @@ def load_cfg():
                 k, v = line.split('=', 1)
                 if k == 'units':
                     S.units = v
-                elif k == 'cal':
-                    S.cal = float(v)
                 elif k == 'clock_fmt':
                     S.clock_fmt = int(v)
                 elif k == 'sw_fmt':
@@ -166,24 +170,21 @@ def load_cfg():
         print('load_cfg failed:', e)
 
 
-# --- Tripmeter --------------------------------------------------------------
+# --- Distance ---------------------------------------------------------------
 def integrate(dt, v):
     if dt <= 0 or dt > 1.0:
         return
     if v < 0:
         v = 0.0
-    d = v * dt * S.cal * S.direction
-    S.inter_m += d
-    if not S.freeze:
-        S.total_m += d
+    S.dist_m += v * dt
 
 
 def dist_in_units(m):
     return m / 1000.0 if S.units == 'km' else m / M_PER_MILE
 
 
-def fmt_dist(m, pad):
-    return '{:{p}.2f}'.format(dist_in_units(m), p=pad)
+def dist_step():
+    return 0.01 * (1000.0 if S.units == 'km' else M_PER_MILE)
 
 
 # --- Clock ------------------------------------------------------------------
@@ -287,13 +288,9 @@ def fmt_sw(ms):
     return '{:d}:{:02d}.{:1d}'.format(total_s // 60, total_s % 60, (ms % 1000) // 100)
 
 
-def update_leds(now, state):
-    if state == 'run':
-        set_leds(GREEN)
-    elif state == 'stopped':
-        set_leds(RED)
-    else:
-        set_leds(GREEN if (now // 300) % 2 else RED)
+# --- GNSS data callback (registering it makes the gnss.* getters live) ------
+def on_gnss():
+    S.last_gnss_ms = now_ms()
 
 
 # --- Periodic UI tick (10 Hz, runs with or without a GPS fix) ---------------
@@ -302,17 +299,13 @@ def ui_tick():
     dt = (now - S.last_ms) / 1000.0
     S.last_ms = now
 
-    # GPS lock status
+    locked = (now - S.last_gnss_ms) < GPS_TIMEOUT_MS
     try:
+        sats = gnss.sat_count()
         q = gnss.quality()
-        n = gnss.sat_count()
     except Exception:
-        q, n = 0, 0
-    locked = q > 0
-    if locked:
-        gps_disp[0] = 'GPS LOCK: {} sat (fix {})'.format(n, q)
-    else:
-        gps_disp[0] = 'GPS: searching... ({} sat)'.format(n)
+        sats, q = 0, 0
+    gps_disp[0] = 'Sats: {}  Fix: {}'.format(sats, q)
     if locked != S.gps_locked:
         S.gps_locked = locked
         draw()
@@ -324,16 +317,13 @@ def ui_tick():
         speed = 0.0
     integrate(dt, speed)
 
-    spd_disp[0] = '{:.1f}'.format(speed * (3.6 if S.units == 'km' else 2.23694))
-    total_disp[0] = fmt_dist(S.total_m, '06')
-    inter_disp[0] = fmt_dist(S.inter_m, '05')
-    if locked:
-        clock_disp[0] = fmt_clock()
-        clock_secs[0] = ((gnss.h() + TZ_OFFSET_H) % 24) * 3600 + gnss.m() * 60 + gnss.s()
-    else:
-        clock_disp[0] = '--:--:--'
+    spd_disp[0] = '{:.1f} {}'.format(
+        speed * (3.6 if S.units == 'km' else 2.23694),
+        'km/h' if S.units == 'km' else 'mph')
+    dist_disp[0] = '{:.2f} {}'.format(dist_in_units(S.dist_m), S.units)
+    clock_disp[0] = fmt_clock() if locked else '--:--:--'
 
-    # Auto-start (needs a valid GNSS time)
+    # Auto-start (needs a valid GPS time)
     if locked and S.autostart_en and not sw_is_started():
         if (gnss.h(), gnss.m(), gnss.s()) == S.autostart_hms:
             if not S.autostart_fired:
@@ -371,44 +361,24 @@ def set_page(p):
     draw()
 
 
-def tab_trip(b):
+def tab_main(b):
     set_page(0)
 
 
-def tab_timer(b):
+def tab_cfg(b):
     set_page(1)
 
 
-def tab_cfg(b):
-    set_page(2)
+def dist_plus(b):
+    S.dist_m += dist_step()
 
 
-def zero_int(b):
-    S.inter_m = 0.0
+def dist_minus(b):
+    S.dist_m = max(0.0, S.dist_m - dist_step())
 
 
-def zero_total(b):
-    S.total_m = 0.0
-
-
-def toggle_freeze(b):
-    S.freeze = not S.freeze
-    draw()
-
-
-def toggle_dir(b):
-    S.direction = -S.direction
-    draw()
-
-
-def edit_minus(b):
-    step = 0.01 * (1000.0 if S.units == 'km' else M_PER_MILE)
-    S.total_m -= step
-
-
-def edit_plus(b):
-    step = 0.01 * (1000.0 if S.units == 'km' else M_PER_MILE)
-    S.total_m += step
+def dist_reset(b):
+    S.dist_m = 0.0
 
 
 def toggle_units(b):
@@ -416,18 +386,6 @@ def toggle_units(b):
     units_disp[0] = S.units
     save_cfg()
     draw()
-
-
-def cal_minus(b):
-    S.cal = max(0.500, round(S.cal - 0.001, 3))
-    cal_disp[0] = '{:.3f}'.format(S.cal)
-    save_cfg()
-
-
-def cal_plus(b):
-    S.cal = min(2.000, round(S.cal + 0.001, 3))
-    cal_disp[0] = '{:.3f}'.format(S.cal)
-    save_cfg()
 
 
 def cycle_mode(b):
@@ -482,8 +440,7 @@ def toggle_autostart(b):
 
 
 def _bump_autostart(idx, step):
-    h, m, s = S.autostart_hms
-    v = [h, m, s]
+    v = list(S.autostart_hms)
     cap = [24, 60, 60]
     v[idx] = (v[idx] + step) % cap[idx]
     S.autostart_hms = (v[0], v[1], v[2])
@@ -505,15 +462,13 @@ def autostart_s(b):
 
 def factory_reset(b):
     S.units = 'km'
-    S.cal = 1.000
     S.clock_fmt = 0
     S.sw_fmt = 0
     S.mode = 0
     S.brightness = 2
     S.autostart_en = False
     S.autostart_hms = (0, 0, 0)
-    S.total_m = 0.0
-    S.inter_m = 0.0
+    S.dist_m = 0.0
     sw_reset()
     sync_disp()
     save_cfg()
@@ -530,15 +485,15 @@ def swipe_cb(gui_list, start):
         return
     si = gui.swipe_info()
     if si.dx <= -50:
-        S.page = (S.page + 1) % 3
+        S.page = (S.page + 1) % 2
         draw()
     elif si.dx >= 50:
-        S.page = (S.page - 1) % 3
+        S.page = (S.page - 1) % 2
         draw()
 
 
 def header():
-    title = ['TRIPMETER', 'RALLY TIMER', 'CONFIGURATION'][S.page]
+    title = ['RALLY COMPUTER', 'CONFIGURATION'][S.page]
     dot = GREEN if S.gps_locked else RED
     return [
         [gui.EVT_VSYNC, vsync_cb],
@@ -552,83 +507,57 @@ def header():
         [gui.DL_COLOR_RGB(*fg_rgb())],
         [gui.CTRL_TEXT, 40, 44, 22, 0, gps_disp],
         # Page tabs
-        [gui.CTRL_BUTTON, 545, 6, 78, 40, 28, 'TRIP', tab_trip],
-        [gui.CTRL_BUTTON, 629, 6, 86, 40, 28, 'TIMER', tab_timer],
-        [gui.CTRL_BUTTON, 721, 6, 68, 40, 28, 'CFG', tab_cfg],
+        [gui.CTRL_BUTTON, 620, 6, 80, 40, 28, 'MAIN', tab_main],
+        [gui.CTRL_BUTTON, 708, 6, 72, 40, 28, 'CFG', tab_cfg],
     ]
 
 
-def page_trip():
-    fg = fg_rgb()
-    freeze_lbl = 'Unfreeze' if S.freeze else 'Freeze'
-    dir_lbl = 'Count -' if S.direction < 0 else 'Count +'
-    return [
-        [gui.DL_COLOR_RGB(*fg)],
-        [gui.CTRL_TEXT, 400, 80, 28, gui.OPT_CENTER, 'TOTAL ({})'.format(S.units)],
-        [gui.CTRL_TEXT, 400, 134, 31, gui.OPT_CENTER, total_disp],
-        [gui.CTRL_TEXT, 400, 208, 26, gui.OPT_CENTER, 'INTERMEDIATE'],
-        [gui.CTRL_TEXT, 400, 246, 30, gui.OPT_CENTER, inter_disp],
-        [gui.CTRL_TEXT, 20, 306, 26, 0, 'Speed:'],
-        [gui.CTRL_TEXT, 150, 306, 26, 0, spd_disp],
-        [gui.CTRL_TEXT, 560, 306, 26, 0, 'Cal:'],
-        [gui.CTRL_TEXT, 640, 306, 26, 0, cal_disp],
-        [gui.CTRL_BUTTON, 15, 356, 185, 52, 28, 'Zero Int', zero_int],
-        [gui.CTRL_BUTTON, 205, 356, 185, 52, 28, 'Zero Tot', zero_total],
-        [gui.CTRL_BUTTON, 395, 356, 185, 52, 28, freeze_lbl, toggle_freeze],
-        [gui.CTRL_BUTTON, 585, 356, 185, 52, 28, dir_lbl, toggle_dir],
-        [gui.CTRL_BUTTON, 15, 416, 148, 52, 28, 'Edit -', edit_minus],
-        [gui.CTRL_BUTTON, 167, 416, 148, 52, 28, 'Edit +', edit_plus],
-        [gui.CTRL_BUTTON, 319, 416, 148, 52, 28, 'Units', toggle_units],
-        [gui.CTRL_BUTTON, 471, 416, 148, 52, 28, 'Cal -', cal_minus],
-        [gui.CTRL_BUTTON, 623, 416, 148, 52, 28, 'Cal +', cal_plus],
-    ]
-
-
-def page_timer():
+def page_main():
     fg = fg_rgb()
     return [
         [gui.DL_COLOR_RGB(*fg)],
-        [gui.CTRL_TEXT, 250, 88, 31, gui.OPT_CENTER, clock_disp],
-        [gui.CTRL_TEXT, 250, 128, 24, gui.OPT_CENTER, 'TIME OF DAY'],
-        [gui.CTRL_CLOCK, 690, 122, 62, True, True, True, clock_secs],
-        [gui.CTRL_TEXT, 250, 176, 26, gui.OPT_CENTER, mode_disp],
-        [gui.CTRL_TEXT, 250, 244, 31, gui.OPT_CENTER, sw_disp],
-        [gui.CTRL_TEXT, 250, 298, 24, gui.OPT_CENTER, 'STOPWATCH'],
-        [gui.CTRL_BUTTON, 15, 356, 150, 52, 28, 'Start/Stop', sw_press],
-        [gui.CTRL_BUTTON, 167, 356, 150, 52, 28, 'Reset', sw_reset],
-        [gui.CTRL_BUTTON, 319, 356, 150, 52, 28, 'Mode', cycle_mode],
-        [gui.CTRL_BUTTON, 471, 356, 150, 52, 28, 'Clk Fmt', cycle_clkfmt],
-        [gui.CTRL_BUTTON, 623, 356, 150, 52, 28, 'SW Fmt', cycle_swfmt],
-        [gui.CTRL_BUTTON, 15, 416, 185, 52, 28, 'Bright', cycle_bright],
-        [gui.CTRL_TEXT, 215, 432, 26, 0, bright_disp],
+        [gui.CTRL_TEXT, 400, 80, 24, gui.OPT_CENTER, 'TIME OF DAY'],
+        [gui.CTRL_TEXT, 400, 116, 31, gui.OPT_CENTER, clock_disp],
+        [gui.CTRL_TEXT, 210, 176, 24, gui.OPT_CENTER, 'STOPWATCH'],
+        [gui.CTRL_TEXT, 210, 224, 31, gui.OPT_CENTER, sw_disp],
+        [gui.CTRL_TEXT, 210, 268, 24, gui.OPT_CENTER, mode_disp],
+        [gui.CTRL_TEXT, 590, 176, 24, gui.OPT_CENTER, 'DISTANCE'],
+        [gui.CTRL_TEXT, 590, 224, 31, gui.OPT_CENTER, dist_disp],
+        [gui.CTRL_TEXT, 400, 330, 26, gui.OPT_CENTER, spd_disp],
+        [gui.CTRL_BUTTON, 15, 398, 150, 68, 28, 'Start/Stop', sw_press],
+        [gui.CTRL_BUTTON, 167, 398, 150, 68, 28, 'SW Reset', sw_reset],
+        [gui.CTRL_BUTTON, 319, 398, 150, 68, 28, 'Dist +', dist_plus],
+        [gui.CTRL_BUTTON, 471, 398, 150, 68, 28, 'Dist -', dist_minus],
+        [gui.CTRL_BUTTON, 623, 398, 150, 68, 28, 'Dist 0', dist_reset],
     ]
 
 
 def page_cfg():
     fg = fg_rgb()
-    return [
-        [gui.DL_COLOR_RGB(*fg)],
-        [gui.CTRL_TEXT, 20, 70, 26, 0, 'Units:'],
-        [gui.CTRL_TEXT, 260, 70, 26, 0, units_disp],
-        [gui.CTRL_TEXT, 20, 105, 26, 0, 'Calibration:'],
-        [gui.CTRL_TEXT, 260, 105, 26, 0, cal_disp],
-        [gui.CTRL_TEXT, 20, 140, 26, 0, 'Clock format:'],
-        [gui.CTRL_TEXT, 260, 140, 26, 0, clkfmt_disp],
-        [gui.CTRL_TEXT, 20, 175, 26, 0, 'Stopwatch format:'],
-        [gui.CTRL_TEXT, 260, 175, 26, 0, swfmt_disp],
-        [gui.CTRL_TEXT, 20, 210, 26, 0, 'Stopwatch mode:'],
-        [gui.CTRL_TEXT, 260, 210, 26, 0, mode_disp],
-        [gui.CTRL_TEXT, 20, 245, 26, 0, 'Brightness:'],
-        [gui.CTRL_TEXT, 260, 245, 26, 0, bright_disp],
-        [gui.CTRL_TEXT, 20, 280, 26, 0, 'Auto-start:'],
-        [gui.CTRL_TEXT, 260, 280, 26, 0, autostart_disp],
-        [gui.CTRL_BUTTON, 430, 66, 150, 50, 28, 'Auto On/Off', toggle_autostart],
-        [gui.CTRL_BUTTON, 590, 66, 60, 50, 28, '+H', autostart_h],
-        [gui.CTRL_BUTTON, 656, 66, 60, 50, 28, '+M', autostart_m],
-        [gui.CTRL_BUTTON, 722, 66, 60, 50, 28, '+S', autostart_s],
-        [gui.CTRL_BUTTON, 15, 416, 200, 52, 28, 'Save to SD', save_cfg],
-        [gui.CTRL_BUTTON, 227, 416, 230, 52, 28, 'Factory Reset', factory_reset],
+    out = [[gui.DL_COLOR_RGB(*fg)]]
+    rows = [
+        ('Units', units_disp, toggle_units),
+        ('Clock format', clkfmt_disp, cycle_clkfmt),
+        ('Stopwatch mode', mode_disp, cycle_mode),
+        ('Stopwatch format', swfmt_disp, cycle_swfmt),
+        ('Brightness', bright_disp, cycle_bright),
     ]
+    y = 72
+    for label, val, cb in rows:
+        out.append([gui.CTRL_TEXT, 20, y, 28, 0, label])
+        out.append([gui.CTRL_TEXT, 340, y, 28, 0, val])
+        out.append([gui.CTRL_BUTTON, 560, y - 8, 200, 40, 26, 'Change', cb])
+        y += 46
+    out.append([gui.CTRL_TEXT, 20, y, 28, 0, 'Auto-start'])
+    out.append([gui.CTRL_TEXT, 340, y, 28, 0, autostart_disp])
+    y += 40
+    out.append([gui.CTRL_BUTTON, 20, y, 170, 44, 26, 'Auto On/Off', toggle_autostart])
+    out.append([gui.CTRL_BUTTON, 200, y, 70, 44, 26, '+H', autostart_h])
+    out.append([gui.CTRL_BUTTON, 278, y, 70, 44, 26, '+M', autostart_m])
+    out.append([gui.CTRL_BUTTON, 356, y, 70, 44, 26, '+S', autostart_s])
+    out.append([gui.CTRL_BUTTON, 470, y, 150, 44, 26, 'Save SD', save_cfg])
+    out.append([gui.CTRL_BUTTON, 628, y, 150, 44, 26, 'Factory', factory_reset])
+    return out
 
 
 def draw():
@@ -641,13 +570,12 @@ def draw():
         ])
         return
     gui_l = header()
-    gui_l.extend([page_trip, page_timer, page_cfg][S.page]())
+    gui_l.extend([page_main, page_cfg][S.page]())
     gui.show(gui_l)
 
 
 def sync_disp():
     units_disp[0] = S.units
-    cal_disp[0] = '{:.3f}'.format(S.cal)
     clkfmt_disp[0] = CLOCKFMT_NAMES[S.clock_fmt]
     swfmt_disp[0] = SWFMT_NAMES[S.sw_fmt]
     mode_disp[0] = MODE_NAMES[S.mode]
@@ -671,6 +599,10 @@ def main():
         vbox.init(vbox.VBOX_SRC_GNSS_BASIC)
     except Exception as e:
         print('vbox init failed:', e)
+    try:
+        gnss.new_data_callback(on_gnss)
+    except Exception as e:
+        print('gnss callback failed:', e)
 
     vts.Timer.destroy_all()
     S.timer = vts.Timer(100, True)

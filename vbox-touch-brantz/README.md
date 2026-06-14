@@ -1,13 +1,13 @@
 # Brantz Rallymeter for VBOX Motorsport Touch
 
-A single self-contained MicroPython app (`main.py`) that reproduces the core
-functions of two classic **Brantz** rally instruments on the **VBOX Motorsport
-Touch** display:
+A single self-contained MicroPython app (`main.py`) that combines the core
+functions of two classic **Brantz** rally instruments onto one **VBOX Motorsport
+Touch** screen:
 
-| Source manual | Emulated instrument |
+| Source manual | Function on the MAIN screen |
 |---|---|
-| `Brantz International Tripmeter` | Distance / trip computer page |
-| `Brantz Timer V2 (BR32V2)` | Real-time clock + 4-mode stopwatch page |
+| `Brantz International Tripmeter` | Distance travelled (from GPS) |
+| `Brantz Timer V2 (BR32V2)` | Time of day (from GPS) + 4-mode stopwatch |
 
 It uses **only** functions demonstrated by the official VBOX Touch python
 examples (`gui`, `vts`, `gnss`, `vbox`, `digitalio`) — no invented APIs.
@@ -24,41 +24,38 @@ Per the VBOX Touch examples' `Readme.txt`:
 Debug/`print()` output appears on the serial port (Connector 3, via an
 RLCAB001 cable).
 
-## Pages
+## Screens
 
-Switch pages by **swiping** left/right or tapping the **TRIP / TIMER / CFG**
-tabs (top right).
+Two screens — **MAIN** and **CFG** — switched by **swiping** left/right or
+tapping the **MAIN / CFG** tabs (top right).
 
-A **GPS-lock indicator** sits under the title on every page: a coloured dot
-(green = lock, red = no fix) plus live text showing the satellite count and fix
-quality (`GPS LOCK: 11 sat (fix 3)` / `GPS: searching... (4 sat)`).
+A **GPS indicator** sits under the title: a coloured dot (green = receiving GPS
+data, red = none) plus live text showing satellite count and fix quality
+(`Sats: 11  Fix: 3`).
 
-### TRIPMETER (Brantz International Tripmeter)
-- **TOTAL** and **INTERMEDIATE** distance, derived by integrating GNSS ground
-  speed; **Speed** and **Calibration** readouts.
-- `Zero Int`, `Zero Tot`, `Freeze` (freeze total), `Count +/-` (direction),
-  `Edit -/+` (nudge total), `Units` (km/mile), `Cal -/+` (calibration multiplier,
-  emulating the push-wheel calibration switches).
-
-### RALLY TIMER (Brantz Timer V2)
-- **Time of day** in `24Hr / 12Hr / 10Hr-decimal / 100th` formats (+ a small
-  analog clock), GNSS-sourced (UTC; set `TZ_OFFSET_H` for local time). The clock
-  shows `--:--:--` until a GPS fix is acquired; the stopwatch needs no fix.
-- **Stopwatch** with the 4 Brantz modes, cycled by `Mode`:
+### MAIN
+- **Time of day** (from GPS) in the configured `24Hr / 12Hr / 10Hr-decimal /
+  100th` format. Shows `--:--:--` until GPS data is being received; the stopwatch
+  needs no fix.
+- **Stopwatch** (large) with the active mode label; the 4 Brantz modes are:
   - **Standard** – start / stop / hold / reset.
   - **Regularity** – free-runs; a press holds the display ~32 s then internally
     resets and restarts timing the next section.
   - **Jogularity** – free-runs; a press holds the display ~32 s while counting
     continues, showing the cumulative total.
   - **Std-Cumulative** – start/stop with background counting; shows cumulative.
-- `Start/Stop`, `Reset`, `Clk Fmt`, `SW Fmt` (MM:SS / decimal seconds),
-  `Bright` (Lo/Med/Hi/Off).
+- **Distance travelled** (large), integrated from GPS ground speed, plus **Speed**.
+- Minimal buttons: `Start/Stop`, `SW Reset`, `Dist +`, `Dist -`, `Dist 0`.
 - The 4 front LEDs mirror the Brantz Start/Stop LED: **red** = stopped,
-  **green** = running, **flashing** = paused/hold.
+  **green** = running, **flashing** = paused/hold (scaled by the brightness
+  setting).
 
-### CONFIG
-- Shows all settings; `Auto On/Off` + `+H/+M/+S` set the stopwatch auto-start
-  time; `Save to SD` and `Factory Reset`.
+### CFG
+- `Change` buttons cycle **Units** (km/mile), **Clock format**, **Stopwatch
+  mode**, **Stopwatch format** (MM:SS / seconds) and **Brightness**
+  (Lo/Med/Hi/Off — affects the display and the front LEDs).
+- `Auto On/Off` + `+H/+M/+S` set the stopwatch auto-start time; `Save SD` and
+  `Factory` reset.
 - Settings are written to `/sd/brantz.cfg` whenever changed and reloaded on
   startup (emulates "settings saved on power down").
 
@@ -68,30 +65,32 @@ and **Reset** button, in addition to the on-screen buttons.
 
 ## Feature → VBOX Touch API mapping
 
-| Brantz function | VBOX Touch implementation |
+| Function | VBOX Touch implementation |
 |---|---|
-| Real-time clock (24/12/10/100th) | `gnss.h/m/s/cs()` formatted per mode |
-| GPS-lock indicator | `gnss.quality()` + `gnss.sat_count()`, shown as dot + text |
+| Time of day (24/12/10/100th) | `gnss.h/m/s/cs()` formatted per mode |
+| GPS indicator / lock | `gnss.new_data_callback` activates the `gnss.*` getters; lock = data seen < 2 s; shows `gnss.sat_count()` + `gnss.quality()` |
 | UI / clock / stopwatch refresh | `vts.Timer(100, True)` 10 Hz tick (works without a fix) |
 | Stopwatch timing | `vts.Chrono` monotonic time; 4-mode state machine |
 | 32-second hold | timestamp + `HOLD_MS` compare |
-| Start/Stop LED states | `vts.leds(*[r,g,b]*4)` with time-based flashing |
+| Start/Stop LED states | `vts.leds(*[r,g,b]*4)`, time-based flashing, brightness-scaled |
 | Remote / Reset buttons | `digitalio.get()` falling-edge + on-screen buttons |
-| Total / Intermediate distance | integrate `vbox.get_sample().speed_gnd_mps` · dt |
-| Calibration factor | numeric multiplier on integrated distance |
+| Distance travelled | integrate `vbox.get_sample().speed_gnd_mps` · dt |
 | Units km / mile | display scaling |
-| Brightness Lo/Med/Hi/Off | foreground intensity; Off blanks until tapped |
+| Brightness Lo/Med/Hi/Off | display intensity + LED scaling; Off blanks until tapped |
 | Settings persistence | `open('/sd/brantz.cfg')`, guarded by `vts.sd_present()` |
-| Pages / swiping | `gui.show` + `EVT_SWIPE` / `gui.swipe_info()` |
+| Screens / swiping | `gui.show` + `EVT_SWIPE` / `gui.swipe_info()` |
 
 ## Fidelity notes / limitations
 
-- Tripmeter distance comes from **GNSS speed**, not a wheel sensor, so the
-  calibration factor is a fine-trim multiplier rather than a pulse divider.
-- Brightness is emulated by scaling drawn intensity (the examples expose no
-  backlight-PWM register).
-- Clock time is GNSS **UTC**; set `TZ_OFFSET_H` at the top of `main.py` for
-  local time.
+- Distance and time both come from **GPS**; there is no wheel-sensor calibration
+  (removed — GPS provides the distance directly).
+- The `gnss.*` getters only return data once `gnss.new_data_callback` is
+  registered, so the app registers it at start-up; GPS "lock" is inferred from
+  that callback firing (more reliable than `gnss.quality()`, which can read 0).
+- Brightness is emulated by scaling drawn intensity and LED output (the examples
+  expose no backlight-PWM register).
+- Clock time is GPS **UTC**; set `TZ_OFFSET_H` at the top of `main.py` for local
+  time.
 - Built-in GUI fonts are used for big readouts (no external `.rft`/`.png`
   assets to deploy).
 
@@ -101,11 +100,12 @@ and **Reset** button, in addition to the on-screen buttons.
 - Import/API scan — every `gui/vts/gnss/vbox/digitalio` symbol used is present in
   the official examples; no other modules are imported.
 - Logic tests against stubbed hardware (clock formats, all stopwatch modes,
-  distance integration with calibration/units/freeze/direction, and the
-  settings save/load round-trip) — all pass.
-- Tick/GPS tests — the 10 Hz `ui_tick` updates the stopwatch and clock with **no**
-  GNSS callback firing, the lock indicator flips on `gnss.quality()` changes, and
-  `main()` wires the periodic timer — all pass.
+  distance integration, units, brightness/LED scaling, and the settings
+  save/load round-trip) — all pass.
+- Tick/GPS tests — the 10 Hz `ui_tick` updates the stopwatch and distance with
+  **no** GNSS data; once the GNSS callback fires the clock + satellite count
+  appear **even when `gnss.quality()` is 0**, and lock drops after a 2 s data gap;
+  `main()` registers the GNSS callback and wires the periodic timer — all pass.
 - On-hardware execution was **not** performed here (the `gui/vts/gnss/vbox/...`
   modules exist only on the VBOX Touch); correctness is argued via the mapping
   above and the tests.
