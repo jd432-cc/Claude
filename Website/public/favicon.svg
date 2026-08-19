@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="TheRacingData — icon">
+  <title>TheRacingData — icon</title>
+  <defs><clipPath id="capband" clipPathUnits="userSpaceOnUse"><rect x="-40" y="0" width="4000" height="100"/></clipPath></defs>
+  <g>
+    <rect width="512" height="512" rx="108" ry="108" fill="#970000"/>
+    <g transform="translate(54.00,165.94) scale(2.32184)" fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6">
+      <path d="M0,112.0 H174" stroke="#F2F1ED" stroke-width="2.58" opacity="0.5"/>
+      <path d="M64.0,77.92 V112.0" stroke="#F2F1ED" stroke-width="2.97" stroke-dasharray="4.13 4.91" opacity="0.70"/>
+      <mask id="trdnode3" maskUnits="userSpaceOnUse" x="-40" y="-200" width="254" height="518"><rect x="-40" y="-200" width="254" height="518" fill="#fff"/><circle cx="64.0" cy="77.92" r="5.37" fill="#000"/></mask><g mask="url(#trdnode3)"><path d="M 6,-18.64 H 32 L 50,58.04 C 55,72.24 57,77.92 64,77.92 C 74,77.92 81,65.14 90,48.1 C 106,18.28 126,-10.12 150,-24.32 C 158,-29.29 162,-30.71 168,-31.42" stroke="#F2F1ED" stroke-width="12.49009900990099"/><circle cx="64.0" cy="77.92" r="11.12" fill="#F2F1ED" stroke="none"/></g>
+    </g>
+  </g>
+</svg>

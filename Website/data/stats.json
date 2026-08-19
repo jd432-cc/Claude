@@ -1,0 +1,44 @@
+{
+  "season": {
+    "firstYear": 1994,
+    "opensOn": "03-01"
+  },
+  "stats": [
+    {
+      "compute": "seasonsOperating",
+      "label": {
+        "en": "Seasons operating",
+        "fr": "Saisons d'exploitation",
+        "es": "Temporadas en activo"
+      }
+    },
+    {
+      "value": "140",
+      "suffix": "+",
+      "suffixStyle": "accent",
+      "label": {
+        "en": "Cars developed",
+        "fr": "Voitures développées",
+        "es": "Coches desarrollados"
+      }
+    },
+    {
+      "value": "2.1",
+      "suffix": "TB",
+      "suffixStyle": "unit",
+      "label": {
+        "en": "Race data archived",
+        "fr": "Données de course archivées",
+        "es": "Datos de carrera archivados"
+      }
+    },
+    {
+      "value": "9",
+      "label": {
+        "en": "Customer titles",
+        "fr": "Titres clients",
+        "es": "Títulos de clientes"
+      }
+    }
+  ]
+}

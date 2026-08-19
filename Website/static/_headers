@@ -1,0 +1,27 @@
+# Cloudflare Pages headers.
+# Syntax: a path pattern on its own line, then indented "Name: value" lines.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# support.js and image-slot.js have no content hash in their filenames, so they
+# must NOT be cached immutably -- a redeploy would not reach returning visitors.
+# 5 minutes at the edge, always revalidate in the browser.
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+  CDN-Cache-Control: public, max-age=300
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# No Content-Security-Policy is set on purpose. The design runtime in
+# support.js compiles the page's <script type="text/x-dc"> block with
+# new Function(), and injects React/ReactDOM from unpkg.com at load time.
+# Any CSP would therefore need at minimum:
+#   script-src 'self' 'unsafe-eval' https://unpkg.com
+#   style-src  'self' 'unsafe-inline' https://fonts.googleapis.com
+#   font-src   https://fonts.gstatic.com
+# A CSP without 'unsafe-eval' renders a blank page. See README.

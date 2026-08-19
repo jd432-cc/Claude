@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TheRacingData - Race Engineering and Operations</title>
+<meta name="description" content="Development, calibration and race-day operations for rally, GT and historic crews - from the data room to the service park.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TheRacingData">
+<meta property="og:title" content="TheRacingData - Race Engineering and Operations">
+<meta property="og:description" content="Development, calibration and race-day operations for rally, GT and historic crews - from the data room to the service park.">
+<meta property="og:url" content="https://theracingdata.com/">
+<meta name="twitter:card" content="summary_large_image">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0a0b; }
+  * { box-sizing: border-box; }
+  a { color: #f2f0ec; text-decoration: none; }
+  a:hover { color: #970000; }
+  ::selection { background: #970000; color: #fff; }
+  @keyframes acmarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes acblink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.15; } }
+  input::placeholder { color: #6b6b70; }
+  .stat  { padding: 22px 24px; border-right: 1px solid #232327; }
+  .stat:last-child { border-right: 0; }
+  .stat-value { font-size: clamp(30px, 3.4vw, 48px); font-weight: 900;
+                letter-spacing: -0.04em; line-height: 1; }
+  .stat-value .accent { color: #970000; }
+  .stat-value .unit   { font-size: 0.5em; color: #8e8e95; }
+  .stat-label { margin-top: 6px; font-size: 11px; font-weight: 700;
+                letter-spacing: 0.18em; text-transform: uppercase; color: #8e8e95; }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="background: #0a0a0b; color: #f2f0ec; font-family: Archivo, Helvetica, Arial, sans-serif; min-height: 100vh; overflow-x: hidden;">
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: stretch; justify-content: space-between; gap: 24px; border-bottom: 1px solid #232327; background: rgba(10,10,11,0.92); backdrop-filter: blur(8px);">
+    <a href="#top" style="display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-right: 1px solid #232327;">
+      <img src="/logo.svg" alt="TheRacingData" width="617" height="88"
+           style="display: block; height: 30px; width: auto;">
+    </a>
+    <nav style="display: flex; align-items: stretch;">
+      <a href="/services" data-fr="Ingénierie" data-es="Ingeniería" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327;">Engineering</a>
+      <a href="#programmes" data-fr="Programmes" data-es="Programas" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327;">Programmes</a>
+      <a href="#results" data-fr="Résultats" data-es="Resultados" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327;">Results</a>
+      <div style="display: flex; align-items: center; gap: 2px; padding: 0 16px; border-left: 1px solid #232327;">
+        <button type="button" data-lang-btn="en" onClick="{{ setEN }}" style="border: 0; background: #970000; color: #fff; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;">EN</button>
+        <button type="button" data-lang-btn="fr" onClick="{{ setFR }}" style="border: 0; background: transparent; color: #74747a; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;" style-hover="color: #f2f0ec;">FR</button>
+        <button type="button" data-lang-btn="es" onClick="{{ setES }}" style="border: 0; background: transparent; color: #74747a; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;" style-hover="color: #f2f0ec;">ES</button>
+      </div>
+      <a href="#season" data-fr="Notes de saison" data-es="Notas de temporada" style="display: flex; align-items: center; padding: 0 24px; background: #970000; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;" style-hover="background: #f2f0ec; color: #0a0a0b;">Season Notes</a>
+    </nav>
+  </header>
+
+  <section id="top" style="position: relative; min-height: 88vh; display: grid; grid-template-rows: 1fr auto; border-bottom: 1px solid #232327;">
+    <div style="position: absolute; inset: 0;">
+      <image-slot id="ac-hero" shape="rect" fit="cover" placeholder="Hero - rally car mid-corner, gravel, low sun"></image-slot>
+    </div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,11,0.82) 0%, rgba(10,10,11,0.35) 45%, rgba(10,10,11,0.94) 100%); pointer-events: none;"></div>
+    <div style="position: relative; align-self: end; padding: 96px 24px 40px; max-width: 1500px; margin: 0 auto; width: 100%; pointer-events: none;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 28px;">
+        <span style="width: 8px; height: 8px; background: #970000; border-radius: 50%; animation: acblink 1.6s steps(1, end) infinite;"></span>
+        <span data-fr="Saison 2026 · engagés sur 4 championnats" data-es="Temporada 2026 · presentes en 4 campeonatos" style="font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #cfcfd4;">Season 2026 · running in 4 championships</span>
+      </div>
+      <h1 data-fr="La vitesse est une discipline d'ingénierie." data-es="La velocidad es una disciplina de ingeniería." style="margin: 0; font-size: clamp(48px, 9.5vw, 168px); line-height: 0.86; font-weight: 900; letter-spacing: -0.045em; text-transform: uppercase; text-wrap: balance; max-width: 15ch;">Pace is an engineering discipline.</h1>
+      <p data-fr="Développement, calibration et exploitation en course pour équipages rallye, GT et historiques - de la cellule de données au parc d'assistance." data-es="Desarrollo, calibración y operación en carrera para equipos de rally, GT e históricos - de la sala de datos al parque de asistencia." style="margin: 32px 0 0; max-width: 62ch; font-size: clamp(16px, 1.4vw, 21px); line-height: 1.45; color: #cfcfd4; text-wrap: pretty;">Development, calibration and race-day operations for rally, GT and historic crews - from the data room to the service park.</p>
+    </div>
+    <div class="stats" style="position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border-top: 1px solid #232327; background: rgba(10,10,11,0.72);"><!--stats:start-->
+      <div class="stat">
+        <div class="stat-value">1</div>
+        <div class="stat-label" data-fr="Saisons d'exploitation" data-es="Temporadas en activo">Seasons operating</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">3<span class="accent">+</span></div>
+        <div class="stat-label" data-fr="Voitures développées" data-es="Coches desarrollados">Cars developed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">2.1<span class="unit">TB</span></div>
+        <div class="stat-label" data-fr="Données de course archivées" data-es="Datos de carrera archivados">Race data archived</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0</div>
+        <div class="stat-label" data-fr="Titres clients" data-es="Títulos de clientes">Customer titles</div>
+      </div>
+<!--stats:end--></div>
+  </section>
+
+  <div style="overflow: hidden; border-bottom: 1px solid #232327; background: #970000; color: #0a0a0b;">
+    <div style="display: flex; width: max-content; animation: acmarquee 34s linear infinite;">
+      <div style="display: flex; gap: 40px; padding: 12px 20px; font-size: 13px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;">
+        <span>Gravel</span><span>·</span><span>Tarmac</span><span>·</span><span>GT3 / GT4</span><span>·</span><span>Rally2</span><span>·</span><span>Historic</span><span>·</span><span>Telemetry</span><span>·</span><span>Calibration</span><span>·</span><span>Arrive &amp; drive</span><span>·</span>
+      </div>
+      <div style="display: flex; gap: 40px; padding: 12px 20px; font-size: 13px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;" aria-hidden="true">
+        <span>Gravel</span><span>·</span><span>Tarmac</span><span>·</span><span>GT3 / GT4</span><span>·</span><span>Rally2</span><span>·</span><span>Historic</span><span>·</span><span>Telemetry</span><span>·</span><span>Calibration</span><span>·</span><span>Arrive &amp; drive</span><span>·</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="programmes" style="max-width: 1500px; margin: 0 auto; padding: 96px 24px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #232327; padding-bottom: 18px;">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">01</span>
+      <h2 data-fr="Programmes" data-es="Programas" style="margin: 0; font-size: clamp(30px, 4vw, 62px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.9;">Programmes</h2>
+      <p data-fr="Quatre disciplines, une seule méthode." data-es="Cuatro disciplinas, un solo método." style="margin: 0 0 0 auto; font-size: 14px; color: #8e8e95; letter-spacing: 0.02em;">Four disciplines, one method.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; margin-top: 1px;">
+      <article style="background: #0f0f11; outline: 1px solid #232327; padding: 0;" style-hover="background: #15151a;">
+        <div style="position: relative; height: 220px; border-bottom: 1px solid #232327;">
+          <image-slot id="ac-prog-rally" shape="rect" placeholder="Rally car on gravel stage"></image-slot>
+        </div>
+        <div style="padding: 26px 24px 30px;">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: #970000; text-transform: uppercase;">Rally</div>
+          <h3 data-fr="Gravier &amp; asphalte" data-es="Tierra y asfalto" style="margin: 12px 0 10px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">Gravel &amp; Tarmac</h3>
+          <p data-fr="Réglages amortisseurs par surface, cartographies par étape et ingénieur dédié au parc d'assistance." data-es="Ajustes de amortiguación por superficie, mapas por tramo e ingeniero dedicado en el parque de asistencia." style="margin: 0; font-size: 15px; line-height: 1.5; color: #a6a6ad; text-wrap: pretty;">Surface-specific damper packages, stage-by-stage maps and a dedicated engineer in the service park.</p>
+        </div>
+      </article>
+      <article style="background: #0f0f11; outline: 1px solid #232327;" style-hover="background: #15151a;">
+        <div style="position: relative; height: 220px; border-bottom: 1px solid #232327;">
+          <image-slot id="ac-prog-gt" shape="rect" placeholder="GT car on circuit, kerb"></image-slot>
+        </div>
+        <div style="padding: 26px 24px 30px;">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: #970000; text-transform: uppercase;">Circuit</div>
+          <h3 data-fr="GT3 / GT4 &amp; endurance" data-es="GT3 / GT4 y resistencia" style="margin: 12px 0 10px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">GT3 / GT4 &amp; Endurance</h3>
+          <p data-fr="Simulation de tour, gestion de dégradation pneumatique et stratégie relais sur épreuves de 6 à 24 heures." data-es="Simulación de vuelta, gestión de degradación de neumáticos y estrategia de relevos en pruebas de 6 a 24 horas." style="margin: 0; font-size: 15px; line-height: 1.5; color: #a6a6ad; text-wrap: pretty;">Lap simulation, tyre-degradation management and stint strategy across 6h to 24h events.</p>
+        </div>
+      </article>
+      <article style="background: #0f0f11; outline: 1px solid #232327;" style-hover="background: #15151a;">
+        <div style="position: relative; height: 220px; border-bottom: 1px solid #232327;">
+          <image-slot id="ac-prog-support" shape="rect" placeholder="Engineers at trackside timing stand"></image-slot>
+        </div>
+        <div style="padding: 26px 24px 30px;">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: #970000; text-transform: uppercase;">Customer</div>
+          <h3 data-fr="Arrive &amp; drive" data-es="Arrive &amp; drive" style="margin: 12px 0 10px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">Arrive &amp; Drive</h3>
+          <p data-fr="Voiture préparée, transport, équipage et débriefs données : vous arrivez avec un casque." data-es="Coche preparado, transporte, equipo y análisis de datos: usted solo trae el casco." style="margin: 0; font-size: 15px; line-height: 1.5; color: #a6a6ad; text-wrap: pretty;">Prepared car, transport, crew and data debriefs. You arrive with a helmet.</p>
+        </div>
+      </article>
+      <article style="background: #0f0f11; outline: 1px solid #232327;" style-hover="background: #15151a;">
+        <div style="position: relative; height: 220px; border-bottom: 1px solid #232327;">
+          <image-slot id="ac-prog-historic" shape="rect" placeholder="Historic race car in workshop"></image-slot>
+        </div>
+        <div style="padding: 26px 24px 30px;">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: #970000; text-transform: uppercase;">Historic</div>
+          <h3 data-fr="Restauration de course" data-es="Restauración de competición" style="margin: 12px 0 10px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;">Race Restoration</h3>
+          <p data-fr="Remise en état conforme à l'homologation, avec fiabilité et instrumentation modernes discrètes." data-es="Puesta a punto conforme a la homologación, con fiabilidad e instrumentación modernas discretas." style="margin: 0; font-size: 15px; line-height: 1.5; color: #a6a6ad; text-wrap: pretty;">Homologation-correct rebuilds with modern reliability and discreet instrumentation.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section style="max-width: 1500px; margin: 0 auto; padding: 96px 24px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #232327; padding-bottom: 18px;">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">02</span>
+      <h2 data-fr="Ce que nous faisons" data-es="Lo que hacemos" style="margin: 0; font-size: clamp(30px, 4vw, 62px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.9;">What we do</h2>
+      <a href="/services" data-fr="Détail ingénierie →" data-es="Detalle de ingeniería →" style="margin: 0 0 0 auto; font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #970000;">Engineering detail →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1px; margin-top: 1px;">
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 34px 26px 38px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="font-size: 46px; font-weight: 900; letter-spacing: -0.05em; color: #232327; line-height: 1;">01</div>
+        <h3 data-fr="Données &amp; télémétrie" data-es="Datos y telemetría" style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">Data &amp; Telemetry</h3>
+        <p data-fr="Instrumentation, canaux mathématiques et débrief pilote structuré. Chaque décision de réglage remonte à une trace." data-es="Instrumentación, canales matemáticos y análisis estructurado con el piloto. Cada decisión de ajuste se remite a una traza." style="margin: 0; font-size: 15px; line-height: 1.55; color: #a6a6ad; text-wrap: pretty;">Instrumentation, math channels and structured driver debriefs. Every setup decision traces back to a trace.</p>
+        <ul style="margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #232327; padding-top: 16px;">
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Live trackside acquisition</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Damper &amp; tyre modelling</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Driver-coaching overlays</li>
+        </ul>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 34px 26px 38px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="font-size: 46px; font-weight: 900; letter-spacing: -0.05em; color: #232327; line-height: 1;">02</div>
+        <h3 data-fr="Calibration ECU" data-es="Calibración de ECU" style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">ECU Calibration</h3>
+        <p data-fr="Cartographies au banc et en piste : couple exploitable, contrôle thermique, conformité aux règlements." data-es="Mapas en banco y en pista: par utilizable, control térmico y cumplimiento del reglamento." style="margin: 0; font-size: 15px; line-height: 1.55; color: #a6a6ad; text-wrap: pretty;">Bench and in-car mapping for usable torque, thermal control and rulebook compliance.</p>
+        <ul style="margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #232327; padding-top: 16px;">
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Dyno development</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Restrictor / BoP work</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Anti-lag &amp; launch strategies</li>
+        </ul>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 34px 26px 38px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="font-size: 46px; font-weight: 900; letter-spacing: -0.05em; color: #232327; line-height: 1;">03</div>
+        <h3 data-fr="Assistance en course" data-es="Asistencia en carrera" style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">Race Weekend Support</h3>
+        <p data-fr="Équipage complet, pièces d'usure, stratégie et rapport de sortie sous 48 heures." data-es="Equipo completo, recambios de desgaste, estrategia e informe de evento en 48 horas." style="margin: 0; font-size: 15px; line-height: 1.55; color: #a6a6ad; text-wrap: pretty;">Full crew, wear-part logistics, strategy and an event report inside 48 hours.</p>
+        <ul style="margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #232327; padding-top: 16px;">
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Service park operations</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Spares &amp; transport</li>
+          <li style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">Post-event reporting</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1500px; margin: 0 auto; padding: 96px 24px 0;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1px;">
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 26px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 22px;">
+          <h3 data-fr="Banc - 2.0 T Rally2" data-es="Banco - 2.0 T Rally2" style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;">Dyno - 2.0T Rally2</h3>
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: #74747a;">RUN 14 / BASE</span>
+        </div>
+        <div ref="{{ dynoRef }}" style="position: relative; height: 240px; border-left: 1px solid #33333a; border-bottom: 1px solid #33333a;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #74747a;">
+          <span>2000</span><span>3500</span><span>5000</span><span>6500</span><span>RPM</span>
+        </div>
+        <div style="display: flex; gap: 22px; margin-top: 18px; border-top: 1px solid #232327; padding-top: 16px;">
+          <div><div style="font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">293<span style="font-size: 0.48em; color: #8e8e95;">kW</span></div><div style="font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #74747a; text-transform: uppercase;">Peak power</div></div>
+          <div><div style="font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">452<span style="font-size: 0.48em; color: #8e8e95;">Nm</span></div><div style="font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #74747a; text-transform: uppercase;">Peak torque</div></div>
+          <div><div style="font-size: 28px; font-weight: 900; letter-spacing: -0.03em; color: #970000;">+6.4<span style="font-size: 0.48em;">%</span></div><div style="font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #74747a; text-transform: uppercase;">Area under curve</div></div>
+        </div>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 26px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 22px;">
+          <h3 data-fr="Télémétrie - comparatif de tour" data-es="Telemetría - comparación de vuelta" style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;">Telemetry - lap overlay</h3>
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: #74747a;">Δ −0.84s</span>
+        </div>
+        <div ref="{{ telRef }}" style="position: relative; height: 240px; border-left: 1px solid #33333a; border-bottom: 1px solid #33333a;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #74747a;">
+          <span>T1</span><span>T4</span><span>T7</span><span>T11</span><span>DISTANCE</span>
+        </div>
+        <div style="display: flex; gap: 22px; margin-top: 18px; border-top: 1px solid #232327; padding-top: 16px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 18px; height: 3px; background: #970000;"></span><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: #a6a6ad;">REFERENCE</span></div>
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 18px; height: 3px; background: #6f6f78;"></span><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: #a6a6ad;">DRIVER</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results" style="max-width: 1500px; margin: 0 auto; padding: 96px 24px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #232327; padding-bottom: 18px;">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">03</span>
+      <h2 data-fr="Palmarès" data-es="Palmarés" style="margin: 0; font-size: clamp(30px, 4vw, 62px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.9;">Our Achievements</h2>
+      <p data-fr="Sélection 2023 - 2026" data-es="Selección 2023 - 2026" style="margin: 0 0 0 auto; font-size: 14px; color: #8e8e95;">Selected 2023 - 2026</p>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; min-width: 720px; border-collapse: collapse; margin-top: 8px;">
+        <thead>
+          <tr>
+            <th data-fr="Année" data-es="Año" style="text-align: left; padding: 14px 12px 14px 0; border-bottom: 1px solid #33333a; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #74747a;">Year</th>
+            <th data-fr="Championnat" data-es="Campeonato" style="text-align: left; padding: 14px 12px; border-bottom: 1px solid #33333a; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #74747a;">Championship</th>
+            <th data-fr="Voiture" data-es="Coche" style="text-align: left; padding: 14px 12px; border-bottom: 1px solid #33333a; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #74747a;">Car</th>
+            <th data-fr="Rôle" data-es="Función" style="text-align: left; padding: 14px 12px; border-bottom: 1px solid #33333a; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #74747a;">Our role</th>
+            <th data-fr="Résultat" data-es="Resultado" style="text-align: right; padding: 14px 0 14px 12px; border-bottom: 1px solid #33333a; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #74747a;">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style-hover="background: #101013;">
+            <td style="padding: 18px 12px 18px 0; border-bottom: 1px solid #1c1c20; font-size: 15px; font-weight: 800; color: #8e8e95;">2026</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 17px; font-weight: 700;">National Rally Championship</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 15px; color: #a6a6ad;">Rally2 - gravel spec</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #a6a6ad;">Full operation</td>
+            <td style="padding: 18px 0 18px 12px; border-bottom: 1px solid #1c1c20; text-align: right; font-size: 15px; font-weight: 800; color: #970000;">Leading</td>
+          </tr>
+          <tr style-hover="background: #101013;">
+            <td style="padding: 18px 12px 18px 0; border-bottom: 1px solid #1c1c20; font-size: 15px; font-weight: 800; color: #8e8e95;">2025</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 17px; font-weight: 700;">GT4 European Series</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 15px; color: #a6a6ad;">GT4 - Pro-Am</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #a6a6ad;">Data &amp; strategy</td>
+            <td style="padding: 18px 0 18px 12px; border-bottom: 1px solid #1c1c20; text-align: right; font-size: 15px; font-weight: 800;">Champions</td>
+          </tr>
+          <tr style-hover="background: #101013;">
+            <td style="padding: 18px 12px 18px 0; border-bottom: 1px solid #1c1c20; font-size: 15px; font-weight: 800; color: #8e8e95;">2025</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 17px; font-weight: 700;">Tarmac Rally Trophy</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 15px; color: #a6a6ad;">Rally4 - customer car</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #a6a6ad;">Arrive &amp; drive</td>
+            <td style="padding: 18px 0 18px 12px; border-bottom: 1px solid #1c1c20; text-align: right; font-size: 15px; font-weight: 800;">P2 overall</td>
+          </tr>
+          <tr style-hover="background: #101013;">
+            <td style="padding: 18px 12px 18px 0; border-bottom: 1px solid #1c1c20; font-size: 15px; font-weight: 800; color: #8e8e95;">2024</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 17px; font-weight: 700;">24H Endurance Series</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 15px; color: #a6a6ad;">GT3 - Silver Cup</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #a6a6ad;">Calibration</td>
+            <td style="padding: 18px 0 18px 12px; border-bottom: 1px solid #1c1c20; text-align: right; font-size: 15px; font-weight: 800;">Class win</td>
+          </tr>
+          <tr style-hover="background: #101013;">
+            <td style="padding: 18px 12px 18px 0; border-bottom: 1px solid #1c1c20; font-size: 15px; font-weight: 800; color: #8e8e95;">2023</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 17px; font-weight: 700;">Historic Endurance Cup</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 15px; color: #a6a6ad;">Group 4 - period spec</td>
+            <td style="padding: 18px 12px; border-bottom: 1px solid #1c1c20; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #a6a6ad;">Restoration &amp; run</td>
+            <td style="padding: 18px 0 18px 12px; border-bottom: 1px solid #1c1c20; text-align: right; font-size: 15px; font-weight: 800;">Champions</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="max-width: 1500px; margin: 0 auto; padding: 80px 24px 0;">
+    <div data-fr="Fournisseurs &amp; partenaires techniques" data-es="Proveedores y socios técnicos" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #74747a; padding-bottom: 18px; border-bottom: 1px solid #232327;">Suppliers &amp; technical partners</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; margin-top: 1px;">
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-1" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-2" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-3" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-4" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-5" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; height: 96px; display: grid; place-items: center; padding: 12px;"><image-slot id="ac-logo-6" shape="rect" fit="contain" placeholder="Logo"></image-slot></div>
+    </div>
+  </section>
+
+  <section id="season" style="margin-top: 96px; border-top: 1px solid #232327; border-bottom: 1px solid #232327; background: #0f0f11; outline: 1px solid #232327;">
+    <div style="max-width: 1500px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px; align-items: center;">
+      <div>
+        <div data-fr="Notes de saison" data-es="Notas de temporada" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #970000;">Season notes</div>
+        <h2 data-fr="Les données de l'événement, dans votre boîte le mardi." data-es="Los datos del evento, en tu bandeja el martes." style="margin: 16px 0 14px; font-size: clamp(28px, 3.6vw, 52px); font-weight: 900; letter-spacing: -0.04em; line-height: 0.94; text-transform: uppercase; text-wrap: balance;">Event data in your inbox, every Tuesday.</h2>
+        <p data-fr="Un compte rendu par épreuve : ce qui a fonctionné, ce qui a cassé, et les chiffres derrière la décision. Pas de publicité." data-es="Un informe por prueba: qué funcionó, qué se rompió y los números detrás de la decisión. Sin publicidad." style="margin: 0; max-width: 52ch; font-size: 16px; line-height: 1.55; color: #a6a6ad; text-wrap: pretty;">One write-up per event: what worked, what broke, and the numbers behind the call. No advertising.</p>
+      </div>
+      <div ref="{{ formRef }}">
+        <div style="display: flex; gap: 1px; background: #33333a; padding: 1px;">
+          <input type="email" data-newsletter-input="1" placeholder="name@team.com" style="flex: 1; min-width: 0; border: 0; background: #0a0a0b; color: #f2f0ec; font-family: inherit; font-size: 16px; padding: 20px 18px; outline: none;">
+          <button type="button" onClick="{{ subscribe }}" data-fr="S'abonner" data-es="Suscribirse" style="border: 0; background: #970000; color: #fff; font-family: inherit; font-size: 13px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; padding: 0 30px; cursor: pointer;" style-hover="background: #f2f0ec; color: #0a0a0b;">Subscribe</button>
+        </div>
+        <div data-newsletter-msg="1" data-fr="Un e-mail par épreuve. Désinscription en un clic." data-es="Un correo por prueba. Baja en un clic." style="margin-top: 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">One email per event. Unsubscribe in one click.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="max-width: 1500px; margin: 0 auto; padding: 56px 24px 72px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; align-items: start;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="/logo.svg" alt="TheRacingData" width="617" height="88"
+             style="display: block; height: 26px; width: auto;">
+      </div>
+      <p data-fr="Ingénierie de course et exploitation." data-es="Ingeniería de competición y operaciones." style="margin: 16px 0 0; font-size: 13px; color: #74747a; letter-spacing: 0.04em;">Race engineering and operations.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <a href="/services" data-fr="Ingénierie" data-es="Ingeniería" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Engineering</a>
+      <a href="#programmes" data-fr="Programmes" data-es="Programas" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Programmes</a>
+      <a href="#results" data-fr="Palmarès" data-es="Palmarés" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Our Achievements</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div data-fr="Atelier" data-es="Taller" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #74747a;">Workshop</div>
+      <div style="font-size: 14px; color: #a6a6ad; line-height: 1.5;">The Barn<br>St. Frideswide Farm<br>Oxford, UK</div>
+      <a href="mailto:contactus@theracingdata.com" style="font-size: 14px; color: #970000; font-weight: 700;">contactus@theracingdata.com</a>
+    </div>
+    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #4d4d54; text-align: right;">© 2026 THERACINGDATA</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1024}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.rootRef = React.createRef();
+    this.dynoRef = React.createRef();
+    this.telRef = React.createRef();
+    this.formRef = React.createRef();
+    this.lang = 'en';
+  }
+
+  componentDidMount() {
+    this.drawDyno();
+    this.drawTelemetry();
+  }
+
+  svg(w, h, paths) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const s = document.createElementNS(ns, 'svg');
+    s.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    s.setAttribute('preserveAspectRatio', 'none');
+    s.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%');
+    paths.forEach(p => {
+      const el = document.createElementNS(ns, p.tag || 'path');
+      Object.keys(p).forEach(k => { if (k !== 'tag') el.setAttribute(k, p[k]); });
+      s.appendChild(el);
+    });
+    return s;
+  }
+
+  curve(pts, w, h) {
+    return pts.map((v, i) => (i ? 'L' : 'M') + (i / (pts.length - 1) * w).toFixed(1) + ' ' + ((1 - v) * h).toFixed(1)).join(' ');
+  }
+
+  drawDyno() {
+    const host = this.dynoRef.current;
+    if (!host || host.dataset.drawn) return;
+    host.dataset.drawn = '1';
+    const w = 300, h = 200;
+    const power = [0.10, 0.20, 0.33, 0.47, 0.60, 0.72, 0.82, 0.90, 0.95, 0.97, 0.93, 0.84];
+    const torque = [0.42, 0.60, 0.74, 0.83, 0.88, 0.90, 0.89, 0.86, 0.82, 0.76, 0.68, 0.58];
+    const base = power.map(v => v * 0.9 - 0.03);
+    const grid = [];
+    for (let i = 1; i < 4; i++) grid.push({ tag: 'line', x1: 0, x2: w, y1: h * i / 4, y2: h * i / 4, stroke: '#1f1f24', 'stroke-width': 1 });
+    for (let i = 1; i < 4; i++) grid.push({ tag: 'line', y1: 0, y2: h, x1: w * i / 4, x2: w * i / 4, stroke: '#1f1f24', 'stroke-width': 1 });
+    host.appendChild(this.svg(w, h, grid.concat([
+      { d: this.curve(base, w, h), fill: 'none', stroke: '#3d3d45', 'stroke-width': 2, 'stroke-dasharray': '5 4', 'vector-effect': 'non-scaling-stroke' },
+      { d: this.curve(torque, w, h), fill: 'none', stroke: '#8e8e95', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' },
+      { d: this.curve(power, w, h), fill: 'none', stroke: '#970000', 'stroke-width': 3, 'vector-effect': 'non-scaling-stroke' }
+    ])));
+  }
+
+  drawTelemetry() {
+    const host = this.telRef.current;
+    if (!host || host.dataset.drawn) return;
+    host.dataset.drawn = '1';
+    const w = 300, h = 200;
+    const ref = [0.9, 0.95, 0.4, 0.55, 0.92, 0.98, 0.3, 0.42, 0.8, 0.95, 0.35, 0.6, 0.9, 0.97, 0.5, 0.88];
+    const drv = ref.map((v, i) => Math.max(0.05, Math.min(0.99, v - (i % 3 === 0 ? 0.1 : 0.04))));
+    const grid = [];
+    for (let i = 1; i < 4; i++) grid.push({ tag: 'line', x1: 0, x2: w, y1: h * i / 4, y2: h * i / 4, stroke: '#1f1f24', 'stroke-width': 1 });
+    host.appendChild(this.svg(w, h, grid.concat([
+      { d: this.curve(drv, w, h), fill: 'none', stroke: '#6f6f78', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' },
+      { d: this.curve(ref, w, h), fill: 'none', stroke: '#970000', 'stroke-width': 2.5, 'vector-effect': 'non-scaling-stroke' }
+    ])));
+  }
+
+  setLang(lang) {
+    const root = this.rootRef.current;
+    if (!root) return;
+    root.querySelectorAll('[data-fr]').forEach(el => {
+      if (!el.dataset.en) el.dataset.en = el.textContent;
+      el.textContent = lang === 'en' ? el.dataset.en : (lang === 'fr' ? el.dataset.fr : el.dataset.es);
+    });
+    root.querySelectorAll('[data-lang-btn]').forEach(b => {
+      const on = b.dataset.langBtn === lang;
+      b.style.background = on ? '#970000' : 'transparent';
+      b.style.color = on ? '#fff' : '#74747a';
+    });
+    this.lang = lang;
+  }
+
+  renderVals() {
+    return {
+      rootRef: this.rootRef,
+      dynoRef: this.dynoRef,
+      telRef: this.telRef,
+      formRef: this.formRef,
+      setEN: () => this.setLang('en'),
+      setFR: () => this.setLang('fr'),
+      setES: () => this.setLang('es'),
+      subscribe: () => {
+        const host = this.formRef.current;
+        if (!host) return;
+        const input = host.querySelector('[data-newsletter-input]');
+        const msg = host.querySelector('[data-newsletter-msg]');
+        const ok = input && /.+@.+\..+/.test(input.value);
+        if (msg) {
+          msg.textContent = ok
+            ? { en: 'Confirmed - first note lands Tuesday.', fr: 'Confirmé - première note mardi.', es: 'Confirmado - primera nota el martes.' }[this.lang]
+            : { en: 'Enter a valid email address.', fr: 'Saisissez une adresse e-mail valide.', es: 'Introduce un correo válido.' }[this.lang];
+          msg.style.color = ok ? '#970000' : '#a6a6ad';
+        }
+        if (ok && input) input.value = '';
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
