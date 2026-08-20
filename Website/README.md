@@ -6,7 +6,8 @@ no build step on Cloudflare's side — `public/` is uploaded as-is.
 ```
 _source/      the design export (re-drop a new export here)
 data/         stats.json — the four hero figures, read at build time
-static/       files copied verbatim into the build (_headers, favicon)
+static/       copied verbatim into the build, directories included
+                (_headers, favicon, tools/ — the standalone tool pages)
 public/       ← THE DEPLOY DIRECTORY. Generated. Do not edit by hand.
 build.ps1     regenerates public/ from _source/ + static/ + data/
 dev-server.js local preview that mimics Pages routing
@@ -62,6 +63,28 @@ persistence, so language never survives a navigation anywhere on this site; the
 404 is consistent with that rather than a regression. Add `data-fr` / `data-es`
 attributes if that changes.
 
+
+## The tools section
+
+`static/tools/` holds the self-contained tool pages — the `/tools/` index and
+Loom Planner. They are Claude Design bundles, not `_source/` pages: each carries
+its own runtime, fonts and assets inline, so `build.ps1` copies them verbatim
+rather than rendering them.
+
+They live under `static/` rather than `public/` for a reason. `build.ps1` deletes
+`public/` wholesale before rebuilding it, and it used to copy only the top-level
+*files* of `static/` — so `public/tools/` was destroyed on every build and never
+recreated. Anything that must survive a build belongs in `static/`.
+
+The `/tools/` index is brand-aligned against the site by hand: site header and
+footer, the real `logo.svg` lockup embedded as a data URI, `max-width: 1500px`,
+same-origin links, and the `<title>`/OG tags the `_source/` pages get from this
+script. Re-exporting it from Claude Design loses all of that.
+
+Two files still in `public/` have no source and are referenced by nothing:
+`stats-runtime.js` (a leftover from before the stats were rendered at build
+time) and `stats.json` (a stale copy of `data/stats.json`). The next build drops
+both.
 
 ## Deploy
 

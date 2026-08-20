@@ -11,7 +11,7 @@
 #   - adds <title>, meta description and Open Graph tags (the export has none)
 #   - adds lang="en" to <html> (the export has none; default language is English)
 #   - links a favicon
-#   - copies static/ verbatim (_headers, favicon, empty image-slot sidecar)
+#   - copies static/ verbatim, directories included (_headers, favicon, tools/)
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Web   # HttpUtility::HtmlEncode
@@ -183,10 +183,14 @@ foreach ($f in @('support.js', 'image-slot.js')) {
     Write-Host ("  runtime {0}" -f $f)
 }
 
-Get-ChildItem (Join-Path $root 'static') -File -Force | ForEach-Object {
-    Copy-Item $_.FullName (Join-Path $out $_.Name) -Force
-    Write-Host ("  static  {0}" -f $_.Name)
+# Copied wholesale, directories included. public/ is deleted at the top of this
+# script, so anything not reproduced here does not survive a build -- which is
+# how public/tools/ used to get wiped on every run.
+Get-ChildItem (Join-Path $root 'static') -Force | ForEach-Object {
+    Copy-Item $_.FullName (Join-Path $out $_.Name) -Recurse -Force
+    $label = if ($_.PSIsContainer) { $_.Name + '/' } else { $_.Name }
+    Write-Host ("  static  {0}" -f $label)
 }
 
-$n = (Get-ChildItem $out -File -Force).Count
+$n = (Get-ChildItem $out -File -Force -Recurse).Count
 Write-Host "`nBuilt $out ($n files)" -ForegroundColor Green
