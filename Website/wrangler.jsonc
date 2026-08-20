@@ -1,0 +1,15 @@
+{
+  // The site is deployed as a Worker with static assets, not a Pages project.
+  // Pages inferred 404 behaviour from the presence of a 404.html file; Workers
+  // requires it to be stated, and with nothing set a miss returns a bare 404
+  // with an empty body. That is what not_found_handling fixes.
+  //
+  // "name" must match the deployed Worker or `wrangler deploy` creates a second
+  // one and leaves the theracingdata.com custom domain attached to the old one.
+  "name": "yellow-cake-de51",
+  "compatibility_date": "2026-08-20",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}

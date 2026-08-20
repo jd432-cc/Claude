@@ -1,4 +1,4 @@
-# TheRacingData — Cloudflare Pages bundle
+# TheRacingData — Cloudflare static site
 
 Static site built from the Claude Design export. No framework, no npm install,
 no build step on Cloudflare's side — `public/` is uploaded as-is.
@@ -36,13 +36,14 @@ Rebuild after any change:
 
 ## The 404 page
 
-`_source/NotFound.dc.html` builds to `public/404.html`. Cloudflare Pages serves a
-top-level `404.html` for any unmatched path automatically, with a 404 status and
-no configuration — there is nothing to add to `_headers` or `_redirects`.
+`_source/NotFound.dc.html` builds to `public/404.html`.
 
-Its presence also settles how Pages classifies the site: **without** a top-level
-`404.html`, Pages assumes a single-page app and serves `index.html` for unmatched
-paths instead of erroring.
+**Shipping the file is not enough on this deployment.** The site runs as a Worker
+with static assets (see Deploy below), and Workers requires the 404 behaviour to
+be declared — `"not_found_handling": "404-page"` in `wrangler.jsonc`. With it
+unset, `/404` is reachable as an ordinary page but a genuine miss returns a bare
+404 with an empty body. Cloudflare made this explicit deliberately: Pages used to
+infer it from the presence of a `404.html`, and Workers does not guess.
 
 Two things about this page differ from the other two, and both matter:
 
@@ -61,20 +62,28 @@ persistence, so language never survives a navigation anywhere on this site; the
 404 is consistent with that rather than a regression. Add `data-fr` / `data-es`
 attributes if that changes.
 
-If Pages is ever swapped for Workers static assets, this becomes explicit config:
-`"not_found_handling": "404-page"` in `wrangler.jsonc`.
 
 ## Deploy
 
-**Option A — direct upload (no Git).** In the Cloudflare dashboard:
-Workers & Pages → Create → Pages → Upload assets. Drag the **`public`** folder.
-Set the project name; there is no build command and no framework preset.
+The live site is a **Worker with static assets** named `yellow-cake-de51`, with
+`theracingdata.com` attached to it as a custom domain. It is not a Pages project,
+despite the Pages-era instructions this README used to carry — a dashboard asset
+upload creates a Worker now.
 
-**Option B — Wrangler CLI.**
+**Option A — Wrangler CLI (preferred, and the only way to set `not_found_handling`).**
 
 ```powershell
-npx wrangler pages deploy public --project-name=theracingdata
+npx wrangler deploy
 ```
+
+Config lives in `wrangler.jsonc`. Keep `name` as `yellow-cake-de51`: deploying
+under a different name creates a second Worker and leaves the custom domain
+pointing at the old one. The first `wrangler deploy` over a Worker that was
+created in the dashboard will warn that it is dashboard-managed and ask you to
+confirm taking it over.
+
+**Option B — dashboard upload.** Drag the **`public`** folder. This still works,
+but it will not set `not_found_handling`, so the 404 page stays inert.
 
 **Option C — Git integration.** Push this folder to a repo and connect it, with:
 
@@ -165,7 +174,7 @@ Mimics Pages' extensionless routing (`/services` → `services.html`). It does
 **not** apply `_headers`. For a faithful check including headers and redirects:
 
 ```powershell
-npx wrangler pages dev public
+npx wrangler dev
 ```
 
 ## Verified
