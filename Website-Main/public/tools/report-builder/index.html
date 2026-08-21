@@ -13,10 +13,9 @@
   <meta name="theme-color" content="#0A0A0B">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
+  <!-- Archivo is vendored under assets/fonts/ and declared in the
+       stylesheet. No CDN: the tool has to work with no signal. -->
+  <link rel="preload" href="assets/fonts/Archivo-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/report-builder.css">
   <!-- Standalone page only. Remove this line when embedding in the site shell. -->
   <link rel="stylesheet" href="css/standalone.css">

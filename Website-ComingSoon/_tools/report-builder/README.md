@@ -97,6 +97,15 @@ pages. Idempotent, and `--check` fails the build if output is stale.
 **`_headers`** gained a real CSP for `/tools/*` and an immutable cache rule for
 versioned templates.
 
+**The stylesheet declared a webfont that was never shipped.** `@font-face` named
+`assets/fonts/Archivo-Variable.woff2`, which is not in the package: online the
+Google Fonts link in the page covered it, offline the text fell back to Arial
+and the request 404'd. Archivo is vendored now and the CDN link is gone.
+
+The loom planner still loads Archivo from Google Fonts. Until it is vendored too
+the `/tools/*` CSP has to keep `fonts.googleapis.com` and `fonts.gstatic.com`;
+the report builder no longer uses either.
+
 ---
 
 ## The templates
@@ -250,5 +259,16 @@ itself.
 ## Third-party
 
 `docx-templates` 4.15.0 (MIT), vendored at
-`assets/vendor/docx-templates.browser.js`, licence alongside it. Vendored rather
-than loaded from a CDN so the tool works offline and needs no CSP exception.
+`assets/vendor/docx-templates.browser.js`, licence alongside it.
+
+**Archivo** (SIL Open Font Licence), from
+[Omnibus-Type/Archivo](https://github.com/Omnibus-Type/Archivo), vendored at
+`assets/fonts/`, licence alongside it. Five static weights — 400, 500, 600, 700
+and 800 — which is what the stylesheet asks for. Upstream publishes no variable
+woff2, only a variable `.ttf`; five files that are certainly right beat one
+converted here. Adding a weight to the CSS means adding a face, or the stack
+falls back to Arial for it.
+
+Both are vendored rather than loaded from a CDN for the same reason: the tool is
+used where the signal is not. The page now makes no offsite request at all, so
+it renders the same on a lost connection as on a good one.

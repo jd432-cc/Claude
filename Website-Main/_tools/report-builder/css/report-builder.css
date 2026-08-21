@@ -10,12 +10,53 @@
    copy scoped under #trd-report-builder for embedding in the site.
    ============================================================= */
 
+/* Archivo, vendored rather than loaded from a CDN, for the same reason
+   docx-templates is: this tool is used where the signal is not, and the
+   page has to render the same offline as on.
+
+   Static instances of the five weights the tool uses. The upstream
+   project ships no variable woff2 — only a variable .ttf — and five
+   files that are certainly right beat one converted here. Adding a
+   weight means adding a face; the stack below falls back to Arial
+   until one arrives. SIL Open Font Licence, alongside the files. */
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/Archivo-Variable.woff2') format('woff2-variations');
+  src: url('../assets/fonts/Archivo-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/Archivo-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/Archivo-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/Archivo-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/Archivo-ExtraBold.woff2') format('woff2');
 }
 
 #trd-report-builder, #trd-report-builder *,
