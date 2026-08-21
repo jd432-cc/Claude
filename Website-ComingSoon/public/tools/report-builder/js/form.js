@@ -2,12 +2,13 @@
    TheRacingData — Report Builder
    Schema-driven form rendering.
 
-   Everything is built from SCHEMA, so the other five report types
-   need a schema and no new form code.
+   Everything is built from SCHEMA, which is whichever report type is
+   loaded. Switching type re-renders this form against a different
+   schema; there is no per-report form code to switch between.
    ============================================================= */
 
-import { SCHEMA, SYSTEMS_CHECK } from './schema.js';
-import { get, set, resolveField, validate, isGated, completion } from './store.js';
+import { SCHEMA } from './schema.js';
+import { get, set, derive, resolveField, validate, isLocked, completion } from './store.js';
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -33,11 +34,10 @@ export class Form {
   /* ---------- section rail ---------- */
   renderRail() {
     const rail = document.getElementById('rail');
-    rail.replaceChildren();
-    const gated = isGated(this.report);
+    const frag = document.createDocumentFragment();
     for (const s of SCHEMA.sections) {
       const pct = completion(this.report, s);
-      const locked = gated && !['event', 'sources'].includes(s.id);
+      const locked = isLocked(this.report, s);
       const b = el('button', 'rail-item' + (s.id === this.active ? ' active' : '') +
                               (locked ? ' locked' : ''));
       b.append(el('span', 'rail-n', s.n));
@@ -47,17 +47,18 @@ export class Form {
       if (locked) dot.textContent = '\u00b7';
       b.append(dot);
       b.addEventListener('click', () => { this.active = s.id; this.render(); });
-      rail.append(b);
+      frag.append(b);
     }
+    rail.replaceChildren(frag);
   }
 
   renderIssues() {
     const box = document.getElementById('issues');
     const issues = validate(this.report);
-    box.replaceChildren();
-    if (!issues.length) { box.hidden = true; return; }
+    if (!issues.length) { box.replaceChildren(); box.hidden = true; return; }
     box.hidden = false;
-    box.append(el('h4', null, `${issues.length} thing${issues.length > 1 ? 's' : ''} to resolve before issue`));
+    const frag = document.createDocumentFragment();
+    frag.append(el('h4', null, `${issues.length} thing${issues.length > 1 ? 's' : ''} to resolve before issue`));
     const ul = el('ul');
     for (const i of issues) {
       const li = el('li');
@@ -66,7 +67,8 @@ export class Form {
       li.append(a);
       ul.append(li);
     }
-    box.append(ul);
+    frag.append(ul);
+    box.replaceChildren(frag);
   }
 
   /* ---------- fields ---------- */
@@ -195,10 +197,84 @@ export class Form {
     return wrap;
   }
 
+  /* ---------- fixed grid ----------
+     A matrix whose rows are the document's own: they cannot be added or
+     removed, only filled. */
+  fixedTable(section) {
+    const g = section.fixed;
+    const wrap = el('div', 'table-wrap');
+    // The totals row sits in the same table as the cells it sums, so it
+    // refreshes on every keystroke rather than waiting for a blur.
+    const totalCells = [];
+    const refresh = () => {
+      for (const { input, row, col } of totalCells) {
+        input.value = derive(this.report, row.derive)[col.k] ?? '';
+      }
+    };
+
+    const head = el('div', 'trow thead');
+    const lead = el('div', 'tcell', g.label || '');
+    lead.style.flex = `${g.labelWidth || 22} 1 0`;
+    head.append(lead);
+    for (const c of g.columns) {
+      const d = el('div', 'tcell', c.label);
+      d.style.flex = `${c.w} 1 0`;
+      head.append(d);
+    }
+    wrap.append(head);
+
+    for (const row of g.rows) {
+      const tr = el('div', 'trow');
+      const label = el('div', 'tcell tlabel', row.label);
+      label.style.flex = `${g.labelWidth || 22} 1 0`;
+      tr.append(label);
+      const totals = row.derive ? derive(this.report, row.derive) : null;
+      for (const c of g.columns) {
+        const cell = el('div', 'tcell');
+        cell.style.flex = `${c.w} 1 0`;
+        const at = `${g.key}.${row.k}.${c.k}`;
+        let input;
+        if (totals) {
+          input = el('input', 'derived');
+          input.readOnly = true;
+          input.value = totals[c.k] ?? '';
+          input.title = 'Derived from the rows above.';
+          totalCells.push({ input, row, col: c });
+        } else if (c.options) {
+          input = el('select');
+          input.append(new Option('\u2014', ''));
+          for (const o of c.options) input.append(new Option(c.optionLabels?.[o] || o, o));
+          input.value = get(this.report, at) ?? '';
+        } else {
+          input = el('input');
+          input.inputMode = c.numeric ? 'decimal' : 'text';
+          if (c.placeholder) input.placeholder = c.placeholder;
+          input.value = get(this.report, at) ?? '';
+        }
+        if (!totals) {
+          input.addEventListener('input', () => {
+            set(this.report, at, input.value); refresh(); this.change();
+          });
+          input.addEventListener('change', () => {
+            set(this.report, at, input.value); refresh(); this.change();
+          });
+        }
+        cell.append(input);
+        tr.append(cell);
+      }
+      wrap.append(tr);
+    }
+    return wrap;
+  }
+
   checkgrid(section) {
     const wrap = el('div', 'checkgrid');
-    SYSTEMS_CHECK.forEach((label, i) => {
-      const key = `check.c${i + 1}`;
+    const cg = section.checkgrid;
+    cg.items.forEach((label, i) => {
+      // The form groups its boxes under headings; the tags do not care.
+      const heading = cg.groups?.[i + 1];
+      if (heading) wrap.append(el('h4', 'checkgroup', heading));
+      const key = `${cg.key}.c${i + 1}`;
       const item = el('label', 'checkitem');
       const box = el('input');
       box.type = 'checkbox';
@@ -214,26 +290,31 @@ export class Form {
 
   /* ---------- main ---------- */
   render() {
-    const section = SCHEMA.sections.find(s => s.id === this.active);
+    // Section ids are per-schema: after a report swap the previously
+    // active one may not exist here.
+    const section = SCHEMA.sections.find(s => s.id === this.active)
+                 || SCHEMA.sections[0];
+    this.active = section.id;
     const pane = document.getElementById('pane');
-    pane.replaceChildren();
+    const frag = document.createDocumentFragment();
 
-    const gated = isGated(this.report) && !['event', 'sources'].includes(section.id);
+    const gated = isLocked(this.report, section);
+    const gateSection = SCHEMA.sections.find(s => s.gate);
 
     const h = el('header', 'pane-head');
     h.append(el('p', 'eyebrow', `Section ${section.n}`));
     h.append(el('h2', null, section.title));
     if (section.blurb) h.append(el('p', 'blurb', section.blurb));
-    pane.append(h);
+    frag.append(h);
 
     if (gated) {
       const lock = el('div', 'lock');
-      lock.append(el('p', null,
-        'Section 1 has not confirmed a clean reference lap. A bad reference makes every number below it wrong, so this section stays closed until it is.'));
-      const go = el('button', 'add', 'Go to section 1');
-      go.addEventListener('click', () => { this.active = 'sources'; this.render(); });
+      lock.append(el('p', null, gateSection.gate.lockMessage || gateSection.gate.message));
+      const go = el('button', 'add', `Go to section ${gateSection.n}`);
+      go.addEventListener('click', () => { this.active = gateSection.id; this.render(); });
       lock.append(go);
-      pane.append(lock);
+      frag.append(lock);
+      pane.replaceChildren(frag);
       this.renderRail(); this.renderIssues();
       return;
     }
@@ -241,11 +322,13 @@ export class Form {
     if (section.fields) {
       const grid = el('div', 'grid');
       for (const f of section.fields) grid.append(this.field(f));
-      pane.append(grid);
+      frag.append(grid);
     }
-    if (section.checkgrid) pane.append(this.checkgrid(section));
-    if (section.table) pane.append(this.table(section));
+    if (section.fixed) frag.append(this.fixedTable(section));
+    if (section.checkgrid) frag.append(this.checkgrid(section));
+    if (section.table) frag.append(this.table(section));
 
+    pane.replaceChildren(frag);
     this.renderRail();
     this.renderIssues();
   }

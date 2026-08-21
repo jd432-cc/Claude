@@ -6,114 +6,49 @@
    DOCX payload, the .trd.json file — is a view of it, so there is
    only ever one source of truth to get wrong.
 
+   Every function here reads the active schema rather than a fixed
+   one, so the same store serves all three report types. Autosave
+   is keyed by schema id: each type keeps its own work in progress.
+
    Nothing leaves the machine. Autosave is localStorage; sharing is
    an explicit file export.
    ============================================================= */
 
-import { SCHEMA, CONSISTENCY_BANDS, SYSTEMS_CHECK } from './schema.js';
+import { SCHEMA, reportById, setReport } from './schema.js';
+import { get, set, toSeconds, fromSeconds } from './values.js';
 
-const KEY = `trd_report_${SCHEMA.id}_v${SCHEMA.version}`;
-const TABLES = SCHEMA.sections.filter(s => s.table).map(s => s.table.key);
+export { get, set, toSeconds, fromSeconds };
 
-/* ---------- dotted-path access ---------- */
-export function get(obj, path) {
-  return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
-}
-
-export function set(obj, path, value) {
-  const keys = path.split('.');
-  const last = keys.pop();
-  let node = obj;
-  for (const k of keys) {
-    if (typeof node[k] !== 'object' || node[k] === null) node[k] = {};
-    node = node[k];
-  }
-  node[last] = value;
-  return obj;
-}
-
-/* ---------- lap times ----------
-   Accepts 2:14.82 or 134.82 and normalises to seconds, so a gap can
-   be computed without asking the engineer to enter both forms. */
-export function toSeconds(v) {
-  if (v == null || v === '') return null;
-  const s = String(v).trim();
-  const mmss = /^(\d+):(\d{1,2}(?:\.\d+)?)$/.exec(s);
-  if (mmss) return Number(mmss[1]) * 60 + Number(mmss[2]);
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
-}
-
-export function fromSeconds(sec) {
-  if (sec == null || !Number.isFinite(sec)) return '';
-  if (sec < 60) return sec.toFixed(2);
-  const m = Math.floor(sec / 60);
-  return `${m}:${(sec - m * 60).toFixed(2).padStart(5, '0')}`;
-}
+const key = () => `trd_report_${SCHEMA.id}_v${SCHEMA.version}`;
+const tables = () => SCHEMA.sections.filter(s => s.table).map(s => s.table.key);
+const checkgrids = () => SCHEMA.sections.filter(s => s.checkgrid).map(s => s.checkgrid);
+const grids = () => SCHEMA.sections.filter(s => s.fixed).map(s => s.fixed);
 
 /* ---------- empty report ---------- */
 export function blank() {
-  const r = { _schema: SCHEMA.id, _version: SCHEMA.version, check: {} };
-  for (const t of TABLES) r[t] = [];
-  SYSTEMS_CHECK.forEach((_, i) => { r.check[`c${i + 1}`] = false; });
+  const r = { _schema: SCHEMA.id, _version: SCHEMA.version };
+  for (const t of tables()) r[t] = [];
+  for (const cg of checkgrids()) {
+    r[cg.key] = {};
+    cg.items.forEach((_, i) => { r[cg.key][`c${i + 1}`] = false; });
+  }
+  // A fixed grid has the shape of the table it prints into: its rows are
+  // the form's own, so they are created rather than added.
+  for (const g of grids()) {
+    r[g.key] = {};
+    for (const row of g.rows) {
+      r[g.key][row.k] = Object.fromEntries(g.columns.map(c => [c.k, '']));
+    }
+  }
   return r;
 }
 
 /* ---------- derived values ----------
    Computed rather than typed, so the arithmetic in the document can
-   never disagree with the arithmetic in the form. */
-export const DERIVED = {
-  totalRecoverable(r) {
-    const sum = (r.opportunities || [])
-      .reduce((a, o) => a + (Number(o.gain) || 0), 0);
-    return sum ? `${sum.toFixed(2)} s` : '';
-  },
-
-  gapToTheoretical(r) {
-    const b = toSeconds(r.bestLap), t = toSeconds(r.theoreticalBest);
-    if (b == null || t == null) return '';
-    return `${b - t >= 0 ? '+' : ''}${(b - t).toFixed(2)} s`;
-  },
-
-  projectedBest(r) {
-    const b = toSeconds(r.bestLap);
-    const sum = (r.opportunities || [])
-      .reduce((a, o) => a + (Number(o.gain) || 0), 0);
-    if (b == null || !sum) return '';
-    return fromSeconds(b - sum);
-  },
-
-  biggestOpportunity(r) {
-    const rows = (r.opportunities || []).filter(o => o.corner || o.gain);
-    if (!rows.length) return '';
-    return rows.reduce((a, b) =>
-      (Number(b.gain) || 0) > (Number(a.gain) || 0) ? b : a).corner || '';
-  },
-
-  windowPct(r) {
-    const b = toSeconds(r.bestLap), w = Number(get(r, 'stint.window'));
-    if (b == null || !Number.isFinite(w) || !b) return '';
-    return `${(w / b * 100).toFixed(2)} %`;
-  },
-
-  band(r) {
-    const b = toSeconds(r.bestLap), w = Number(get(r, 'stint.window'));
-    if (b == null || !Number.isFinite(w) || !b) return '';
-    const pct = w / b * 100;
-    // Tightest band the window fits inside.
-    const hit = [...CONSISTENCY_BANDS].reverse().find(x => pct <= x.pct);
-    return hit ? hit.label : 'Outside the bands';
-  },
-
-  reportRef(r) {
-    const parts = [r.round, r.venueCode, 'PSDR', r.carCode];
-    if (parts.some(p => !p)) return '';
-    return parts.map(p => String(p).toUpperCase()).join('-');
-  },
-};
-
+   never disagree with the arithmetic in the form. Each schema brings
+   its own set; nothing here knows what they are. */
 export function derive(report, name) {
-  const fn = DERIVED[name];
+  const fn = SCHEMA.derived?.[name];
   return fn ? fn(report) : '';
 }
 
@@ -151,12 +86,28 @@ export function validate(report) {
       issues.push({ section: section.id, gate: true, message: section.gate.message });
     }
   }
+  // Doctrine the generic rules cannot express — a split that must total
+  // 100%, a figure that must reconcile — belongs to the report itself.
+  for (const extra of SCHEMA.issues?.(report) || []) issues.push(extra);
   return issues;
+}
+
+/* The gating section and everything before it stay open; the rest of
+   the report waits until the gate is satisfied. A schema without a
+   gate never locks anything. */
+export function gateIndex() {
+  return SCHEMA.sections.findIndex(s => s.gate);
 }
 
 export function isGated(report) {
   const gate = SCHEMA.sections.find(s => s.gate)?.gate;
   return gate ? !get(report, gate.field) : false;
+}
+
+export function isLocked(report, section) {
+  const at = gateIndex();
+  if (at < 0 || !isGated(report)) return false;
+  return SCHEMA.sections.indexOf(section) > at;
 }
 
 /* ---------- completion, for the section rail ---------- */
@@ -173,7 +124,16 @@ export function completion(report, section) {
   }
   if (section.checkgrid) {
     total += 1;
-    if (Object.values(report.check || {}).some(Boolean)) done += 1;
+    if (Object.values(report[section.checkgrid.key] || {}).some(Boolean)) done += 1;
+  }
+  if (section.fixed) {
+    for (const row of section.fixed.rows) {
+      if (row.derive) continue;
+      for (const col of section.fixed.columns) {
+        total += 1;
+        if (String(get(report, `${section.fixed.key}.${row.k}.${col.k}`) ?? '').trim()) done += 1;
+      }
+    }
   }
   return total ? done / total : 0;
 }
@@ -181,7 +141,7 @@ export function completion(report, section) {
 /* ---------- persistence ---------- */
 export function save(report) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(report));
+    localStorage.setItem(key(), JSON.stringify(report));
     return true;
   } catch {
     return false;   // private mode, or quota
@@ -190,7 +150,7 @@ export function save(report) {
 
 export function load() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return migrate(parsed);
@@ -200,18 +160,34 @@ export function load() {
 }
 
 /* A file written against an older schema is accepted rather than
-   rejected: missing keys simply come through blank. */
+   rejected: missing keys simply come through blank.
+
+   A file written against a *different report type* switches the tool
+   to that type. Opening a PEER and being shown a PSDR form would be
+   the more surprising behaviour of the two. */
 export function migrate(data) {
   if (!data || typeof data !== 'object') return null;
+  if (data._schema && data._schema !== SCHEMA.id && reportById(data._schema)) {
+    setReport(data._schema);
+  }
   const base = blank();
-  const merged = { ...base, ...data, check: { ...base.check, ...(data.check || {}) } };
-  for (const t of TABLES) if (!Array.isArray(merged[t])) merged[t] = [];
+  const merged = { ...base, ...data };
+  for (const cg of checkgrids()) {
+    merged[cg.key] = { ...base[cg.key], ...(data[cg.key] || {}) };
+  }
+  for (const g of grids()) {
+    merged[g.key] = { ...base[g.key] };
+    for (const row of g.rows) {
+      merged[g.key][row.k] = { ...base[g.key][row.k], ...(data[g.key]?.[row.k] || {}) };
+    }
+  }
+  for (const t of tables()) if (!Array.isArray(merged[t])) merged[t] = [];
   merged._schema = SCHEMA.id;
   merged._version = SCHEMA.version;
   return merged;
 }
 
 export function filename(report, ext) {
-  const ref = derive(report, 'reportRef') || 'PSDR';
+  const ref = derive(report, 'reportRef') || SCHEMA.refCode;
   return `${ref}.${ext}`;
 }

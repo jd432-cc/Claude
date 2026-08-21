@@ -139,13 +139,27 @@
   background: var(--rule-soft); color: var(--bone); border-style: dashed; cursor: default;
 }#trd-report-builder input.missing { border-color: var(--signal-lift); background: var(--signal-wash); }#trd-report-builder .hint { font-size: 12px; color: var(--faint); margin-top: 5px; }#trd-report-builder .tick { display: flex; align-items: center; gap: 7px; white-space: nowrap; }#trd-report-builder .tick span { font-size: 12px; color: var(--muted); }#trd-report-builder input[type="checkbox"] {
   width: 15px; height: 15px; accent-color: var(--signal-lift); flex: 0 0 auto;
-}#trd-report-builder /* ===== Repeating tables ===== */
+}#trd-report-builder /* The report picker. Selects in the form body are full-width fields;
+   this one is a toolbar control and sizes to its longest option. */
+#trd-report-builder .picker { display: flex; align-items: center; gap: 8px; white-space: nowrap; }#trd-report-builder .picker > span {
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faint); font-weight: 700;
+}#trd-report-builder .picker select {
+  width: auto; font-size: 13px; font-weight: 600;
+  padding: 8px 12px; color: var(--bone); cursor: pointer;
+  transition: border-color .12s, color .12s;
+}#trd-report-builder .picker select:hover { border-color: var(--steel); color: var(--paper); }#trd-report-builder /* ===== Repeating tables ===== */
 #trd-report-builder .table-wrap { margin-top: 20px; }#trd-report-builder .trow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }#trd-report-builder .thead {
   font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--faint); font-weight: 600; margin-bottom: 10px;
 }#trd-report-builder .tcell { flex: 1 1 0; min-width: 0; }#trd-report-builder .tnum {
   flex: 0 0 22px; font-family: var(--font-mono); font-size: 12px; color: var(--faint);
-}#trd-report-builder .tdel { flex: 0 0 28px; }#trd-report-builder .icon {
+}#trd-report-builder .tdel { flex: 0 0 28px; }#trd-report-builder /* A fixed grid labels its rows instead of numbering them: the rows are
+   the document's, #trd-report-builder and no button adds or removes one. */
+#trd-report-builder .tlabel {
+  font-size: 13px; color: var(--body); padding-right: 6px;
+  display: flex; align-items: center; min-height: 36px;
+}#trd-report-builder .icon {
   padding: 4px 8px; font-size: 15px; line-height: 1; color: var(--faint); background: none; border: 0;
 }#trd-report-builder .icon:hover { color: var(--signal-lift); background: none; }#trd-report-builder .add {
   margin-top: 6px; font-size: 12.5px; border-style: dashed; color: var(--muted);
@@ -155,7 +169,13 @@
   gap: 9px 20px; margin-bottom: 22px;
 }#trd-report-builder .checkitem {
   display: flex; gap: 9px; align-items: center; font-size: 13.5px; color: var(--body);
-}#trd-report-builder /* ===== Issues ===== */
+}#trd-report-builder /* A grid whose boxes fall into named groups puts the name on its own
+   full-width row, #trd-report-builder so the columns below it stay aligned. */
+#trd-report-builder .checkgroup {
+  grid-column: 1 / -1; margin-top: 6px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--faint);
+}#trd-report-builder .checkgroup:first-child { margin-top: 0; }#trd-report-builder /* ===== Issues ===== */
 #trd-report-builder .issues {
   margin-top: 30px; padding: 16px 18px;
   border: 1px solid var(--signal-lo); border-left-width: 2px;

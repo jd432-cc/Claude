@@ -32,18 +32,22 @@ Anything that must survive a build has to be reproduced by `build.ps1`. Editing
 ```
 node tools/build-web.mjs            # regenerate the *.scoped.css files
 node tools/build-web.mjs --check    # fail if any scoped stylesheet is stale
-node tools/test-report-builder.mjs  # report builder, 27 assertions end-to-end
+node tools/test-report-builder.mjs  # report builder, 49 assertions across all three reports
 pwsh build.ps1                      # build public/
 node dev-server.js                  # preview on http://localhost:8788
 ```
 
-Validate a report template before shipping it:
+Validate a report template against its schema before shipping it:
 
 ```
 python3 tools/validate_template.py \
     _tools/report-builder/templates/psdr-circuit-v1.2.docx \
-    _tools/report-builder/js/schema.js
+    _tools/report-builder/js/schemas/psdr-circuit.js
 ```
+
+The report builder carries three documents — PSDR, PEER and PSDB — one schema
+each under `_tools/report-builder/js/schemas/`, registered in `js/schema.js`.
+Each template is regenerated from its blank form by the matching `tools/tag_*.py`.
 
 ---
 

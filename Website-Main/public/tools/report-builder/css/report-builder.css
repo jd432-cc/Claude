@@ -205,6 +205,20 @@
   width: 15px; height: 15px; accent-color: var(--signal-lift); flex: 0 0 auto;
 }
 
+/* The report picker. Selects in the form body are full-width fields;
+   this one is a toolbar control and sizes to its longest option. */
+#trd-report-builder .picker { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+#trd-report-builder .picker > span {
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faint); font-weight: 700;
+}
+#trd-report-builder .picker select {
+  width: auto; font-size: 13px; font-weight: 600;
+  padding: 8px 12px; color: var(--bone); cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+#trd-report-builder .picker select:hover { border-color: var(--steel); color: var(--paper); }
+
 /* ===== Repeating tables ===== */
 #trd-report-builder .table-wrap { margin-top: 20px; }
 #trd-report-builder .trow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -217,6 +231,12 @@
   flex: 0 0 22px; font-family: var(--font-mono); font-size: 12px; color: var(--faint);
 }
 #trd-report-builder .tdel { flex: 0 0 28px; }
+/* A fixed grid labels its rows instead of numbering them: the rows are
+   the document's, and no button adds or removes one. */
+#trd-report-builder .tlabel {
+  font-size: 13px; color: var(--body); padding-right: 6px;
+  display: flex; align-items: center; min-height: 36px;
+}
 #trd-report-builder .icon {
   padding: 4px 8px; font-size: 15px; line-height: 1; color: var(--faint); background: none; border: 0;
 }
@@ -234,6 +254,14 @@
 #trd-report-builder .checkitem {
   display: flex; gap: 9px; align-items: center; font-size: 13.5px; color: var(--body);
 }
+/* A grid whose boxes fall into named groups puts the name on its own
+   full-width row, so the columns below it stay aligned. */
+#trd-report-builder .checkgroup {
+  grid-column: 1 / -1; margin-top: 6px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--faint);
+}
+#trd-report-builder .checkgroup:first-child { margin-top: 0; }
 
 /* ===== Issues ===== */
 #trd-report-builder .issues {

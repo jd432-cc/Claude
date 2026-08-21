@@ -5,16 +5,20 @@
    The tagged template is the layout; this file only supplies values.
    Nothing here knows what the document looks like, which is the point:
    re-tag the .docx and the output changes without touching any code.
+
+   Nor does it know which report is being built. Every rule below is
+   read off the active schema, so a new report type is a schema and a
+   tagged template, not another exporter.
    ============================================================= */
 
 import { createReport } from '../assets/vendor/docx-templates.browser.js';
 import { runJs } from './resolve.js';
-import { SCHEMA, CONSISTENCY_BANDS, SYSTEMS_CHECK } from './schema.js';
-import { derive, get, resolveField, toSeconds } from './store.js';
+import { SCHEMA } from './schema.js';
+import { derive, get, resolveField } from './store.js';
 
-const TICK = '\u2611';   // ballot box with check
-const BOX  = '\u2610';   // ballot box
-const MARK = '   \u25c2 this session';
+const TICK = '☑';   // ballot box with check
+const BOX  = '☐';   // ballot box
+const MARK = '   ◂ this session';
 
 /* Values are strings by the time they reach the template: the resolver
    returns them verbatim and Word renders them verbatim. Formatting
@@ -23,7 +27,13 @@ function str(v) {
   return v == null ? '' : String(v);
 }
 
-/* Provisional figures carry (P), per the form's own convention. */
+/* Provisional figures carry (P), per the form's own convention. Prose
+   is not a figure, and the report reference is an identifier, so
+   neither takes the mark. */
+function marks(field) {
+  return field.type !== 'textarea' && field.computed !== 'reportRef';
+}
+
 function prov(value, isProvisional) {
   const v = str(value);
   return v && isProvisional ? `${v} (P)` : v;
@@ -32,14 +42,8 @@ function prov(value, isProvisional) {
 export function buildPayload(report, { showGuidance = false, provisional = false } = {}) {
   const p = {};
 
-  // Scalar and mirrored fields straight off the schema.
-  for (const section of SCHEMA.sections) {
-    for (const f of section.fields || []) {
-      p[f.k.replace(/\./g, '__')] = null;   // placeholder, replaced below
-    }
-  }
-
-  // Flat scalars, dotted paths preserved for the template.
+  /* Dotted field keys are rebuilt as nested objects: the template
+     writes {stint.bestLap} and the resolver walks the path. */
   const put = (path, value) => {
     const keys = path.split('.');
     const last = keys.pop();
@@ -53,71 +57,92 @@ export function buildPayload(report, { showGuidance = false, provisional = false
 
   for (const section of SCHEMA.sections) {
     for (const f of section.fields || []) {
-      put(f.k, prov(resolveField(report, f), provisional && f.k !== 'reportRef'));
+      put(f.k, prov(resolveField(report, f), provisional && marks(f)));
+      // A field with a tick column beside it renders Y or nothing.
+      if (f.check) put(f.check, get(report, f.check) ? 'Y' : '');
     }
   }
-  // Clear the flattening placeholders.
-  for (const k of Object.keys(p)) if (k.includes('__')) delete p[k];
 
   put('showGuidance', !!showGuidance);
 
-  // Section 1 tick column.
-  for (const key of ['logger', 'sampleRate', 'channels',
-                     'referenceLap', 'comparisonLap', 'noise']) {
-    put(`src.${key}Checked`, get(report, `src.${key}Checked`) ? 'Y' : '');
-  }
-
-  // Row loops. Blank rows are dropped so the document has exactly as
-  // many rows as there is content.
-  const rows = (key, cols) =>
-    (report[key] || [])
+  /* Row loops. Blank rows are dropped so the document has exactly as
+     many rows as there is content. */
+  for (const section of SCHEMA.sections) {
+    const t = section.table;
+    if (!t) continue;
+    const cols = t.columns.map(c => c.k);
+    const rows = (report[t.key] || [])
       .filter(r => cols.some(c => String(r[c] ?? '').trim() !== ''))
       .map(r => Object.fromEntries(cols.map(c => [c, str(r[c])])));
+    if (t.sortBy) {
+      rows.sort((a, b) => (Number(b[t.sortBy]) || 0) - (Number(a[t.sortBy]) || 0));
+    }
+    p[t.key] = rows;
+  }
 
-  p.opportunities = rows('opportunities',
-    ['corner', 'evidence', 'rootCause', 'gain', 'owner'])
-    .sort((a, b) => (Number(b.gain) || 0) - (Number(a.gain) || 0));
-  p.correlation   = rows('correlation',
-    ['corner', 'words', 'balance', 'evidence', 'verdict']);
-  p.setupChanges  = rows('setupChanges',
-    ['change', 'reason', 'expected', 'measured', 'keepRevert']);
-  p.priorities    = rows('priorities', ['action', 'owner', 'measure']);
+  /* Fixed grids: the rows are the document's own, so each cell lands at
+     a path the template names outright. */
+  for (const section of SCHEMA.sections) {
+    const g = section.fixed;
+    if (!g) continue;
+    for (const row of g.rows) {
+      // A totals row is derived from the rows above it, so the arithmetic
+      // in the document cannot disagree with the arithmetic in the form.
+      const totals = row.derive ? derive(report, row.derive) : null;
+      for (const col of g.columns) {
+        const at = `${g.key}.${row.k}.${col.k}`;
+        if (totals) put(at, str(totals[col.k] ?? ''));
+        else put(at, prov(get(report, at), provisional));
+      }
+    }
+  }
 
-  // Consistency banding: the whole scale prints, the achieved band is
-  // marked. Showing only the achieved band would lose the comparison
-  // that makes the scale worth printing.
-  const band = derive(report, 'band');
-  p.band = {};
-  for (const b of CONSISTENCY_BANDS) p.band[b.key] = (b.label === band) ? MARK : '';
+  /* Banding: the whole scale prints, the achieved band is marked.
+     Showing only the achieved band would lose the comparison that
+     makes the scale worth printing. */
+  if (SCHEMA.bands) {
+    const band = derive(report, 'band');
+    p.band = {};
+    for (const b of SCHEMA.bands) p.band[b.key] = (b.label === band) ? MARK : '';
+  }
 
-  // Systems check.
-  p.check = {};
-  SYSTEMS_CHECK.forEach((_, i) => {
-    p.check[`c${i + 1}`] = get(report, `check.c${i + 1}`) ? TICK : BOX;
-  });
+  /* Check grids. An unticked item still prints, as an empty box. */
+  for (const section of SCHEMA.sections) {
+    const cg = section.checkgrid;
+    if (!cg) continue;
+    p[cg.key] = {};
+    cg.items.forEach((_, i) => {
+      p[cg.key][`c${i + 1}`] = get(report, `${cg.key}.c${i + 1}`) ? TICK : BOX;
+    });
+  }
 
-  p.faults = str(report.faults);
-  p.verdict = str(report.verdict);
+  /* Anything the template needs that is neither a field nor a plain row
+     loop — a nested block, a scale split around its selection — is the
+     schema's own business, and it gets the last word on the payload. */
+  SCHEMA.payload?.(report, p);
 
   return p;
 }
 
-let templateCache = null;
+/* One cache entry per template: switching report type and switching
+   back must not re-fetch, and must not serve the wrong document. */
+const templateCache = new Map();
 
-async function fetchTemplate() {
-  if (templateCache) return templateCache;
-  const res = await fetch(SCHEMA.templateFile);
+async function fetchTemplate(file) {
+  if (templateCache.has(file)) return templateCache.get(file);
+  const res = await fetch(file);
   if (!res.ok) {
     throw new Error(
-      `Could not load ${SCHEMA.templateFile} (${res.status}). ` +
+      `Could not load ${file} (${res.status}). ` +
       `The template ships with the page; if this persists the deploy is incomplete.`);
   }
-  templateCache = new Uint8Array(await res.arrayBuffer());
-  return templateCache;
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  templateCache.set(file, bytes);
+  return bytes;
 }
 
 export async function renderDocx(report, options) {
-  const template = await fetchTemplate();
+  const template = await fetchTemplate(SCHEMA.templateFile);
   const data = buildPayload(report, options);
   return createReport({
     template,
