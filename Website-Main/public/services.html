@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engineering - TheRacingData</title>
+<meta name="description" content="Data and telemetry, ECU calibration and race weekend support. We do not guess: we measure, change, and measure again.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TheRacingData">
+<meta property="og:title" content="Engineering - TheRacingData">
+<meta property="og:description" content="Data and telemetry, ECU calibration and race weekend support. We do not guess: we measure, change, and measure again.">
+<meta property="og:url" content="https://theracingdata.com/services">
+<meta name="twitter:card" content="summary_large_image">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0a0b; }
+  * { box-sizing: border-box; }
+  a { color: #f2f0ec; text-decoration: none; }
+  a:hover { color: #970000; }
+  ::selection { background: #970000; color: #fff; }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="background: #0a0a0b; color: #f2f0ec; font-family: Archivo, Helvetica, Arial, sans-serif; min-height: 100vh; overflow-x: hidden;">
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: stretch; justify-content: space-between; gap: 24px; border-bottom: 1px solid #232327; background: rgba(10,10,11,0.92); backdrop-filter: blur(8px);">
+    <a href="/" style="display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-right: 1px solid #232327;">
+      <img src="/logo.svg" alt="TheRacingData" width="617" height="88"
+           style="display: block; height: 30px; width: auto;">
+    </a>
+    <nav style="display: flex; align-items: stretch;">
+      <a href="/" data-fr="Accueil" data-es="Inicio" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327; color: #a6a6ad;">Home</a>
+      <a href="#capabilities" data-fr="Capacités" data-es="Capacidades" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327;">Capabilities</a>
+      <a href="#method" data-fr="Méthode" data-es="Método" style="display: flex; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border-left: 1px solid #232327;">Method</a>
+      <div style="display: flex; align-items: center; gap: 2px; padding: 0 16px; border-left: 1px solid #232327;">
+        <button type="button" data-lang-btn="en" onClick="{{ setEN }}" style="border: 0; background: #970000; color: #fff; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;">EN</button>
+        <button type="button" data-lang-btn="fr" onClick="{{ setFR }}" style="border: 0; background: transparent; color: #74747a; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;">FR</button>
+        <button type="button" data-lang-btn="es" onClick="{{ setES }}" style="border: 0; background: transparent; color: #74747a; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; padding: 6px 9px; cursor: pointer;">ES</button>
+      </div>
+      <a href="#season" data-fr="Notes de saison" data-es="Notas de temporada" style="display: flex; align-items: center; padding: 0 24px; background: #970000; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;" style-hover="background: #f2f0ec; color: #0a0a0b;">Season Notes</a>
+    </nav>
+  </header>
+
+  <section style="border-bottom: 1px solid #232327;">
+    <div style="max-width: 1500px; margin: 0 auto; padding: 80px 24px 64px;">
+      <div data-fr="Ingénierie" data-es="Ingeniería" style="font-size: 12px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #970000;">Engineering</div>
+      <h1 data-fr="Nous ne devinons pas. Nous mesurons, nous modifions, nous re-mesurons." data-es="No adivinamos. Medimos, cambiamos y volvemos a medir." style="margin: 22px 0 0; font-size: clamp(38px, 6.6vw, 108px); line-height: 0.88; font-weight: 900; letter-spacing: -0.045em; text-transform: uppercase; max-width: 22ch; text-wrap: balance;">We don't guess. We measure, change, measure again.</h1>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 40px; margin-top: 48px; padding-top: 32px; border-top: 1px solid #232327;">
+        <p data-fr="Trois disciplines pilotent tout ce que nous livrons : l'acquisition de données, la calibration moteur et l'exploitation en course. Elles se partagent une même boucle — capteur, modèle, décision, chronomètre." data-es="Tres disciplinas rigen todo lo que entregamos: adquisición de datos, calibración del motor y operación en carrera. Comparten un mismo bucle: sensor, modelo, decisión, cronómetro." style="margin: 0; font-size: clamp(16px, 1.3vw, 20px); line-height: 1.5; color: #cfcfd4; grid-column: span 2; max-width: 70ch; text-wrap: pretty;">Three disciplines drive everything we deliver: data acquisition, engine calibration and race operations. They share one loop — sensor, model, decision, stopwatch.</p>
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div><div style="font-size: 34px; font-weight: 900; letter-spacing: -0.04em;">64</div><div data-fr="Canaux par voiture, standard" data-es="Canales por coche, estándar" style="font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #74747a;">Channels per car, standard</div></div>
+          <div><div style="font-size: 34px; font-weight: 900; letter-spacing: -0.04em;">48<span style="font-size: 0.5em; color: #8e8e95;">h</span></div><div data-fr="Délai de rapport après épreuve" data-es="Plazo de informe tras la prueba" style="font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #74747a;">Post-event report turnaround</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="capabilities" style="max-width: 1500px; margin: 0 auto; padding: 0 24px;">
+    <article style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1px; border-bottom: 1px solid #232327;">
+      <div style="background: #0a0a0b; padding: 64px 0;">
+        <div style="display: flex; align-items: baseline; gap: 16px;">
+          <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">01</span>
+          <h2 data-fr="Données &amp; télémétrie" data-es="Datos y telemetría" style="margin: 0; font-size: clamp(28px, 3.4vw, 54px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.92;">Data &amp; Telemetry</h2>
+        </div>
+        <p data-fr="Nous instrumentons la voiture pour répondre à des questions précises, pas pour remplir un tableau de bord. Les canaux mathématiques traduisent les traces brutes en décisions : transfert de charge, travail des amortisseurs, glissement pneumatique, coût du style de pilotage." data-es="Instrumentamos el coche para responder preguntas concretas, no para llenar un panel. Los canales matemáticos convierten trazas en decisiones: transferencia de carga, trabajo del amortiguador, deslizamiento del neumático y coste del estilo de pilotaje." style="margin: 26px 0 0; max-width: 58ch; font-size: 16px; line-height: 1.6; color: #a6a6ad; text-wrap: pretty;">We instrument the car to answer specific questions, not to fill a dashboard. Math channels turn raw traces into decisions: load transfer, damper work, tyre slip and the cost of driving style.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 34px;">
+          <div style="border-top: 2px solid #970000; padding-top: 14px;">
+            <div data-fr="Acquisition" data-es="Adquisición" style="font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Acquisition</div>
+            <div data-fr="Jauges de suspension, thermocouples, GPS 10 Hz, pression pneu en direct." data-es="Sensores de suspensión, termopares, GPS 10 Hz, presión de neumático en directo." style="margin-top: 8px; font-size: 14px; line-height: 1.5; color: #74747a;">Suspension pots, thermocouples, 10 Hz GPS, live tyre pressure.</div>
+          </div>
+          <div style="border-top: 2px solid #33333a; padding-top: 14px;">
+            <div data-fr="Analyse" data-es="Análisis" style="font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Analysis</div>
+            <div data-fr="Comparatifs de tours, histogrammes de vitesse d'amortisseur, cartes de perte de temps." data-es="Comparativas de vuelta, histogramas de velocidad de amortiguador, mapas de pérdida de tiempo." style="margin-top: 8px; font-size: 14px; line-height: 1.5; color: #74747a;">Lap overlays, damper-velocity histograms, time-loss maps.</div>
+          </div>
+          <div style="border-top: 2px solid #33333a; padding-top: 14px;">
+            <div data-fr="Débrief" data-es="Debrief" style="font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Debrief</div>
+            <div data-fr="Une page par session : constat, cause, action pour la prochaine sortie." data-es="Una página por sesión: hallazgo, causa y acción para la próxima salida." style="margin-top: 8px; font-size: 14px; line-height: 1.5; color: #74747a;">One page per session: finding, cause, action for the next run.</div>
+          </div>
+        </div>
+      </div>
+      <div style="background: #0a0a0b; padding: 64px 0 64px 0; display: grid; place-items: stretch;">
+        <div style="position: relative; min-height: 340px; border: 1px solid #232327;">
+          <image-slot id="svc-data" shape="rect" placeholder="Engineer at data screens, trackside"></image-slot>
+        </div>
+      </div>
+    </article>
+
+    <article style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 48px; border-bottom: 1px solid #232327; padding: 64px 0;">
+      <div style="order: 2;">
+        <div style="display: flex; align-items: baseline; gap: 16px;">
+          <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">02</span>
+          <h2 data-fr="Calibration ECU" data-es="Calibración de ECU" style="margin: 0; font-size: clamp(28px, 3.4vw, 54px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.92;">ECU Calibration</h2>
+        </div>
+        <p data-fr="Le pic de puissance ne gagne pas les épreuves ; la surface sous la courbe et la répétabilité le font. Nous calibrons pour la charge réelle, la température réelle et le carburant réellement disponible sur l'épreuve." data-es="La potencia máxima no gana pruebas; lo hacen el área bajo la curva y la repetibilidad. Calibramos para la carga real, la temperatura real y el combustible realmente disponible en el evento." style="margin: 26px 0 0; max-width: 58ch; font-size: 16px; line-height: 1.6; color: #a6a6ad; text-wrap: pretty;">Peak power doesn't win events; area under the curve and repeatability do. We calibrate for real load, real temperature and the fuel actually available at the event.</p>
+        <ul style="margin: 30px 0 0; padding: 0; list-style: none; display: grid; gap: 1px;">
+          <li data-fr="Développement au banc avec cellule de charge et contrôle thermique" data-es="Desarrollo en banco con celda de carga y control térmico" style="background: #0f0f11; outline: 1px solid #232327; padding: 16px 18px; font-size: 14px; font-weight: 600; color: #cfcfd4;">Dyno development with load cell and thermal control</li>
+          <li data-fr="Bride, BoP et conformité au règlement technique" data-es="Brida, BoP y conformidad con el reglamento técnico" style="background: #0f0f11; outline: 1px solid #232327; padding: 16px 18px; font-size: 14px; font-weight: 600; color: #cfcfd4;">Restrictor, BoP and technical-regulation compliance</li>
+          <li data-fr="Anti-lag, contrôle de départ, stratégies de sécurité" data-es="Anti-lag, control de salida y estrategias de seguridad" style="background: #0f0f11; outline: 1px solid #232327; padding: 16px 18px; font-size: 14px; font-weight: 600; color: #cfcfd4;">Anti-lag, launch control, safety strategies</li>
+          <li data-fr="Cartographies par surface et par étape, chargées sur place" data-es="Mapas por superficie y por tramo, cargados en el evento" style="background: #0f0f11; outline: 1px solid #232327; padding: 16px 18px; font-size: 14px; font-weight: 600; color: #cfcfd4;">Surface and stage maps, flashed on site</li>
+        </ul>
+      </div>
+      <div style="order: 1; position: relative; min-height: 340px; border: 1px solid #232327;">
+        <image-slot id="svc-ecu" shape="rect" placeholder="Engine on dyno / laptop with map open"></image-slot>
+      </div>
+    </article>
+
+    <article style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 48px; border-bottom: 1px solid #232327; padding: 64px 0;">
+      <div>
+        <div style="display: flex; align-items: baseline; gap: 16px;">
+          <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">03</span>
+          <h2 data-fr="Assistance en course" data-es="Asistencia en carrera" style="margin: 0; font-size: clamp(28px, 3.4vw, 54px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.92;">Race Weekend Support</h2>
+        </div>
+        <p data-fr="Un équipage entraîné, des pièces d'usure prévues avant qu'elles ne manquent, et un ingénieur qui parle au pilote dans son langage. Rallye, circuit ou historique — même rigueur." data-es="Un equipo entrenado, recambios de desgaste previstos antes de que falten y un ingeniero que habla al piloto en su idioma. Rally, circuito o histórico: el mismo rigor." style="margin: 26px 0 0; max-width: 58ch; font-size: 16px; line-height: 1.6; color: #a6a6ad; text-wrap: pretty;">A drilled crew, wear parts planned before they run out, and an engineer who speaks the driver's language. Rally, circuit or historic — the same rigour.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-top: 30px;">
+          <div style="background: #0f0f11; outline: 1px solid #232327; padding: 22px 18px;"><div style="font-size: 30px; font-weight: 900; letter-spacing: -0.03em;">6</div><div data-fr="Personnes par week-end" data-es="Personas por fin de semana" style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #74747a;">Crew per weekend</div></div>
+          <div style="background: #0f0f11; outline: 1px solid #232327; padding: 22px 18px;"><div style="font-size: 30px; font-weight: 900; letter-spacing: -0.03em;">18<span style="font-size: 0.5em; color: #8e8e95;">min</span></div><div data-fr="Reconstruction assistance type" data-es="Reconstrucción típica en asistencia" style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #74747a;">Typical service rebuild</div></div>
+          <div style="background: #0f0f11; outline: 1px solid #232327; padding: 22px 18px;"><div style="font-size: 30px; font-weight: 900; letter-spacing: -0.03em;">24<span style="font-size: 0.5em; color: #8e8e95;">/7</span></div><div data-fr="Astreinte en épreuve" data-es="Guardia durante el evento" style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #74747a;">On-event standby</div></div>
+        </div>
+      </div>
+      <div style="position: relative; min-height: 340px; border: 1px solid #232327;">
+        <image-slot id="svc-support" shape="rect" placeholder="Service park, crew working on car"></image-slot>
+      </div>
+    </article>
+  </section>
+
+  <section id="method" style="max-width: 1500px; margin: 0 auto; padding: 88px 24px 0;">
+    <div style="display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #232327; padding-bottom: 18px;">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">04</span>
+      <h2 data-fr="La boucle" data-es="El bucle" style="margin: 0; font-size: clamp(30px, 4vw, 62px); font-weight: 900; letter-spacing: -0.04em; text-transform: uppercase; line-height: 0.9;">The loop</h2>
+      <p data-fr="Comment un programme avance, semaine après semaine." data-es="Cómo avanza un programa, semana a semana." style="margin: 0 0 0 auto; font-size: 14px; color: #8e8e95;">How a programme moves, week to week.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; margin-top: 1px;">
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 24px 34px;">
+        <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">STEP 01</div>
+        <h3 data-fr="Cadrage" data-es="Encuadre" style="margin: 14px 0 10px; font-size: 21px; font-weight: 800; letter-spacing: -0.02em;">Frame</h3>
+        <p data-fr="Objectif de saison, budget, règlement. Nous décidons ce que le chrono doit gagner et où." data-es="Objetivo de temporada, presupuesto, reglamento. Decidimos qué debe ganar el cronómetro y dónde." style="margin: 0; font-size: 14px; line-height: 1.55; color: #a6a6ad;">Season target, budget, rulebook. We decide what the clock must gain, and where.</p>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 24px 34px;">
+        <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">STEP 02</div>
+        <h3 data-fr="Référence" data-es="Referencia" style="margin: 14px 0 10px; font-size: 21px; font-weight: 800; letter-spacing: -0.02em;">Baseline</h3>
+        <p data-fr="Banc, essai et session de données. Rien ne change avant d'avoir un point de départ chiffré." data-es="Banco, test y sesión de datos. Nada cambia antes de tener un punto de partida medido." style="margin: 0; font-size: 14px; line-height: 1.55; color: #a6a6ad;">Dyno, shakedown and a data session. Nothing changes before there's a measured starting point.</p>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 24px 34px;">
+        <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">STEP 03</div>
+        <h3 data-fr="Développement" data-es="Desarrollo" style="margin: 14px 0 10px; font-size: 21px; font-weight: 800; letter-spacing: -0.02em;">Develop</h3>
+        <p data-fr="Une variable à la fois, documentée. Les gains sont conservés, le reste est jeté." data-es="Una variable a la vez, documentada. Se conserva la ganancia y se descarta el resto." style="margin: 0; font-size: 14px; line-height: 1.55; color: #a6a6ad;">One variable at a time, documented. Gains are kept, the rest is thrown out.</p>
+      </div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 30px 24px 34px;">
+        <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: #970000;">STEP 04</div>
+        <h3 data-fr="Exploitation" data-es="Operación" style="margin: 14px 0 10px; font-size: 21px; font-weight: 800; letter-spacing: -0.02em;">Operate</h3>
+        <p data-fr="Épreuve courue, rapport livré, boucle rouverte pour la sortie suivante." data-es="Prueba disputada, informe entregado y bucle reabierto para la próxima salida." style="margin: 0; font-size: 14px; line-height: 1.55; color: #a6a6ad;">Event run, report delivered, loop reopened for the next outing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1500px; margin: 0 auto; padding: 88px 24px 0;">
+    <div data-fr="Équipements de l'atelier" data-es="Equipamiento del taller" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #74747a; padding-bottom: 18px; border-bottom: 1px solid #232327;">Workshop equipment</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; margin-top: 1px;">
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 24px 22px;"><div data-fr="Banc à rouleaux 4x4, 1 200 ch" data-es="Banco de rodillos 4x4, 1.200 cv" style="font-size: 15px; font-weight: 700;">4WD rolling road, 1,200 hp</div><div data-fr="Contrôle thermique et soufflerie de refroidissement" data-es="Control térmico y ventilación de refrigeración" style="margin-top: 6px; font-size: 13px; color: #74747a;">Thermal control and cooling fan bank</div></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 24px 22px;"><div data-fr="Banc amortisseurs" data-es="Banco de amortiguadores" style="font-size: 15px; font-weight: 700;">Damper dyno</div><div data-fr="Cartographie force-vitesse, reconditionnement interne" data-es="Mapeo fuerza-velocidad, reacondicionado interno" style="margin-top: 6px; font-size: 13px; color: #74747a;">Force-velocity mapping, in-house rebuilds</div></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 24px 22px;"><div data-fr="Marbre de géométrie" data-es="Mármol de geometría" style="font-size: 15px; font-weight: 700;">Setup pad</div><div data-fr="Poids aux roues, corner weighting, hauteurs de caisse" data-es="Pesos por rueda, corner weighting y alturas" style="margin-top: 6px; font-size: 13px; color: #74747a;">Corner weights, ride heights, geometry</div></div>
+      <div style="background: #0f0f11; outline: 1px solid #232327; padding: 24px 22px;"><div data-fr="Baie de télémétrie" data-es="Sala de telemetría" style="font-size: 15px; font-weight: 700;">Telemetry bay</div><div data-fr="Archive de 2,1 To, comparatifs multi-saisons" data-es="Archivo de 2,1 TB, comparativas multitemporada" style="margin-top: 6px; font-size: 13px; color: #74747a;">2.1 TB archive, multi-season comparisons</div></div>
+    </div>
+  </section>
+
+  <section id="season" style="margin-top: 88px; border-top: 1px solid #232327; border-bottom: 1px solid #232327; background: #0f0f11; outline: 1px solid #232327;">
+    <div style="max-width: 1500px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px; align-items: center;">
+      <div>
+        <div data-fr="Notes de saison" data-es="Notas de temporada" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #970000;">Season notes</div>
+        <h2 data-fr="Suivez le travail d'ingénierie, épreuve par épreuve." data-es="Sigue el trabajo de ingeniería, prueba a prueba." style="margin: 16px 0 14px; font-size: clamp(28px, 3.4vw, 48px); font-weight: 900; letter-spacing: -0.04em; line-height: 0.94; text-transform: uppercase; text-wrap: balance;">Follow the engineering, event by event.</h2>
+        <p data-fr="Comptes rendus techniques, extraits de données, ce que nous changerions. Un e-mail par épreuve." data-es="Informes técnicos, extractos de datos y qué cambiaríamos. Un correo por prueba." style="margin: 0; max-width: 52ch; font-size: 16px; line-height: 1.55; color: #a6a6ad; text-wrap: pretty;">Technical write-ups, data extracts, and what we'd change. One email per event.</p>
+      </div>
+      <div ref="{{ formRef }}">
+        <div style="display: flex; gap: 1px; background: #33333a; padding: 1px;">
+          <input type="email" data-newsletter-input="1" placeholder="name@team.com" style="flex: 1; min-width: 0; border: 0; background: #0a0a0b; color: #f2f0ec; font-family: inherit; font-size: 16px; padding: 20px 18px; outline: none;">
+          <button type="button" onClick="{{ subscribe }}" data-fr="S'abonner" data-es="Suscribirse" style="border: 0; background: #970000; color: #fff; font-family: inherit; font-size: 13px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; padding: 0 30px; cursor: pointer;" style-hover="background: #f2f0ec; color: #0a0a0b;">Subscribe</button>
+        </div>
+        <div data-newsletter-msg="1" data-fr="Un e-mail par épreuve. Désinscription en un clic." data-es="Un correo por prueba. Baja en un clic." style="margin-top: 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #74747a;">One email per event. Unsubscribe in one click.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="max-width: 1500px; margin: 0 auto; padding: 56px 24px 72px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; align-items: start;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="/logo.svg" alt="TheRacingData" width="617" height="88"
+             style="display: block; height: 26px; width: auto;">
+      </div>
+      <p data-fr="Ingénierie de course et exploitation." data-es="Ingeniería de competición y operaciones." style="margin: 16px 0 0; font-size: 13px; color: #74747a; letter-spacing: 0.04em;">Race engineering and operations.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <a href="/" data-fr="Accueil" data-es="Inicio" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Home</a>
+      <a href="#capabilities" data-fr="Capacités" data-es="Capacidades" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Capabilities</a>
+      <a href="#method" data-fr="Méthode" data-es="Método" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a6a6ad;">Method</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div data-fr="Atelier" data-es="Taller" style="font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #74747a;">Workshop</div>
+      <div style="font-size: 14px; color: #a6a6ad; line-height: 1.5;">67 Smith Road<br>Smith City, UK</div>
+      <a href="mailto:race@acmotorsport.eu" style="font-size: 14px; color: #970000; font-weight: 700;">race@theracingdata.com</a>
+    </div>
+    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #4d4d54; text-align: right;">© 2026 THERACINGDATA</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1024}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.rootRef = React.createRef();
+    this.formRef = React.createRef();
+    this.lang = 'en';
+  }
+
+  setLang(lang) {
+    const root = this.rootRef.current;
+    if (!root) return;
+    root.querySelectorAll('[data-fr]').forEach(el => {
+      if (!el.dataset.en) el.dataset.en = el.textContent;
+      el.textContent = lang === 'en' ? el.dataset.en : (lang === 'fr' ? el.dataset.fr : el.dataset.es);
+    });
+    root.querySelectorAll('[data-lang-btn]').forEach(b => {
+      const on = b.dataset.langBtn === lang;
+      b.style.background = on ? '#970000' : 'transparent';
+      b.style.color = on ? '#fff' : '#74747a';
+    });
+    this.lang = lang;
+  }
+
+  renderVals() {
+    return {
+      rootRef: this.rootRef,
+      formRef: this.formRef,
+      setEN: () => this.setLang('en'),
+      setFR: () => this.setLang('fr'),
+      setES: () => this.setLang('es'),
+      subscribe: () => {
+        const host = this.formRef.current;
+        if (!host) return;
+        const input = host.querySelector('[data-newsletter-input]');
+        const msg = host.querySelector('[data-newsletter-msg]');
+        const ok = input && /.+@.+\..+/.test(input.value);
+        if (msg) {
+          msg.textContent = ok
+            ? { en: 'Confirmed — first note lands Tuesday.', fr: 'Confirmé — première note mardi.', es: 'Confirmado — primera nota el martes.' }[this.lang]
+            : { en: 'Enter a valid email address.', fr: 'Saisissez une adresse e-mail valide.', es: 'Introduce un correo válido.' }[this.lang];
+          msg.style.color = ok ? '#970000' : '#a6a6ad';
+        }
+        if (ok && input) input.value = '';
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

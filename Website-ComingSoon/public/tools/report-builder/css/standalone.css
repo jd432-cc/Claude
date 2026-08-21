@@ -1,0 +1,4 @@
+/* Standalone page only — page-level ground so the tool fills the
+   viewport when served on its own. Omit this file when embedding
+   in the site shell, which owns the page background. */
+html, body { margin: 0; padding: 0; background: #0A0A0B; }

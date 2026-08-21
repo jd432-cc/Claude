@@ -1,0 +1,40 @@
+# Cloudflare Pages headers.
+# Syntax: a path pattern on its own line, then indented "Name: value" lines.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# support.js and image-slot.js have no content hash in their filenames, so they
+# must NOT be cached immutably -- a redeploy would not reach returning visitors.
+# 5 minutes at the edge, always revalidate in the browser.
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+  CDN-Cache-Control: public, max-age=300
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# No Content-Security-Policy is set on purpose. The design runtime in
+# support.js compiles the page's <script type="text/x-dc"> block with
+# new Function(), and injects React/ReactDOM from unpkg.com at load time.
+# Any CSP would therefore need at minimum:
+#   script-src 'self' 'unsafe-eval' https://unpkg.com
+#   style-src  'self' 'unsafe-inline' https://fonts.googleapis.com
+#   font-src   https://fonts.gstatic.com
+# A CSP without 'unsafe-eval' renders a blank page. See README.
+
+# --- Tools ---------------------------------------------------------------
+# The tool pages under /tools/ do not use the design runtime, so they do not
+# need the 'unsafe-eval' exemption the marketing pages require and can carry
+# a real policy. The report builder resolves its template tags with a small
+# path resolver instead of eval precisely so this stays possible.
+/tools/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+# Report templates carry their version in the filename, so a given URL is
+# immutable: a new revision ships as a new filename and the schema asserts it.
+/tools/report-builder/templates/*
+  Cache-Control: public, max-age=31536000, immutable

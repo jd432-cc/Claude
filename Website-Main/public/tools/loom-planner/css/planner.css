@@ -1,0 +1,856 @@
+/* =============================================================
+   TheRacingData — Network & Loom Planner
+   Brand: TRD. One accent (Signal Red), neutral ramp, Archivo.
+
+   Hard rule: Signal Red #970000 is a FILL on dark ground, never
+   text — it measures 2.18:1 on Ink. Red as text or stroke uses
+   Signal Lift #CC0000 (3.36:1).
+
+   Authored unscoped for readability. tools/build-web.mjs emits a
+   copy scoped under #trd-loom-planner for embedding in the site.
+   ============================================================= */
+
+/* Archivo — self-hosted so the packaged build works offline.
+   Drop the .woff2 into assets/fonts/ (SIL Open Font Licence).
+   Falls back to the CDN link in index.html, then Arial / Arial
+   Black, which are metrically close enough that layouts hold. */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/Archivo-Variable.woff2') format('woff2-variations');
+}
+
+#trd-loom-planner, #trd-loom-planner *, #trd-loom-planner::before, #trd-loom-planner *::before, #trd-loom-planner::after, #trd-loom-planner *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+#trd-loom-planner {
+  /* Ground */
+  --ink:         #0A0A0B;
+  --panel:       #0F0F11;
+  --surface:     #141417;
+  --surface-hi:  #1B1B1F;
+  --rule:        #232327;
+  --rule-soft:   #18181B;
+
+  /* Grey ramp, lightest first */
+  --paper:       #F2F0EC;  /* 17.4:1 */
+  --bone:        #CFCFD4;  /* 12.8:1 */
+  --body:        #A6A6AD;  /*  8.2:1 */
+  --muted:       #8E8E95;  /*  6.1:1  floor for text under 14px */
+  --faint:       #74747A;  /*  4.3:1  large text only */
+  --steel:       #6F6F78;  /*  4.0:1  large text, chart strokes */
+
+  /* Accent */
+  --signal:      #970000;  /* FILL ONLY on dark ground */
+  --signal-hi:   #AD0000;
+  --signal-lo:   #6E0000;
+  --signal-lift: #CC0000;  /* red as text or stroke on Ink */
+  --signal-wash: rgba(151, 0, 0, 0.14);
+
+  /* Data series — ramp values, not new hues */
+  --series-1: var(--signal);
+  --series-2: var(--steel);
+  --series-3: var(--bone);
+
+  --font:         'Archivo', Arial, Helvetica, sans-serif;
+  --font-display: 'Archivo', 'Arial Black', Arial, Helvetica, sans-serif;
+  /* Narrow exception to the one-family rule: machine tokens only
+     (hex CAN IDs, node addresses, wire IDs) where glyph
+     disambiguation and fixed advance are functional. */
+  --font-mono:    'Cascadia Mono', 'SF Mono', 'Consolas', ui-monospace, monospace;
+
+  --radius: 2px;
+}
+
+#trd-loom-planner {
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  background: var(--ink);
+  color: var(--body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Type roles ===== */
+#trd-loom-planner .display, #trd-loom-planner header h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  line-height: 0.90;
+  color: var(--paper);
+}
+
+#trd-loom-planner .eyebrow {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+#trd-loom-planner .figure {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--paper);
+}
+
+#trd-loom-planner .figure .unit,
+#trd-loom-planner .stat-badge .unit {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-left: 0.3em;
+}
+
+#trd-loom-planner .mono { font-family: var(--font-mono); font-variant-numeric: normal; }
+
+/* ===== Header ===== */
+#trd-loom-planner header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 28px 0;
+}
+
+#trd-loom-planner .brand-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+#trd-loom-planner .brand-lockup { display: flex; align-items: center; padding: 8px 0; }
+
+#trd-loom-planner .brand-lockup img {
+  display: block;
+  width: 168px;
+  height: auto;
+  min-width: 140px;
+}
+
+/* Shown only if assets/logo.svg is absent. Deliberately the eyebrow
+   role, not a substitute wordmark — the real wordmark is drawn
+   geometry and must never be re-set in Archivo. */
+#trd-loom-planner .brand-fallback {
+  display: none;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 12px;
+  color: var(--bone);
+  border-left: 3px solid var(--signal);
+  padding-left: 10px;
+}
+
+#trd-loom-planner .app-title { text-align: right; }
+#trd-loom-planner .app-title .eyebrow { margin-bottom: 6px; color: var(--faint); }
+#trd-loom-planner .app-title h1 { font-size: 28px; }
+
+#trd-loom-planner #main-nav { display: flex; gap: 0; }
+
+#trd-loom-planner .tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--font);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+#trd-loom-planner .tab-btn:hover { color: var(--bone); background: var(--surface); }
+
+/* Active tab: red as a rule with a Paper label — never red text. */
+#trd-loom-planner .tab-btn.active {
+  color: var(--paper);
+  border-bottom-color: var(--signal-lift);
+  background: var(--surface);
+}
+
+/* ===== Main ===== */
+#trd-loom-planner main { padding: 24px 28px 8px; }
+
+#trd-loom-planner .tab-content { display: none; }
+#trd-loom-planner .tab-content.active { display: block; }
+
+/* ===== Toolbar ===== */
+#trd-loom-planner .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+#trd-loom-planner .toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ===== Stat badge — Figure role ===== */
+#trd-loom-planner .stat-badge {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 14px 6px 12px;
+  border-left: 2px solid var(--rule);
+}
+
+#trd-loom-planner .stat-badge .stat-label {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+#trd-loom-planner .stat-badge .stat-value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-size: 20px;
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+/* Severity by weight and brightness, not by adding hues. */
+#trd-loom-planner .stat-badge.is-nominal { border-left-color: var(--rule); }
+#trd-loom-planner .stat-badge.is-nominal .stat-value { color: var(--body); }
+#trd-loom-planner .stat-badge.is-warn { border-left-color: var(--bone); }
+#trd-loom-planner .stat-badge.is-warn .stat-value { color: var(--paper); }
+#trd-loom-planner .stat-badge.is-fault { border-left-color: var(--signal-lift); }
+#trd-loom-planner .stat-badge.is-fault .stat-value { color: var(--signal-lift); }
+
+/* ===== Buttons ===== */
+#trd-loom-planner .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--bone);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+#trd-loom-planner .btn:hover { background: var(--surface-hi); border-color: var(--steel); color: var(--paper); }
+#trd-loom-planner .btn:active { background: var(--panel); }
+
+/* Signal Red as a filled block with Paper text — 7.97:1 */
+#trd-loom-planner .btn-primary {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--paper);
+}
+#trd-loom-planner .btn-primary:hover { background: var(--signal-hi); border-color: var(--signal-hi); color: #fff; }
+#trd-loom-planner .btn-primary:active { background: var(--signal-lo); border-color: var(--signal-lo); }
+
+#trd-loom-planner .btn-secondary {
+  background: transparent;
+  border-color: var(--steel);
+  color: var(--bone);
+}
+#trd-loom-planner .btn-secondary:hover { background: var(--surface-hi); border-color: var(--bone); color: var(--paper); }
+
+#trd-loom-planner .btn-tertiary {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--muted);
+}
+#trd-loom-planner .btn-tertiary:hover { background: var(--surface-hi); border-color: var(--bone); color: var(--paper); }
+
+#trd-loom-planner .btn-danger {
+  background: transparent;
+  border-color: var(--signal-lift);
+  color: var(--signal-lift);
+}
+#trd-loom-planner .btn-danger:hover { background: var(--signal); border-color: var(--signal); color: var(--paper); }
+
+#trd-loom-planner .btn-sm { padding: 5px 10px; font-size: 10px; letter-spacing: 0.10em; }
+
+#trd-loom-planner .btn-icon {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+#trd-loom-planner .btn-icon:hover { color: var(--paper); }
+
+#trd-loom-planner .btn:focus-visible,
+#trd-loom-planner .tab-btn:focus-visible,
+#trd-loom-planner .btn-icon:focus-visible {
+  outline: 2px solid var(--bone);
+  outline-offset: 2px;
+}
+
+/* ===== Layout ===== */
+#trd-loom-planner .split-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+#trd-loom-planner .panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 18px;
+  min-height: 300px;
+}
+
+#trd-loom-planner .panel h2,
+#trd-loom-planner .full-width-section h2,
+#trd-loom-planner .diagram-section h2 {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+#trd-loom-planner .placeholder-text {
+  color: var(--faint);
+  font-size: 15px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+/* ===== Item list ===== */
+#trd-loom-planner .item-list { display: flex; flex-direction: column; gap: 3px; }
+
+#trd-loom-planner .item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-left: 2px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+#trd-loom-planner .item-card:hover { background: var(--surface-hi); border-left-color: var(--steel); }
+
+#trd-loom-planner .item-card.selected {
+  background: var(--surface-hi);
+  border-color: var(--rule);
+  border-left-color: var(--signal-lift);
+}
+
+#trd-loom-planner .item-card .item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bone);
+  line-height: 1.35;
+}
+
+#trd-loom-planner .item-card.selected .item-name { color: var(--paper); }
+
+#trd-loom-planner .item-card .item-sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+#trd-loom-planner .item-card .item-actions { display: flex; gap: 2px; }
+
+#trd-loom-planner .item-card .item-actions button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+  line-height: 1;
+}
+
+#trd-loom-planner .item-card .item-actions button:hover { color: var(--paper); background: var(--signal); }
+
+/* ===== Group headers ===== */
+#trd-loom-planner .group-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-left: 3px solid var(--steel);
+  padding: 6px 8px;
+  margin: 8px 0 3px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+#trd-loom-planner .group-header:hover { color: var(--bone); }
+#trd-loom-planner .group-header .caret { display: inline-block; transition: transform 0.15s; font-size: 8px; }
+#trd-loom-planner .group-header .count { font-weight: 600; letter-spacing: 0.08em; color: var(--faint); }
+
+/* Icon buttons sitting inside a group header */
+#trd-loom-planner .group-header button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+}
+
+#trd-loom-planner .group-header button:hover { color: var(--paper); background: var(--signal); }
+
+#trd-loom-planner .group-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 2px 5px;
+  border-radius: var(--radius);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+#trd-loom-planner .list-empty { font-size: 12px; color: var(--faint); padding: 6px 12px; }
+
+/* ===== Detail view ===== */
+#trd-loom-planner .detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+#trd-loom-planner .detail-header h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  font-size: 19px;
+  color: var(--paper);
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+#trd-loom-planner .detail-header h2.eyebrow-heading {
+  font-family: var(--font);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+/* ===== Message block (CAN) ===== */
+#trd-loom-planner .message-block {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+#trd-loom-planner .message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--signal-wash);
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+
+#trd-loom-planner .message-header:hover { background: rgba(151, 0, 0, 0.22); }
+
+#trd-loom-planner .message-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--paper);
+}
+
+#trd-loom-planner .message-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+#trd-loom-planner .message-body { padding: 12px 14px; }
+#trd-loom-planner .message-actions { display: flex; gap: 6px; }
+
+#trd-loom-planner .dir-tag {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius);
+}
+#trd-loom-planner .dir-tag.tx { background: var(--signal); color: var(--paper); }
+#trd-loom-planner .dir-tag.rx { background: var(--rule); color: var(--bone); }
+
+/* ===== Data tables ===== */
+#trd-loom-planner .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#trd-loom-planner .data-table th {
+  text-align: left;
+  padding: 9px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  /* Muted not Faint: 10px is below the large-text threshold */
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+
+#trd-loom-planner .data-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: middle;
+  color: var(--body);
+}
+
+#trd-loom-planner .data-table td strong { color: var(--paper); font-weight: 700; }
+#trd-loom-planner .data-table tbody tr:hover { background: var(--surface); }
+
+#trd-loom-planner .data-table tbody tr.is-fault {
+  background: var(--signal-wash);
+  border-left: 3px solid var(--signal-lift);
+}
+
+#trd-loom-planner .data-table tbody tr.group-row td {
+  border-left: 3px solid var(--steel);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--surface);
+  cursor: pointer;
+  user-select: none;
+}
+
+#trd-loom-planner .data-table tbody tr.group-row .count {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+#trd-loom-planner .data-table td input,
+#trd-loom-planner .data-table td select { width: 100%; }
+
+/* The fill reports the true insulation colour and is never adjusted.
+   The ring is Steel rather than Rule so a black wire still reads as a
+   distinct disc instead of vanishing into the panel. */
+#trd-loom-planner .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid var(--steel);
+}
+
+#trd-loom-planner .tag-fault {
+  display: inline-block;
+  background: var(--signal);
+  color: var(--paper);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: var(--radius);
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* ===== Sections ===== */
+#trd-loom-planner .full-width-section,
+#trd-loom-planner .diagram-section {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 22px;
+  overflow-x: auto;
+}
+
+#trd-loom-planner .diagram-section canvas {
+  width: 100%;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+#trd-loom-planner .canvas-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* ===== Forms ===== */
+#trd-loom-planner label {
+  font-size: 12px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#trd-loom-planner input[type="text"],
+#trd-loom-planner input[type="number"],
+#trd-loom-planner select,
+#trd-loom-planner textarea {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--paper);
+  font-family: var(--font);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#trd-loom-planner input:hover, #trd-loom-planner select:hover, #trd-loom-planner textarea:hover { border-color: var(--steel); }
+#trd-loom-planner input:focus, #trd-loom-planner select:focus, #trd-loom-planner textarea:focus { border-color: var(--signal-lift); }
+#trd-loom-planner select { cursor: pointer; }
+#trd-loom-planner option { background: var(--panel); color: var(--paper); }
+
+/* ===== Modal ===== */
+#trd-loom-planner .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.78);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#trd-loom-planner .modal {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--signal);
+  border-radius: var(--radius);
+  width: 480px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#trd-loom-planner .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+#trd-loom-planner .modal-header h3 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  font-size: 17px;
+  color: var(--paper);
+}
+
+#trd-loom-planner .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+
+#trd-loom-planner .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--rule);
+}
+
+#trd-loom-planner .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+#trd-loom-planner .form-row label {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+#trd-loom-planner .form-row input,
+#trd-loom-planner .form-row select,
+#trd-loom-planner .form-row textarea { width: 100%; }
+
+#trd-loom-planner .form-row-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ===== Searchable select ===== */
+#trd-loom-planner .search-select { position: relative; }
+#trd-loom-planner .search-select-input { width: 100%; cursor: text; }
+
+#trd-loom-planner .search-select-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--signal-lift);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  z-index: 1100;
+}
+
+#trd-loom-planner .search-select-dropdown.open { display: block; }
+
+#trd-loom-planner .search-select-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--body);
+}
+
+#trd-loom-planner .search-select-item:hover { background: var(--surface-hi); color: var(--paper); }
+
+#trd-loom-planner .search-select-item.selected {
+  background: var(--signal-wash);
+  color: var(--paper);
+  box-shadow: inset 2px 0 0 var(--signal-lift);
+}
+
+#trd-loom-planner .search-select-empty {
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* ===== Colour picker =====
+   Wire insulation colours are physical facts, not brand colours.
+   Only the selection affordance is branded. */
+#trd-loom-planner .colour-picker-row { display: flex; align-items: center; gap: 8px; }
+
+#trd-loom-planner .colour-picker-row input[type="color"] {
+  width: 36px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+#trd-loom-planner .colour-picker-row input[type="text"] { flex: 1; font-family: var(--font-mono); }
+
+#trd-loom-planner .colour-preset {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--steel);
+  cursor: pointer;
+}
+
+#trd-loom-planner .colour-preset.is-selected { outline: 2px solid var(--paper); outline-offset: 1px; }
+
+/* ===== Severity ===== */
+#trd-loom-planner .success-text { color: var(--muted); }
+#trd-loom-planner .warn-text    { color: var(--bone); font-weight: 700; }
+#trd-loom-planner .danger-text  { color: var(--signal-lift); font-weight: 700; }
+
+/* ===== Footer ===== */
+#trd-loom-planner footer {
+  border-top: 1px solid var(--rule);
+  padding: 18px 28px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+#trd-loom-planner footer .strapline { font-size: 12px; color: var(--faint); }
+#trd-loom-planner footer .eyebrow { color: var(--faint); font-size: 10px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  #trd-loom-planner .split-layout { grid-template-columns: 1fr; }
+  #trd-loom-planner .toolbar { flex-direction: column; align-items: flex-start; }
+  #trd-loom-planner .brand-row { align-items: flex-start; }
+  #trd-loom-planner .app-title { text-align: left; }
+  #trd-loom-planner .app-title h1 { font-size: 22px; }
+  #trd-loom-planner header { padding: 14px 16px 0; }
+  #trd-loom-planner main { padding: 18px 16px 8px; }
+  #trd-loom-planner footer { padding: 16px; }
+}
