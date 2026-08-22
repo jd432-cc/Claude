@@ -27,12 +27,28 @@
 # A CSP without 'unsafe-eval' renders a blank page. See README.
 
 # --- Tools ---------------------------------------------------------------
-# The tool pages under /tools/ do not use the design runtime, so they do not
-# need the 'unsafe-eval' exemption the marketing pages require and can carry
-# a real policy. The report builder resolves its template tags with a small
-# path resolver instead of eval precisely so this stays possible.
-/tools/*
-  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+# Scoped per tool, deliberately, and NOT to /tools/*.
+#
+# /tools/ itself is a design export like the marketing pages: it carries the
+# whole page in inline <script> blocks. A /tools/* rule matches it too, and a
+# policy without 'unsafe-inline' and 'unsafe-eval' renders it blank -- which
+# is exactly what happened. It is left without a CSP, as the marketing pages
+# above are, for the same reason.
+#
+# The tool pages themselves are hand written, load no runtime and keep their
+# scripts in files, so they take a real policy. A new tool gets no CSP until
+# it is added here; that fails open rather than shipping a blank page.
+
+# Nothing inline at all, and Archivo is vendored, so this one needs no
+# exemption and no offsite origin.
+/tools/report-builder/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+# The planner positions a few elements with style attributes, which style-src
+# governs, and still loads Archivo from Google Fonts. Vendoring its font and
+# moving those attributes into planner.css would let it take the policy above.
+/tools/loom-planner/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
 
 # Report templates carry their version in the filename, so a given URL is
 # immutable: a new revision ships as a new filename and the schema asserts it.
