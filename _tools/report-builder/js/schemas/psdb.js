@@ -12,7 +12,7 @@
    gets taken to the halt.
    ============================================================= */
 
-import { reference } from '../values.js';
+import { reference } from '../../../_shared/report-engine/values.js';
 
 /* Both scales are reproduced from the blank form, spacing included:
    after tagging, these strings are what print. */

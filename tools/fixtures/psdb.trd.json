@@ -1,0 +1,10 @@
+{
+  "_schema": "psdb",
+  "_version": 1,
+  "circuit": "Silverstone GP",
+  "corners": [
+    { "corner": "6", "name": "Brooklands", "gear": "3", "confidence": "4", "phase": "braking", "balance": "U3", "notes": "Locks the right front under trail braking." },
+    { "corner": "7", "name": "Luffield", "gear": "2", "confidence": "3", "phase": "exit", "balance": "O2", "notes": "Cannot get the power down before the apex." },
+    { "corner": "9", "name": "Copse", "gear": "5", "confidence": "5", "phase": "entry", "balance": "N", "notes": "Flat, no complaint." }
+  ]
+}

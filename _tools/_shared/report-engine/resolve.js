@@ -1,5 +1,5 @@
 /* =============================================================
-   TheRacingData — Report Builder
+   TheRacingData — shared report engine
    Safe tag resolver for docx-templates.
 
    docx-templates evaluates every tag as JavaScript. Its browser

@@ -1,5 +1,5 @@
 /* =============================================================
-   TheRacingData — Report Builder
+   TheRacingData — shared report engine
    Schema-driven form rendering.
 
    Everything is built from SCHEMA, which is whichever report type is
@@ -7,7 +7,7 @@
    schema; there is no per-report form code to switch between.
    ============================================================= */
 
-import { SCHEMA } from './schema.js';
+import { SCHEMA } from './registry.js';
 import { get, set, derive, resolveField, validate, isLocked, completion } from './store.js';
 
 const el = (tag, cls, text) => {

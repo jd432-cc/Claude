@@ -1,5 +1,5 @@
 /* =============================================================
-   TheRacingData — Report Builder
+   TheRacingData — shared report engine
    State, derived values, validation, persistence.
 
    The report is one plain object. Everything else — the form, the
@@ -7,14 +7,16 @@
    only ever one source of truth to get wrong.
 
    Every function here reads the active schema rather than a fixed
-   one, so the same store serves all three report types. Autosave
-   is keyed by schema id: each type keeps its own work in progress.
+   one, so the same store serves every report a tool registers.
+   Autosave is keyed by schema id: each type keeps its own work in
+   progress, and the key format is fixed so a tool that gains a
+   register does not orphan work saved before it did.
 
    Nothing leaves the machine. Autosave is localStorage; sharing is
    an explicit file export.
    ============================================================= */
 
-import { SCHEMA, reportById, setReport } from './schema.js';
+import { SCHEMA, byId, setActive } from './registry.js';
 import { get, set, toSeconds, fromSeconds } from './values.js';
 
 export { get, set, toSeconds, fromSeconds };
@@ -167,8 +169,8 @@ export function load() {
    the more surprising behaviour of the two. */
 export function migrate(data) {
   if (!data || typeof data !== 'object') return null;
-  if (data._schema && data._schema !== SCHEMA.id && reportById(data._schema)) {
-    setReport(data._schema);
+  if (data._schema && data._schema !== SCHEMA.id && byId(data._schema)) {
+    setActive(data._schema);
   }
   const base = blank();
   const merged = { ...base, ...data };

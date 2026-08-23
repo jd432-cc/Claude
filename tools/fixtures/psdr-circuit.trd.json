@@ -1,0 +1,55 @@
+{
+  "_schema": "psdr-circuit",
+  "_version": 1,
+  "eventName": "Silverstone GP",
+  "sessionType": "Qualifying",
+  "eventSession": "Round 4 / Q2",
+  "circuit": "Silverstone GP",
+  "dates": "16.05.2026",
+  "seriesClass": "HTCC / Class C",
+  "carNumber": "Escort RS1600 / 11",
+  "drivers": "J. Dunn",
+  "weather": "Dry, overcast",
+  "temps": "18 / 27 °C",
+  "engineer": "TheRacingData",
+  "round": "r04",
+  "venueCode": "sil",
+  "carCode": "11",
+  "src": {
+    "logger": "AiM EVO5",
+    "loggerChecked": true,
+    "sampleRate": "100 Hz",
+    "sampleRateChecked": true,
+    "channels": "GPS, wheel speed, steer, brake pressure, throttle",
+    "channelsChecked": true,
+    "referenceLap": "7",
+    "referenceLapChecked": true,
+    "comparisonLap": "11",
+    "comparisonLapChecked": true,
+    "noise": "Brake pressure zero offset 2.1 bar, corrected in post.",
+    "noiseChecked": true
+  },
+  "verdict": "Qualified fourth. The lap is there; it was not put together in one go.",
+  "bestLap": "2:14.82",
+  "theoreticalBest": "2:13.41",
+  "opportunities": [
+    { "corner": "Brooklands", "evidence": "Steer trace +14 deg against reference", "rootCause": "Mid-corner understeer", "gain": "0.62", "owner": "JD" },
+    { "corner": "Luffield", "evidence": "Throttle application 0.3 s late", "rootCause": "Rotation on exit", "gain": "0.41", "owner": "JD" },
+    { "corner": "Stowe", "evidence": "Brake pressure 8% under reference", "rootCause": "Confidence on entry", "gain": "0.28", "owner": "JD" }
+  ],
+  "correlation": [
+    { "corner": "Brooklands", "words": "Will not turn on the brake", "balance": "U3", "evidence": "Steer angle up, yaw rate flat", "verdict": "A" },
+    { "corner": "Copse", "words": "Loose on entry", "balance": "O2", "evidence": "No yaw overshoot in the trace", "verdict": "C" }
+  ],
+  "stint": {
+    "within1pct": "6",
+    "window": "0.71",
+    "degradation": "0.04 s per lap, linear",
+    "errorLaps": "2"
+  },
+  "check": {
+    "c1": true, "c2": true, "c3": true, "c4": false, "c5": true, "c6": true,
+    "c7": true, "c8": true, "c9": false, "c10": true, "c11": true, "c12": true
+  },
+  "faults": "Lap 9: gear shift quality poor on the 3-4 upshift. Lap 12: repeated."
+}

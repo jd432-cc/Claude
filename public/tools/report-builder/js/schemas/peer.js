@@ -16,7 +16,7 @@
    an issue rather than left to the reader to notice.
    ============================================================= */
 
-import { get, reference } from '../values.js';
+import { get, reference } from '../../../_shared/report-engine/values.js';
 
 const CONFIDENCE = ['H', 'M', 'L'];
 const CONFIDENCE_LABELS = { H: 'H — high', M: 'M — medium', L: 'L — low' };

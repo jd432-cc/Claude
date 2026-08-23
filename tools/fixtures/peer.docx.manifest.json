@@ -1,0 +1,32 @@
+{
+  "release": {
+    "[Content_Types].xml": "72e1a7e789e238175e21a964870a263fd2426d6877bd868693e211a4eb23e587",
+    "_rels/.rels": "e19238d7a71fa7a2490776252686f70e2de6238c87cd509b5e3a3cc07c2ea4df",
+    "docProps/app.xml": "bb9b31ecacefe9993911972da2e0a768548d8ef3ed5b9d2c1cbea8d004e5a245",
+    "docProps/core.xml": "61256cfeb2704fe6b8221171a6ef0f81079f38847f5e063795af234eb05fc584",
+    "word/": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "word/_rels/document.xml.rels": "88f80560ab13c082cc73a423a90131d6040dbb0ef7e655d797a214a2f481cf8f",
+    "word/document.xml": "553b3f5fc6e5f9e51f837ab94ed8557b66d91b34620e24291a43724e209e6eb3",
+    "word/fontTable.xml": "3a5d9029631109a6b7fb6d69b98a6603a95a6c4228acc045f48852d8ac43ef48",
+    "word/numbering.xml": "99774011bdcc7ee73242423201055839ba63a41f8df13c431354a37ee7565079",
+    "word/settings.xml": "c19abf0902ce7980c52a0e92e22c28f86a9a009d9c2c5ccbb442f6eba6d8d91d",
+    "word/styles.xml": "632898cd7e2a65ff61be5794aa120c013ae50417add9ae639a93a253fb775478",
+    "word/theme/theme1.xml": "e7948e69d1ab51203d82e7e57d491987a16229547a1b6bfd124133a3a895c0ac",
+    "word/webSettings.xml": "b7b9d1cc5d2ef70e8f0b93e9561fd332131ef59acea1f4edaf434bb69ab61a09"
+  },
+  "draft": {
+    "[Content_Types].xml": "72e1a7e789e238175e21a964870a263fd2426d6877bd868693e211a4eb23e587",
+    "_rels/.rels": "e19238d7a71fa7a2490776252686f70e2de6238c87cd509b5e3a3cc07c2ea4df",
+    "docProps/app.xml": "bb9b31ecacefe9993911972da2e0a768548d8ef3ed5b9d2c1cbea8d004e5a245",
+    "docProps/core.xml": "61256cfeb2704fe6b8221171a6ef0f81079f38847f5e063795af234eb05fc584",
+    "word/": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "word/_rels/document.xml.rels": "88f80560ab13c082cc73a423a90131d6040dbb0ef7e655d797a214a2f481cf8f",
+    "word/document.xml": "c4013a39de942455f0d1cfa1ae0dec0bc37d2578e75736b781af65652ef114bd",
+    "word/fontTable.xml": "3a5d9029631109a6b7fb6d69b98a6603a95a6c4228acc045f48852d8ac43ef48",
+    "word/numbering.xml": "99774011bdcc7ee73242423201055839ba63a41f8df13c431354a37ee7565079",
+    "word/settings.xml": "c19abf0902ce7980c52a0e92e22c28f86a9a009d9c2c5ccbb442f6eba6d8d91d",
+    "word/styles.xml": "632898cd7e2a65ff61be5794aa120c013ae50417add9ae639a93a253fb775478",
+    "word/theme/theme1.xml": "e7948e69d1ab51203d82e7e57d491987a16229547a1b6bfd124133a3a895c0ac",
+    "word/webSettings.xml": "b7b9d1cc5d2ef70e8f0b93e9561fd332131ef59acea1f4edaf434bb69ab61a09"
+  }
+}

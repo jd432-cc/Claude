@@ -39,6 +39,12 @@
 # scripts in files, so they take a real policy. A new tool gets no CSP until
 # it is added here; that fails open rather than shipping a blank page.
 
+# The shared report engine, the vendored Archivo faces, docx-templates and
+# the brand tokens. Served as subresources of the tool pages below, and
+# directly if anyone asks for one, so it carries the same strict policy.
+/tools/_shared/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
 # Nothing inline at all, and Archivo is vendored, so this one needs no
 # exemption and no offsite origin.
 /tools/report-builder/*

@@ -1,63 +1,12 @@
 /* =============================================================
    TheRacingData — Report Builder
-   Brand: TRD. One accent (Signal Red), neutral ramp, Archivo.
-
-   Hard rule: Signal Red #970000 is a FILL on dark ground, never
-   text — it measures 2.18:1 on Ink. Red as text or stroke uses
-   Signal Lift #CC0000 (3.36:1).
+   Layout and components. The palette, the type scale and the five
+   Archivo faces come from ../../_shared/css/trd-tokens.css, which
+   the page links ahead of this one.
 
    Authored unscoped for readability. tools/build-web.mjs emits a
    copy scoped under #trd-report-builder for embedding in the site.
    ============================================================= */
-
-/* Archivo, vendored rather than loaded from a CDN, for the same reason
-   docx-templates is: this tool is used where the signal is not, and the
-   page has to render the same offline as on.
-
-   Static instances of the five weights the tool uses. The upstream
-   project ships no variable woff2 — only a variable .ttf — and five
-   files that are certainly right beat one converted here. Adding a
-   weight means adding a face; the stack below falls back to Arial
-   until one arrives. SIL Open Font Licence, alongside the files. */
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('../assets/fonts/Archivo-Regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('../assets/fonts/Archivo-Medium.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('../assets/fonts/Archivo-SemiBold.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('../assets/fonts/Archivo-Bold.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url('../assets/fonts/Archivo-ExtraBold.woff2') format('woff2');
-}
 
 #trd-report-builder, #trd-report-builder *,
 #trd-report-builder *::before, #trd-report-builder *::after {
@@ -65,35 +14,6 @@
 }
 
 #trd-report-builder {
-  /* Ground */
-  --ink:         #0A0A0B;
-  --panel:       #0F0F11;
-  --surface:     #141417;
-  --surface-hi:  #1B1B1F;
-  --rule:        #232327;
-  --rule-soft:   #18181B;
-
-  /* Grey ramp, lightest first */
-  --paper:       #F2F0EC;
-  --bone:        #CFCFD4;
-  --body:        #A6A6AD;
-  --muted:       #8E8E95;
-  --faint:       #74747A;
-  --steel:       #6F6F78;
-
-  /* Accent */
-  --signal:      #970000;   /* FILL ONLY on dark ground */
-  --signal-hi:   #AD0000;
-  --signal-lo:   #6E0000;
-  --signal-lift: #CC0000;   /* red as text or stroke on Ink */
-  --signal-wash: rgba(151, 0, 0, 0.14);
-
-  --font:         'Archivo', Arial, Helvetica, sans-serif;
-  --font-display: 'Archivo', 'Arial Black', Arial, Helvetica, sans-serif;
-  --font-mono:    'Cascadia Mono', 'SF Mono', 'Consolas', ui-monospace, monospace;
-
-  --radius: 2px;
-
   font-family: var(--font);
   font-weight: 400;
   font-size: 15px;

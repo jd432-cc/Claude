@@ -31,6 +31,12 @@ is loaded. `js/schema.js` is the register and `SCHEMA` is a live binding, so
 swapping type is a state change rather than a page load, and adding a fourth
 report is a schema and a tagged template — not another form.
 
+**The engine is shared.** The form renderer, the store, the exporter, the tag
+resolver and the value helpers live in `../_shared/report-engine/`. This tool
+owns three schemas, three templates and a stylesheet; the machinery underneath
+them is the same machinery the Run Plan and Event Pack tools use. What this
+directory holds is the part that is about these three documents.
+
 ---
 
 ## Switching report type
@@ -48,10 +54,11 @@ than dropping the fields it does not recognise.
 ## Running it
 
 ```
-node tools/build-web.mjs          # regenerate scoped CSS
+node tools/build-web.mjs           # regenerate scoped CSS
 node tools/test-report-builder.mjs # 49 assertions, all three reports
-pwsh build.ps1                    # build public/
-node dev-server.js                # http://localhost:8788
+node tools/test-docx-fixtures.mjs  # every zip entry of every fixture, unmoved
+pwsh build.ps1                     # build public/
+node dev-server.js                 # http://localhost:8788
 ```
 
 Validate a template against its schema before shipping it:
@@ -253,6 +260,36 @@ itself.
   per session. The form fills one block; the runs, stints and qualifying rows
   inside it are loops, so a single session is complete. A second session is
   still a copy and paste in Word.
+
+---
+
+## What moved to the shared engine
+
+`form.js`, `store.js`, `docx.js`, `resolve.js` and `values.js` are now under
+`_tools/_shared/report-engine/`, unchanged but for their import lines. Archivo,
+`docx-templates`, the logo and the favicon moved with them to
+`_tools/_shared/assets/`, and the brand custom properties to
+`_tools/_shared/css/trd-tokens.css`.
+
+What stayed behind is what is specific to these three documents: the schemas,
+the templates, the register in `js/schema.js`, the stylesheet and the page.
+
+`js/schema.js` no longer holds the register implementation, only this tool's
+list of reports. `createRegistry(schemas)` builds a register; `useRegistry()`
+installs it as the one the engine reads. `SCHEMA` is re-exported from the
+engine, still a live binding, and the warning still applies: import the
+binding, do not destructure a copy off a dynamic import.
+
+The autosave key format — `trd_report_${id}_v${version}` — did not change, so
+PSDR, PEER and PSDB work in progress survived the move.
+
+Nothing about the produced documents changed, and
+`tools/test-docx-fixtures.mjs` is the proof: it renders a committed fixture
+session of each report type, in DRAFT and RELEASE, and compares every entry of
+the resulting zip against a manifest recorded before the move. Not the file's
+bytes — a `.docx` stamps a modification time into each local file header, so
+two renders a second apart are never byte-identical. Every entry's *content*,
+by SHA-256, which is the whole of the document and none of the clock.
 
 ---
 

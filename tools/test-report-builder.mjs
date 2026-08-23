@@ -21,6 +21,7 @@ import { inflateRawSync } from 'node:zlib';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TOOL = join(ROOT, '_tools/report-builder');
+const ENGINE = join(ROOT, '_tools/_shared/report-engine');
 
 /* The exporter fetches its template relatively; in Node we serve it
    straight off disk. */
@@ -46,9 +47,9 @@ globalThis.localStorage = {
 const register = await import(join(TOOL, 'js/schema.js'));
 const { REPORTS, setReport } = register;
 const { blank, derive, validate, set, save, load, migrate, filename } =
-  await import(join(TOOL, 'js/store.js'));
-const { renderDocx, buildPayload } = await import(join(TOOL, 'js/docx.js'));
-const { evaluate, UnsupportedExpression } = await import(join(TOOL, 'js/resolve.js'));
+  await import(join(ENGINE, 'store.js'));
+const { renderDocx, buildPayload } = await import(join(ENGINE, 'docx.js'));
+const { evaluate, UnsupportedExpression } = await import(join(ENGINE, 'resolve.js'));
 
 let pass = 0, fail = 0;
 const ok = (name, cond, detail = '') => {

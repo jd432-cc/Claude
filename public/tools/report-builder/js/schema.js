@@ -5,31 +5,23 @@
    One tool, three documents. Each is a schema module under
    schemas/; nothing else in the tool knows which one is loaded.
 
-   `SCHEMA` is a live binding: every module imports it once and
-   sees whatever `setReport` last selected, so switching report
-   type is a state change rather than a page load. The store keys
-   its autosave by schema id, so each report type keeps its own
-   work in progress and swapping back finds it where it was left.
+   The register itself is the shared engine's, created here and
+   installed here: this is the only file that knows which reports
+   this tool carries. `SCHEMA` is re-exported as the live binding
+   it is, so importers see whatever `setReport` last selected.
+   Import the binding, do not destructure a copy off a dynamic
+   import, or the tool freezes on one report.
    ============================================================= */
 
+import { createRegistry, useRegistry }
+  from '../../_shared/report-engine/registry.js';
 import { PSDR_CIRCUIT } from './schemas/psdr-circuit.js';
 import { PEER } from './schemas/peer.js';
 import { PSDB } from './schemas/psdb.js';
 
 export const REPORTS = [PSDR_CIRCUIT, PEER, PSDB];
 
-/* A live binding: importers see whatever `setReport` last selected.
-   Import it, do not destructure it off a dynamic import — that copies
-   the value and freezes the tool on one report. */
-export let SCHEMA = REPORTS[0];
+useRegistry(createRegistry(REPORTS));
 
-export function reportById(id) {
-  return REPORTS.find(r => r.id === id) || null;
-}
-
-export function setReport(id) {
-  const next = reportById(id);
-  if (!next) throw new Error(`unknown report type: ${id}`);
-  SCHEMA = next;
-  return SCHEMA;
-}
+export { SCHEMA, byId as reportById, setActive as setReport }
+  from '../../_shared/report-engine/registry.js';

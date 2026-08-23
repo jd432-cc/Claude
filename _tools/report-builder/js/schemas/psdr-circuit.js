@@ -11,7 +11,7 @@
    silently produce a document with the wrong fields in it.
    ============================================================= */
 
-import { get, toSeconds, fromSeconds, reference } from '../values.js';
+import { get, toSeconds, fromSeconds, reference } from '../../../_shared/report-engine/values.js';
 
 const CONSISTENCY_BANDS = [
   { key: 'novice',       label: 'Novice',       pct: 2.5 },

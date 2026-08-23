@@ -1,5 +1,5 @@
 /* =============================================================
-   TheRacingData — Report Builder
+   TheRacingData — shared report engine
    Value helpers: dotted paths and lap times.
 
    Kept apart from store.js so a schema can import them without

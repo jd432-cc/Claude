@@ -1,5 +1,5 @@
 /* =============================================================
-   TheRacingData — Report Builder
+   TheRacingData — shared report engine
    DOCX export.
 
    The tagged template is the layout; this file only supplies values.
@@ -13,7 +13,7 @@
 
 import { createReport } from '../assets/vendor/docx-templates.browser.js';
 import { runJs } from './resolve.js';
-import { SCHEMA } from './schema.js';
+import { SCHEMA } from './registry.js';
 import { derive, get, resolveField } from './store.js';
 
 const TICK = '☑';   // ballot box with check

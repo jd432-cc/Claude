@@ -1,0 +1,72 @@
+{
+  "_schema": "peer",
+  "_version": 1,
+  "team": "TheRacingData",
+  "eventRounds": "Round 4",
+  "circuit": "Silverstone GP",
+  "dates": "15.05.2026 - 17.05.2026",
+  "seriesClass": "HTCC / Class C",
+  "carNumber": "Escort RS1600 / 11",
+  "drivers": "J. Dunn / A. Rowe",
+  "preparedBy": "TheRacingData",
+  "reviewedBy": "Team principal",
+  "issued": "TheRacingData",
+  "distribution": "Team principal, race engineer, driver pair",
+  "statusRevision": "DRAFT / a",
+  "round": "r04",
+  "venueCode": "sil",
+  "carCode": "11",
+  "qualified": "4th in class",
+  "finished": "3rd in class",
+  "points": "15",
+  "champChange": "+1 position, 4th overall",
+  "ourBestLap": "2:14.82",
+  "classBestLap": "2:13.10",
+  "gapToClassBest": "1.72",
+  "gapPct": "1.28",
+  "gapTrend": "Narrowed 0.4 s against round 3",
+  "why": "The pace deficit was mostly aerodynamic. We lost two positions in the stops. The underlying cause is a front ride height compromise carried from the wet setup, fixable at the next test.",
+  "findings": [
+    { "finding": "Front ride height 6 mm high against the dry baseline", "evidence": "Setup sheet rev 4 against rev 2, plus splitter trace", "conf": "H", "section": "8" },
+    { "finding": "Stationary time 1.8 s over target on both stops", "evidence": "Pit lane video and stint timing", "conf": "H", "section": "10" }
+  ],
+  "eventCovered": "FP1, FP2, Q, race 1 and race 2",
+  "writtenFor": "Team principal and race engineer",
+  "primarySources": "AiM EVO5 logger at 100 Hz, official timing, pit lane video",
+  "secondarySources": "Driver debriefs (PSDB), competitor sector times",
+  "dataConfidence": "High",
+  "dataConfidenceBasis": "Full logger coverage across every session. Two laps lost to GPS dropout in FP1.",
+  "caveats": [
+    { "caveat": "GPS dropout, FP1 laps 4-5", "sessions": "FP1", "effect": "Those two laps excluded from the evolution figure." }
+  ],
+  "gap": {
+    "aero": { "pct": "40", "s": "0.69", "evidence": "Trap speed 4 km/h down", "by": "Ride height and wing" },
+    "power": { "pct": "20", "s": "0.34", "evidence": "Straight-line delta", "by": "Calibration" },
+    "driver": { "pct": "25", "s": "0.43", "evidence": "Brooklands and Luffield", "by": "Test day" },
+    "strategy": { "pct": "10", "s": "0.17", "evidence": "Stationary time", "by": "Practice stops" },
+    "circumstance": { "pct": "5", "s": "0.09", "evidence": "Traffic in Q2", "by": "Nothing" }
+  },
+  "gapMethod": "Sector-by-sector against the class best lap, with a straight-line and cornering split.",
+  "cost": {
+    "consumables": { "planned": "4000", "actual": "4600" },
+    "damage": { "planned": "0", "actual": "250" },
+    "freight": { "planned": "1800", "actual": "1800" },
+    "personnel": { "planned": "2400", "actual": "2400" },
+    "unplanned": { "planned": "0", "actual": "180" }
+  },
+  "strategy": {
+    "stopLap": { "planned": "18", "actual": "20", "delta": "+2", "comment": "Held out for clear air" },
+    "stationary": { "planned": "3.5", "actual": "5.3", "delta": "+1.8", "comment": "Fuel coupling slow to seat" },
+    "inLap": { "planned": "2:16.0", "actual": "2:16.4", "delta": "+0.4", "comment": "" },
+    "outLap": { "planned": "2:19.0", "actual": "2:20.9", "delta": "+1.9", "comment": "Cold fronts" },
+    "undercut": { "planned": "0", "actual": "-1.2", "delta": "-1.2", "comment": "Lost the place to car 7" }
+  },
+  "selfInflicted": "4.1",
+  "finishingGap": "6.8",
+  "toPosition": "2",
+  "setup": { "gain": "0.55", "expectation": "0.80 s", "changeCount": "4" },
+  "setupChanges": [
+    { "change": "Front ride height -4 mm", "session": "FP2", "reason": "Dry baseline", "effect1": "-0.21 s", "effect2": "-0.18 s", "retained": "Y" },
+    { "change": "Rear wing +1 deg", "session": "Q", "reason": "Rotation on entry", "effect1": "+0.06 s", "effect2": "-0.04 s", "retained": "N" }
+  ]
+}

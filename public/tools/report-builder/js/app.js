@@ -4,9 +4,9 @@
    ============================================================= */
 
 import { SCHEMA, REPORTS, setReport } from './schema.js';
-import { blank, load, save, migrate, validate, filename } from './store.js';
-import { Form } from './form.js';
-import { renderDocx, download } from './docx.js';
+import { blank, load, save, migrate, validate, filename } from '../../_shared/report-engine/store.js';
+import { Form } from '../../_shared/report-engine/form.js';
+import { renderDocx, download } from '../../_shared/report-engine/docx.js';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
