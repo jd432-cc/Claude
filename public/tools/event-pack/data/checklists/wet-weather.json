@@ -1,0 +1,115 @@
+{
+  "id": "wet-weather",
+  "title": "Wet weather",
+  "note": "Packed dry or not packed at all. The decision is made the night before, not on the morning it rains.",
+  "items": [
+    {
+      "text": "Wet tyres, sets",
+      "category": "Tyres",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Intermediate tyres, sets",
+      "category": "Tyres",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Wet setup shim pack",
+      "category": "Setup",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Screen and visor treatment",
+      "category": "Visibility",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Tear-offs",
+      "category": "Visibility",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Demister and heated screen check",
+      "category": "Visibility",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Rain light, tested",
+      "category": "Visibility",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Waterproof crew clothing",
+      "category": "Crew",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Wellington boots",
+      "category": "Crew",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Awning sides and guy lines",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Ground anchors and ballast",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Squeegees and brooms",
+      "category": "Structure",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Dehumidifier or fan heater",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Waterproof covers for the car",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Electrical connector grease",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Spare loom tape",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Towels",
+      "category": "Crew",
+      "qty": 6,
+      "packed": false
+    },
+    {
+      "text": "Dry storage boxes",
+      "category": "Structure",
+      "qty": 4,
+      "packed": false
+    }
+  ]
+}

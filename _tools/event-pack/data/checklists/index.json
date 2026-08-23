@@ -1,0 +1,47 @@
+{
+  "note": "Default checklist templates. Each is a starting point the team edits and saves back into its own session. A directory listing is not fetchable from a static host, so the files are named here.",
+  "lists": [
+    {
+      "id": "garage-kit",
+      "title": "Garage kit",
+      "file": "garage-kit.json",
+      "count": 20
+    },
+    {
+      "id": "tool-kit",
+      "title": "Tool kit",
+      "file": "tool-kit.json",
+      "count": 20
+    },
+    {
+      "id": "spares",
+      "title": "Spares",
+      "file": "spares.json",
+      "count": 20
+    },
+    {
+      "id": "scrutineering",
+      "title": "Scrutineering",
+      "file": "scrutineering.json",
+      "count": 20
+    },
+    {
+      "id": "electrical-spares",
+      "title": "Electrical spares",
+      "file": "electrical-spares.json",
+      "count": 20
+    },
+    {
+      "id": "wet-weather",
+      "title": "Wet weather",
+      "file": "wet-weather.json",
+      "count": 18
+    },
+    {
+      "id": "hospitality",
+      "title": "Hospitality",
+      "file": "hospitality.json",
+      "count": 16
+    }
+  ]
+}

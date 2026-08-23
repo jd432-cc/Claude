@@ -1,0 +1,127 @@
+{
+  "id": "scrutineering",
+  "title": "Scrutineering",
+  "note": "CONFIRM AGAINST THE CURRENT YEAR'S BOOK. Regulations change annually and a list from last season is a list that fails an item.",
+  "items": [
+    {
+      "text": "Competition licences, all drivers",
+      "category": "Paperwork",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Entrant licence",
+      "category": "Paperwork",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Vehicle logbook or HTP",
+      "category": "Paperwork",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Entry confirmation",
+      "category": "Paperwork",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Insurance certificate",
+      "category": "Paperwork",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Helmets, in date and labelled",
+      "category": "Driver",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "FHR device, in date",
+      "category": "Driver",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Overalls, in date",
+      "category": "Driver",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Gloves, boots and underwear, in date",
+      "category": "Driver",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Harnesses, in date",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Seat, in date",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Extinguisher system, serviced",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Master switch, external and internal",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Rain light, working",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Towing eyes, front and rear, marked",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Roll cage certificate",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Fuel sample point",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Timing transponder, charged and registered",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Numbers and championship decals",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Weight, against the class minimum",
+      "category": "Car",
+      "qty": 1,
+      "packed": false
+    }
+  ]
+}

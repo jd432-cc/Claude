@@ -1,0 +1,127 @@
+{
+  "id": "garage-kit",
+  "title": "Garage kit",
+  "note": "What makes a garage a garage. Without it the first hour is spent looking for somewhere to put things.",
+  "items": [
+    {
+      "text": "Awning or garage panels",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Floor covering",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Work bench",
+      "category": "Structure",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Trolley jacks",
+      "category": "Lifting",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Axle stands",
+      "category": "Lifting",
+      "qty": 4,
+      "packed": false
+    },
+    {
+      "text": "Wheel gun and sockets",
+      "category": "Lifting",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Torque wrenches, calibrated",
+      "category": "Lifting",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Air line and regulator",
+      "category": "Air",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Compressor",
+      "category": "Air",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Tyre pressure gauge, calibrated",
+      "category": "Tyres",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Tyre blankets and controller",
+      "category": "Tyres",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Fire extinguishers, in date",
+      "category": "Safety",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Spill kit and absorbent",
+      "category": "Safety",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Fuel churns, labelled and in date",
+      "category": "Fuel",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Earthing strap for refuelling",
+      "category": "Fuel",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Lighting and extension leads",
+      "category": "Power",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Setup pad and corner weights",
+      "category": "Setup",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Ride height gauges",
+      "category": "Setup",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Camber and castor gauge",
+      "category": "Setup",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Toe plates or laser",
+      "category": "Setup",
+      "qty": 1,
+      "packed": false
+    }
+  ]
+}

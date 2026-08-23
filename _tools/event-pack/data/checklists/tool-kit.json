@@ -1,0 +1,127 @@
+{
+  "id": "tool-kit",
+  "title": "Tool kit",
+  "note": "The kit that does not get unpacked at the end of the event, so it is the list most likely to be wrong.",
+  "items": [
+    {
+      "text": "Metric spanner set",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Imperial spanner set",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Socket set, 1/4 3/8 1/2",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Hex and Torx keys",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Screwdriver set",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Circlip pliers, internal and external",
+      "category": "Hand tools",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Cable ties, assorted",
+      "category": "Consumables",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Self-amalgamating tape",
+      "category": "Consumables",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Safety wire and pliers",
+      "category": "Consumables",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Thread lock, medium and high",
+      "category": "Consumables",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Copper grease and anti-seize",
+      "category": "Consumables",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Brake cleaner",
+      "category": "Consumables",
+      "qty": 4,
+      "packed": false
+    },
+    {
+      "text": "Rags and blue roll",
+      "category": "Consumables",
+      "qty": 4,
+      "packed": false
+    },
+    {
+      "text": "Multimeter",
+      "category": "Electrical",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Crimp tool and terminals",
+      "category": "Electrical",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Heat gun and heatshrink",
+      "category": "Electrical",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Soldering iron, gas",
+      "category": "Electrical",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Laptop, chargers and interface cables",
+      "category": "Data",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Logger download lead",
+      "category": "Data",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Spare USB drives",
+      "category": "Data",
+      "qty": 2,
+      "packed": false
+    }
+  ]
+}

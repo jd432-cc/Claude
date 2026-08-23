@@ -1,0 +1,534 @@
+/* =============================================================
+   TheRacingData — Event Pack Builder
+   Layout and components. The palette, the type scale and the five
+   Archivo faces come from ../../_shared/css/trd-tokens.css, which
+   the page links ahead of this one.
+
+   Authored unscoped for readability. tools/build-web.mjs emits a
+   copy scoped under #trd-event-pack for embedding in the site.
+
+   No style attributes anywhere in the markup: the page takes
+   default-src 'none' with style-src 'self', and every position
+   below is in this file for that reason.
+   ============================================================= */
+
+#trd-event-pack, #trd-event-pack *,
+#trd-event-pack *::before, #trd-event-pack *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+}
+
+#trd-event-pack {
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  background: var(--ink);
+  color: var(--body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Header ===== */
+#trd-event-pack header[data-standalone] {
+  border-bottom: 1px solid var(--rule);
+  padding: 22px 28px 0;
+  background: var(--panel);
+}
+#trd-event-pack .brand-row {
+  display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap;
+}
+#trd-event-pack .brand-lockup img { height: 30px; width: auto; display: block; }
+#trd-event-pack .eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--faint); font-weight: 700;
+}
+#trd-event-pack h1 {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 900; letter-spacing: -0.04em;
+  text-transform: uppercase; color: var(--paper); line-height: 0.95;
+}
+#trd-event-pack h1 em {
+  font-style: normal; font-weight: 500; color: var(--faint);
+  text-transform: none; letter-spacing: -0.02em;
+}
+
+/* ===== Toolbar ===== */
+#trd-event-pack .toolbar {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; padding: 18px 0 16px;
+}
+#trd-event-pack .spacer { flex: 1 1 auto; }
+#trd-event-pack .picker {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700;
+}
+
+#trd-event-pack button {
+  font-family: var(--font);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 14px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface);
+  color: var(--bone); cursor: pointer;
+  transition: background 120ms linear, color 120ms linear, border-color 120ms linear;
+}
+#trd-event-pack button:hover { background: var(--surface-hi); color: var(--paper); }
+#trd-event-pack button.primary {
+  background: var(--signal); border-color: var(--signal); color: var(--paper);
+}
+#trd-event-pack button.primary:hover { background: var(--signal-hi); }
+#trd-event-pack button.danger:hover { border-color: var(--signal-lift); color: var(--signal-lift); }
+#trd-event-pack button.icon {
+  padding: 2px 8px; font-size: 15px; letter-spacing: 0; line-height: 1.2;
+}
+#trd-event-pack button.add {
+  background: none; border-style: dashed; color: var(--muted);
+  width: 100%; margin-top: 8px;
+}
+#trd-event-pack button.add:hover { color: var(--paper); border-color: var(--steel); }
+#trd-event-pack button.link {
+  background: none; border: none; padding: 0;
+  color: var(--signal-lift); text-transform: none; letter-spacing: 0;
+  font-size: 13px; text-decoration: underline;
+}
+
+#trd-event-pack .status {
+  min-height: 20px; font-size: 12px; letter-spacing: 0.06em;
+  color: var(--muted); padding-bottom: 10px;
+}
+#trd-event-pack .status.ok { color: var(--bone); }
+#trd-event-pack .status.warn { color: var(--signal-lift); }
+
+/* ===== Layout ===== */
+#trd-event-pack main {
+  display: block;
+  min-height: calc(100vh - 160px);
+}
+#trd-event-pack .column { max-width: 1500px; margin: 0 auto; }
+#trd-event-pack .pane-side {
+  border-right: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 20px 20px 60px;
+  position: sticky; top: 0;
+  max-height: 100vh; overflow-y: auto;
+}
+#trd-event-pack .column {
+  min-width: 0;
+  padding: 20px 24px 60px;
+}
+#trd-event-pack .pane-chart {
+  border-left: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 24px 18px;
+  position: sticky; top: 0;
+}
+
+@media (max-width: 1400px) {
+  #trd-event-pack main { grid-template-columns: 320px minmax(0, 1fr); }
+  #trd-event-pack .pane-chart {
+    grid-column: 1 / -1; border-left: none; border-top: 1px solid var(--rule);
+    position: static;
+  }
+}
+@media (max-width: 900px) {
+  #trd-event-pack main { grid-template-columns: 1fr; }
+  #trd-event-pack .pane-side {
+    border-right: none; border-bottom: 1px solid var(--rule);
+    position: static; max-height: none;
+  }
+}
+
+/* ===== Input groups ===== */
+#trd-event-pack .group { margin-bottom: 26px; }
+#trd-event-pack .group h3 {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--paper);
+  padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+#trd-event-pack .blurb {
+  font-size: 12.5px; color: var(--faint); margin-bottom: 12px; line-height: 1.5;
+}
+#trd-event-pack .field-grid {
+  display: grid; grid-template-columns: 1fr; gap: 12px;
+}
+#trd-event-pack .field-grid.tight { grid-template-columns: 1fr 1fr; gap: 8px; }
+#trd-event-pack .field label {
+  display: block; font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  font-weight: 700; margin-bottom: 5px;
+}
+#trd-event-pack .field-row { display: flex; align-items: center; gap: 8px; }
+#trd-event-pack .field-row.tick-row { align-items: baseline; }
+#trd-event-pack .tick-row label {
+  margin-bottom: 0; text-transform: none; letter-spacing: 0.02em;
+  font-size: 13px; font-weight: 500; color: var(--body);
+}
+
+#trd-event-pack input[type="text"],
+#trd-event-pack input:not([type]),
+#trd-event-pack select {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--font); font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  padding: 8px 10px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface);
+  color: var(--paper);
+}
+#trd-event-pack input:focus, #trd-event-pack select:focus {
+  outline: none; border-color: var(--steel); background: var(--surface-hi);
+}
+#trd-event-pack input[type="checkbox"] {
+  width: 15px; height: 15px; accent-color: var(--signal-lift); flex: 0 0 auto;
+}
+#trd-event-pack .unit {
+  font-size: 11px; color: var(--faint); letter-spacing: 0.08em;
+  min-width: 54px; flex: 0 0 auto;
+}
+#trd-event-pack .hint {
+  font-size: 11.5px; color: var(--faint); line-height: 1.45; margin-top: 4px;
+}
+
+#trd-event-pack .helper {
+  margin-top: 16px; padding: 14px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--surface);
+}
+#trd-event-pack .helper h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--bone); font-weight: 800; margin-bottom: 8px;
+}
+#trd-event-pack .probe-result {
+  margin-top: 10px; font-size: 13px; color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+#trd-event-pack .row-line {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+}
+
+/* ===== Summary band ===== */
+#trd-event-pack .summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule); margin-bottom: 24px;
+}
+#trd-event-pack .stat { background: var(--panel); padding: 14px 16px; }
+#trd-event-pack .stat-value {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 900; letter-spacing: -0.04em;
+  line-height: 1.05; color: var(--paper); margin: 6px 0 4px;
+}
+#trd-event-pack .stat-note { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+
+/* ===== Panes ===== */
+#trd-event-pack .pane-head { margin-bottom: 14px; }
+#trd-event-pack .pane-head h2 {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 900; letter-spacing: -0.04em;
+  text-transform: uppercase; color: var(--paper); line-height: 0.95;
+  margin: 6px 0 8px;
+}
+#trd-event-pack .pane + .pane { margin-top: 32px; }
+#trd-event-pack .empty { color: var(--faint); font-size: 13px; }
+
+/* ===== Tables ===== */
+#trd-event-pack .table {
+  border: 1px solid var(--rule);
+  overflow-x: auto;
+}
+#trd-event-pack .trow {
+  display: flex; width: 100%;
+  border-bottom: 1px solid var(--rule-soft);
+  background: none; border-left: none; border-right: none; border-top: none;
+  text-align: left; font-family: var(--font); color: var(--body);
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+  padding: 0; border-radius: 0; cursor: default;
+}
+#trd-event-pack button.trow { cursor: pointer; }
+#trd-event-pack button.trow:hover { background: var(--surface); color: var(--body); }
+#trd-event-pack .trow:last-child { border-bottom: none; }
+#trd-event-pack .trow.thead {
+  background: var(--surface); border-bottom: 1px solid var(--rule);
+}
+#trd-event-pack .thead .tcell {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800;
+}
+#trd-event-pack .trow.active {
+  background: var(--signal-wash);
+  box-shadow: inset 3px 0 0 var(--signal);
+}
+#trd-event-pack .trow.illegal .tcell { color: var(--faint); }
+#trd-event-pack .tcell {
+  flex: 1 1 0; min-width: 0;
+  padding: 9px 12px; font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#trd-event-pack .tcell.tlabel { color: var(--muted); flex: 2 1 0; white-space: normal; }
+#trd-event-pack .tcell.tvalue { color: var(--paper); text-align: right; }
+#trd-event-pack .tcell.c-laps, #trd-event-pack .tcell.c-fuel { flex: 2 1 0; }
+#trd-event-pack .tcell.c-stops { flex: 0 0 82px; }
+#trd-event-pack .tcell.c-total { color: var(--paper); font-weight: 600; }
+#trd-event-pack .tcell.good { color: var(--bone); }
+#trd-event-pack .tcell.bad { color: var(--faint); }
+#trd-event-pack .tcell.over {
+  background: var(--signal); color: var(--paper); font-weight: 700;
+}
+#trd-event-pack .table.mini .tcell { padding: 6px 12px; }
+#trd-event-pack .row-note {
+  font-size: 11.5px; color: var(--signal-lift);
+  padding: 4px 12px 8px; border-bottom: 1px solid var(--rule-soft);
+}
+
+/* ===== Issues ===== */
+#trd-event-pack .issues {
+  margin-top: 20px; padding: 14px 16px;
+  border: 1px solid var(--signal); background: var(--signal-wash);
+}
+#trd-event-pack .issues h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--signal-lift); font-weight: 800; margin-bottom: 8px;
+}
+#trd-event-pack .issues ul { list-style: none; }
+#trd-event-pack .issues li {
+  font-size: 13px; line-height: 1.5; padding: 3px 0 3px 14px;
+  position: relative; color: var(--body);
+}
+#trd-event-pack .issues li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 6px; height: 6px; background: var(--steel);
+}
+#trd-event-pack .issues li.sev-error::before { background: var(--signal); }
+#trd-event-pack .issues li.sev-error { color: var(--paper); }
+
+/* ===== Chart ===== */
+
+
+/* ===== Footer ===== */
+#trd-event-pack .privacy {
+  margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--rule);
+  font-size: 12px; color: var(--faint); line-height: 1.6; max-width: 60ch;
+}
+#trd-event-pack .privacy strong { color: var(--bone); font-weight: 600; }
+#trd-event-pack footer[data-standalone] {
+  border-top: 1px solid var(--rule); background: var(--panel);
+  padding: 18px 28px; font-size: 11.5px; color: var(--faint);
+}
+
+/* ===== Tabs ===== */
+#trd-event-pack .tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 22px;
+}
+#trd-event-pack .tab {
+  border: none; border-bottom: 3px solid transparent; border-radius: 0;
+  background: none; padding: 12px 18px; color: var(--muted);
+}
+#trd-event-pack .tab:hover { background: none; color: var(--bone); }
+#trd-event-pack .tab.active { color: var(--paper); border-bottom-color: var(--signal); }
+
+#trd-event-pack .pane-side h3 {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--paper);
+  padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--rule);
+}
+
+/* ===== Run cards ===== */
+#trd-event-pack .card {
+  border: 1px solid var(--rule); margin-bottom: 10px; background: var(--panel);
+}
+#trd-event-pack .card.open { border-color: var(--steel); }
+#trd-event-pack .card.gated { box-shadow: inset 3px 0 0 var(--signal); }
+#trd-event-pack .card-head {
+  display: flex; align-items: baseline; gap: 16px; width: 100%;
+  padding: 12px 16px; border: none; border-radius: 0; background: none;
+  text-align: left; text-transform: none; letter-spacing: 0; font-weight: 400;
+}
+#trd-event-pack .card-head:hover { background: var(--surface); }
+#trd-event-pack .card-n {
+  font-family: var(--font-display); font-size: 13px; font-weight: 900;
+  letter-spacing: 0.06em; color: var(--paper); flex: 0 0 62px;
+}
+#trd-event-pack .card-title { flex: 2 1 0; color: var(--bone); font-size: 14px; }
+#trd-event-pack .card-change {
+  flex: 2 1 0; color: var(--faint); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#trd-event-pack .card-verdict {
+  flex: 0 0 auto; font-size: 10px; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--rule);
+  color: var(--muted);
+}
+#trd-event-pack .card-verdict.v-keep {
+  background: var(--signal); border-color: var(--signal); color: var(--paper);
+}
+#trd-event-pack .card-verdict.v-revert { border-color: var(--steel); color: var(--bone); }
+#trd-event-pack .card-verdict.v-locked { color: var(--signal-lift); border-color: var(--signal-lift); }
+#trd-event-pack .card-body { padding: 4px 16px 18px; border-top: 1px solid var(--rule); }
+
+#trd-event-pack .field-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;
+  margin: 14px 0;
+}
+#trd-event-pack .pane-side .field-grid { grid-template-columns: 1fr; }
+#trd-event-pack .field.wide { grid-column: 1 / -1; }
+#trd-event-pack textarea {
+  width: 100%; font-family: var(--font); font-size: 14px;
+  padding: 8px 10px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface); color: var(--paper);
+  resize: vertical;
+}
+#trd-event-pack textarea:focus { outline: none; border-color: var(--steel); }
+#trd-event-pack input.derived, #trd-event-pack .field.computed input {
+  background: var(--rule-soft); color: var(--bone); cursor: default;
+}
+
+/* The change picker is the focus of the card. */
+#trd-event-pack .picker-box {
+  border: 1px solid var(--steel); padding: 14px 16px; margin: 14px 0;
+  background: var(--surface);
+}
+#trd-event-pack .picker-box h4, #trd-event-pack .results h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--paper); font-weight: 800;
+}
+
+/* Reconciliation: what moved against what was declared. */
+#trd-event-pack .recon {
+  border: 1px solid var(--rule); margin: 14px 0; background: var(--rule-soft);
+}
+#trd-event-pack .recon-row {
+  display: flex; gap: 14px; padding: 7px 14px;
+  border-bottom: 1px solid var(--ink); font-size: 13px;
+}
+#trd-event-pack .recon-row:last-child { border-bottom: none; }
+#trd-event-pack .recon-label {
+  flex: 0 0 190px; font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); font-weight: 800;
+  padding-top: 2px;
+}
+#trd-event-pack .recon-value { flex: 1 1 auto; color: var(--bone); }
+/* A rule, never red text: #970000 is 2.18:1 on Ink and fails as text. */
+#trd-event-pack .recon-row.flagged { box-shadow: inset 3px 0 0 var(--signal); }
+#trd-event-pack .recon-row.flagged .recon-value { color: var(--paper); }
+
+/* The gate. */
+#trd-event-pack .gate {
+  border: 1px solid var(--signal); background: var(--signal-wash);
+  padding: 14px 16px; margin: 14px 0;
+}
+#trd-event-pack .gate-message { color: var(--paper); font-size: 13.5px; margin-bottom: 10px; }
+#trd-event-pack .gate .tick {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--bone); margin-bottom: 8px;
+}
+#trd-event-pack .results.locked { opacity: 0.55; }
+#trd-event-pack .lock-reason {
+  font-size: 12.5px; color: var(--muted); margin-top: 6px; max-width: 70ch;
+}
+
+/* ===== Setup sheet ===== */
+#trd-event-pack .revbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 0 16px; border-bottom: 1px solid var(--rule); margin-bottom: 18px;
+}
+#trd-event-pack .revbar input { flex: 1 1 220px; }
+#trd-event-pack .compare-summary {
+  border: 1px solid var(--rule); background: var(--surface);
+  padding: 12px 14px; margin-bottom: 18px;
+}
+#trd-event-pack .compare-summary h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--paper); font-weight: 800; margin-bottom: 6px;
+}
+/* A changed cell carries a rule, and the value stays legible. */
+#trd-event-pack .field.changed {
+  box-shadow: inset 3px 0 0 var(--signal); padding-left: 10px;
+}
+#trd-event-pack .field.changed label { color: var(--bone); }
+
+#trd-event-pack .group { margin-bottom: 24px; }
+#trd-event-pack .group h3 {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--paper);
+  padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+}
+
+/* ===== Session and checklist cards ===== */
+#trd-event-pack .card-head {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 12px 16px; border-bottom: 1px solid var(--rule);
+}
+#trd-event-pack .card-when { color: var(--bone); font-size: 13px; }
+#trd-event-pack .card-bad { color: var(--signal-lift); font-size: 13px; }
+#trd-event-pack .card { margin-bottom: 14px; }
+
+#trd-event-pack .progress {
+  flex: 1 1 auto; max-width: 220px; height: 6px;
+  background: var(--rule); display: block; align-self: center;
+}
+#trd-event-pack .progress-fill {
+  display: block; height: 100%; background: var(--signal);
+}
+
+/* ===== Tables ===== */
+#trd-event-pack .table { border: 1px solid var(--rule); }
+#trd-event-pack .card .table { border: none; }
+#trd-event-pack .trow {
+  display: flex; border-bottom: 1px solid var(--rule-soft);
+}
+#trd-event-pack .trow:last-child { border-bottom: none; }
+#trd-event-pack .trow.thead { background: var(--surface); }
+#trd-event-pack .thead .tcell {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800;
+}
+#trd-event-pack .tcell {
+  flex: 1 1 0; min-width: 0; padding: 6px 10px; font-size: 13px;
+  font-variant-numeric: tabular-nums; color: var(--body);
+}
+#trd-event-pack .tcell.tnum { flex: 0 0 58px; color: var(--faint); }
+#trd-event-pack .tcell.twide { flex: 3 1 0; }
+#trd-event-pack .tcell.tstrong { color: var(--paper); font-weight: 600; flex: 0 0 76px; }
+#trd-event-pack .tcell input {
+  width: 100%; padding: 5px 7px; font-size: 12.5px;
+}
+#trd-event-pack .tcell input.bad {
+  border-color: var(--signal-lift); color: var(--signal-lift);
+}
+#trd-event-pack .trow.packed .tcell { color: var(--faint); }
+#trd-event-pack .trow.packed { box-shadow: inset 3px 0 0 var(--steel); }
+
+/* ===== Collisions =====
+   The planning failure a paper timetable hides, so it gets a panel of
+   its own rather than a line in a list. */
+#trd-event-pack .clash {
+  border: 1px solid var(--signal); background: var(--signal-wash);
+  padding: 14px 16px; margin: 18px 0;
+}
+#trd-event-pack .clash h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--signal-lift); font-weight: 800; margin-bottom: 8px;
+}
+#trd-event-pack .clash-line {
+  font-size: 13px; color: var(--paper); line-height: 1.55; margin-bottom: 6px;
+}
+
+#trd-event-pack .addbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 0 18px; border-bottom: 1px solid var(--rule); margin-bottom: 18px;
+}
+#trd-event-pack .addbar-label {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800; margin-right: 4px;
+}
+#trd-event-pack button:disabled { opacity: 0.4; cursor: default; }
+#trd-event-pack button:disabled:hover { background: var(--surface); color: var(--bone); }
+#trd-event-pack .stat-warn { background: var(--signal-wash); }
+#trd-event-pack .stat-warn .stat-value { color: var(--signal-lift); }
+#trd-event-pack .issues li.sev-error { color: var(--paper); }

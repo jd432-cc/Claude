@@ -1,0 +1,127 @@
+{
+  "id": "spares",
+  "title": "Spares",
+  "note": "Sized by what stops the car, not by what is cheap to carry.",
+  "items": [
+    {
+      "text": "Front brake pads, set",
+      "category": "Brakes",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Rear brake pads, set",
+      "category": "Brakes",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Brake fluid, in date",
+      "category": "Brakes",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Front discs",
+      "category": "Brakes",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Wheel bearings",
+      "category": "Hubs",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Driveshaft",
+      "category": "Transmission",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Clutch slave cylinder",
+      "category": "Transmission",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Gearbox oil",
+      "category": "Transmission",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Engine oil, correct grade",
+      "category": "Engine",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Oil filter",
+      "category": "Engine",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Fuel filter",
+      "category": "Engine",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Spark plugs, set",
+      "category": "Engine",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Coolant",
+      "category": "Engine",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Radiator hoses",
+      "category": "Engine",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Alternator belt",
+      "category": "Engine",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Damper, one per corner spec",
+      "category": "Suspension",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Springs, common rates",
+      "category": "Suspension",
+      "qty": 4,
+      "packed": false
+    },
+    {
+      "text": "Wishbone, front",
+      "category": "Suspension",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Track rod end",
+      "category": "Suspension",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Bodywork fasteners and Dzus",
+      "category": "Body",
+      "qty": 1,
+      "packed": false
+    }
+  ]
+}

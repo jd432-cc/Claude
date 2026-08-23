@@ -1,0 +1,127 @@
+{
+  "id": "electrical-spares",
+  "title": "Electrical spares",
+  "note": "The kit that turns a two-hour retirement into a ten-minute one.",
+  "items": [
+    {
+      "text": "Fuses, every rating in the car",
+      "category": "Protection",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Relays, every type in the car",
+      "category": "Protection",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Battery, charged",
+      "category": "Supply",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Battery charger and conditioner",
+      "category": "Supply",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Alternator",
+      "category": "Supply",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Wire, each gauge on the car",
+      "category": "Loom",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Deutsch DT pins and sockets",
+      "category": "Connectors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Superseal terminals",
+      "category": "Connectors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Ring and spade terminals, assorted",
+      "category": "Connectors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Heatshrink, adhesive lined",
+      "category": "Loom",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Loom tape, harness cloth",
+      "category": "Loom",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Crank sensor",
+      "category": "Sensors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Cam sensor",
+      "category": "Sensors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Water temperature sensor",
+      "category": "Sensors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Oil pressure sensor",
+      "category": "Sensors",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Wheel speed sensor",
+      "category": "Sensors",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Coil pack",
+      "category": "Ignition",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Ignition leads, set",
+      "category": "Ignition",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Fuel pump",
+      "category": "Fuel",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "ECU, flashed to the current map",
+      "category": "Control",
+      "qty": 1,
+      "packed": false
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "id": "hospitality",
+  "title": "Hospitality",
+  "note": "A crew that has not eaten makes mistakes in the last hour of the day, and the last hour is when the car is loaded.",
+  "items": [
+    {
+      "text": "Water, per person per day",
+      "category": "Food",
+      "qty": 12,
+      "packed": false
+    },
+    {
+      "text": "Electrolyte or squash",
+      "category": "Food",
+      "qty": 4,
+      "packed": false
+    },
+    {
+      "text": "Breakfast provision",
+      "category": "Food",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Lunch provision",
+      "category": "Food",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Snacks and fruit",
+      "category": "Food",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Tea, coffee and milk",
+      "category": "Food",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Kettle and cups",
+      "category": "Equipment",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Cool box and ice packs",
+      "category": "Equipment",
+      "qty": 2,
+      "packed": false
+    },
+    {
+      "text": "Folding chairs",
+      "category": "Equipment",
+      "qty": 6,
+      "packed": false
+    },
+    {
+      "text": "Table",
+      "category": "Equipment",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Bin bags",
+      "category": "Equipment",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "First aid kit",
+      "category": "Welfare",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Sun cream and hats",
+      "category": "Welfare",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Ear defenders",
+      "category": "Welfare",
+      "qty": 6,
+      "packed": false
+    },
+    {
+      "text": "Hand cleaner and towels",
+      "category": "Welfare",
+      "qty": 1,
+      "packed": false
+    },
+    {
+      "text": "Phone chargers and power bank",
+      "category": "Welfare",
+      "qty": 2,
+      "packed": false
+    }
+  ]
+}
