@@ -1,0 +1,99 @@
+{
+  "warning": "SEED DATA. These ampacities are conservative single-wire free-air figures for orientation only. Confirm every one against the datasheet for the wire actually in the car — Raychem Spec 55, Tefzel ETFE, or whatever is on the reel — before a number here decides a conductor size. The table is editable and exportable for exactly that reason.",
+  "conductors": [
+    {
+      "id": "copper",
+      "label": "Annealed copper",
+      "resistivity_ohm_m_at_20c": 1.724e-8,
+      "alpha_per_c": 0.00393,
+      "density_g_per_cm3": 8.96,
+      "source": "IEC 60028 international annealed copper standard: 1.7241e-8 ohm m at 20 °C, temperature coefficient 0.00393 /°C."
+    },
+    {
+      "id": "tinned-copper",
+      "label": "Tinned copper",
+      "resistivity_ohm_m_at_20c": 1.758e-8,
+      "alpha_per_c": 0.00393,
+      "density_g_per_cm3": 8.96,
+      "source": "Tin plating adds roughly 2% to the bulk resistivity of the strand at DC. Batch dependent; measure if the margin matters."
+    }
+  ],
+  "insulations": [
+    {
+      "id": "pvc-105",
+      "label": "PVC, 105 °C",
+      "rating_c": 105,
+      "wall_g_per_m_per_mm2": 9.5,
+      "source": "General automotive PVC-insulated cable. The 105 °C rating is the insulation's continuous limit, not a temperature the loom should be run at."
+    },
+    {
+      "id": "spec55-150",
+      "label": "Raychem Spec 55, 150 °C",
+      "rating_c": 150,
+      "wall_g_per_m_per_mm2": 4.2,
+      "source": "Raychem Spec 55 crosslinked ETFE, 150 °C continuous. Thin wall; the mass allowance is a fraction of PVC for the same conductor."
+    },
+    {
+      "id": "tefzel-200",
+      "label": "Tefzel ETFE, 200 °C",
+      "rating_c": 200,
+      "wall_g_per_m_per_mm2": 5.0,
+      "source": "M22759/16 and similar ETFE constructions, 200 °C continuous."
+    }
+  ],
+  "ampacity": {
+    "note": "Amps, single wire in free air at 20 °C ambient. Derated in the tool for ambient and for bundle size; not derated here.",
+    "source": "Orientation figures consistent with SAE J1128 and MIL-W-22759 free-air practice for the corresponding conductor sizes. NOT a substitute for the datasheet.",
+    "byCsa": [
+      { "csa_mm2": 0.326, "pvc-105": 5,   "spec55-150": 9,   "tefzel-200": 11 },
+      { "csa_mm2": 0.518, "pvc-105": 8,   "spec55-150": 12,  "tefzel-200": 15 },
+      { "csa_mm2": 0.823, "pvc-105": 11,  "spec55-150": 17,  "tefzel-200": 20 },
+      { "csa_mm2": 1.31,  "pvc-105": 15,  "spec55-150": 23,  "tefzel-200": 27 },
+      { "csa_mm2": 2.08,  "pvc-105": 20,  "spec55-150": 31,  "tefzel-200": 36 },
+      { "csa_mm2": 3.31,  "pvc-105": 27,  "spec55-150": 42,  "tefzel-200": 49 },
+      { "csa_mm2": 5.26,  "pvc-105": 36,  "spec55-150": 56,  "tefzel-200": 65 },
+      { "csa_mm2": 8.37,  "pvc-105": 49,  "spec55-150": 76,  "tefzel-200": 88 },
+      { "csa_mm2": 13.3,  "pvc-105": 66,  "spec55-150": 102, "tefzel-200": 118 },
+      { "csa_mm2": 21.2,  "pvc-105": 88,  "spec55-150": 137, "tefzel-200": 159 },
+      { "csa_mm2": 33.6,  "pvc-105": 118, "spec55-150": 184, "tefzel-200": 213 },
+      { "csa_mm2": 53.5,  "pvc-105": 158, "spec55-150": 245, "tefzel-200": 284 }
+    ]
+  },
+  "awg": {
+    "note": "AWG to nominal conductor cross-section. Held as data, not code, so a loom quoted in AWG and a loom quoted in mm2 are the same loom.",
+    "source": "Nominal areas as given in the build brief; they match the standard AWG series to three significant figures. The Loom Planner's own table rounds 22 AWG to 0.33 and 20 AWG to 0.52 — the same wire, one decimal apart.",
+    "map": {
+      "22": 0.326,
+      "20": 0.518,
+      "18": 0.823,
+      "16": 1.31,
+      "14": 2.08,
+      "12": 3.31,
+      "10": 5.26,
+      "8": 8.37,
+      "6": 13.3,
+      "4": 21.2,
+      "2": 33.6,
+      "0": 53.5
+    }
+  },
+  "bundleDerating": {
+    "note": "Applied to the free-air rating. A wire in the middle of a fat bundle cannot shed heat into air that is already hot.",
+    "source": "Conventional automotive and aerospace bundle factors. Confirm against the wire's own bundle curve where one is published.",
+    "bands": [
+      { "upTo": 2,  "factor": 1.00 },
+      { "upTo": 5,  "factor": 0.80 },
+      { "upTo": 15, "factor": 0.70 },
+      { "upTo": null, "factor": 0.50 }
+    ]
+  },
+  "limits": {
+    "note": "Defaults. All editable in the tool.",
+    "generalDrop_pct": 3,
+    "criticalDrop_pct": 1,
+    "criticalDrop_v": 0.25,
+    "crankingDrop_pct": 10,
+    "fuseOverLoad": 1.25,
+    "fuseOverInrushLoad": 1.5
+  }
+}

@@ -1,0 +1,433 @@
+/* =============================================================
+   TheRacingData — Load Budget & Voltage Drop
+   Layout and components. The palette, the type scale and the five
+   Archivo faces come from ../../_shared/css/trd-tokens.css, which
+   the page links ahead of this one.
+
+   Authored unscoped for readability. tools/build-web.mjs emits a
+   copy scoped under #trd-load-budget for embedding in the site.
+
+   No style attributes anywhere in the markup: the page takes
+   default-src 'none' with style-src 'self', and every position
+   below is in this file for that reason.
+
+   The fuse chart at the foot of the page is the tool's most
+   valuable output and the only part of it that gets printed. The
+   @media print block at the end hides everything else and prints
+   it on Paper — a laminated sheet is read in a dark garage with a
+   torch, and Ink on Paper is what a torch is for.
+   ============================================================= */
+
+#trd-load-budget, #trd-load-budget *,
+#trd-load-budget *::before, #trd-load-budget *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+}
+
+#trd-load-budget {
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  background: var(--ink);
+  color: var(--body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Header ===== */
+#trd-load-budget header[data-standalone] {
+  border-bottom: 1px solid var(--rule);
+  padding: 22px 28px 0;
+  background: var(--panel);
+}
+#trd-load-budget .brand-row {
+  display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap;
+}
+#trd-load-budget .brand-lockup img { height: 30px; width: auto; display: block; }
+#trd-load-budget .eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--faint); font-weight: 700;
+}
+#trd-load-budget h1 {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 900; letter-spacing: -0.04em;
+  text-transform: uppercase; color: var(--paper); line-height: 0.95;
+}
+#trd-load-budget h1 em {
+  font-style: normal; font-weight: 500; color: var(--faint);
+  text-transform: none; letter-spacing: -0.02em;
+}
+
+/* ===== Toolbar ===== */
+#trd-load-budget .toolbar {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; padding: 18px 0 16px;
+}
+#trd-load-budget .spacer { flex: 1 1 auto; }
+#trd-load-budget .picker {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700;
+}
+
+#trd-load-budget button {
+  font-family: var(--font);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 14px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface);
+  color: var(--bone); cursor: pointer;
+  transition: background 120ms linear, color 120ms linear, border-color 120ms linear;
+}
+#trd-load-budget button:hover { background: var(--surface-hi); color: var(--paper); }
+#trd-load-budget button.primary {
+  background: var(--signal); border-color: var(--signal); color: var(--paper);
+}
+#trd-load-budget button.primary:hover { background: var(--signal-hi); }
+#trd-load-budget button.danger:hover { border-color: var(--signal-lift); color: var(--signal-lift); }
+#trd-load-budget button.icon {
+  padding: 2px 8px; font-size: 15px; letter-spacing: 0; line-height: 1.2;
+}
+#trd-load-budget button.add {
+  background: none; border-style: dashed; color: var(--muted);
+  width: 100%; margin-top: 8px;
+}
+#trd-load-budget button.add:hover { color: var(--paper); border-color: var(--steel); }
+#trd-load-budget button.link {
+  background: none; border: none; padding: 0;
+  color: var(--signal-lift); text-transform: none; letter-spacing: 0;
+  font-size: 13px; text-decoration: underline;
+}
+
+#trd-load-budget .status {
+  min-height: 20px; font-size: 12px; letter-spacing: 0.06em;
+  color: var(--muted); padding-bottom: 10px;
+}
+#trd-load-budget .status.ok { color: var(--bone); }
+#trd-load-budget .status.warn { color: var(--signal-lift); }
+
+/* ===== Layout ===== */
+#trd-load-budget main {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  align-items: start;
+  min-height: calc(100vh - 160px);
+}
+#trd-load-budget .pane-side {
+  border-right: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 20px 20px 60px;
+  position: sticky; top: 0;
+  max-height: 100vh; overflow-y: auto;
+}
+#trd-load-budget .column {
+  min-width: 0;
+  padding: 20px 24px 60px;
+}
+#trd-load-budget .pane-chart {
+  border-left: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 24px 18px;
+  position: sticky; top: 0;
+}
+
+@media (max-width: 1400px) {
+  #trd-load-budget main { grid-template-columns: 320px minmax(0, 1fr); }
+  #trd-load-budget .pane-chart {
+    grid-column: 1 / -1; border-left: none; border-top: 1px solid var(--rule);
+    position: static;
+  }
+}
+@media (max-width: 900px) {
+  #trd-load-budget main { grid-template-columns: 1fr; }
+  #trd-load-budget .pane-side {
+    border-right: none; border-bottom: 1px solid var(--rule);
+    position: static; max-height: none;
+  }
+}
+
+/* ===== Input groups ===== */
+#trd-load-budget .group { margin-bottom: 26px; }
+#trd-load-budget .group h3 {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--paper);
+  padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+#trd-load-budget .blurb {
+  font-size: 12.5px; color: var(--faint); margin-bottom: 12px; line-height: 1.5;
+}
+#trd-load-budget .field-grid {
+  display: grid; grid-template-columns: 1fr; gap: 12px;
+}
+#trd-load-budget .field-grid.tight { grid-template-columns: 1fr 1fr; gap: 8px; }
+#trd-load-budget .field label {
+  display: block; font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  font-weight: 700; margin-bottom: 5px;
+}
+#trd-load-budget .field-row { display: flex; align-items: center; gap: 8px; }
+#trd-load-budget .field-row.tick-row { align-items: baseline; }
+#trd-load-budget .tick-row label {
+  margin-bottom: 0; text-transform: none; letter-spacing: 0.02em;
+  font-size: 13px; font-weight: 500; color: var(--body);
+}
+
+#trd-load-budget input[type="text"],
+#trd-load-budget input:not([type]),
+#trd-load-budget select {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--font); font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  padding: 8px 10px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--surface);
+  color: var(--paper);
+}
+#trd-load-budget input:focus, #trd-load-budget select:focus {
+  outline: none; border-color: var(--steel); background: var(--surface-hi);
+}
+#trd-load-budget input[type="checkbox"] {
+  width: 15px; height: 15px; accent-color: var(--signal-lift); flex: 0 0 auto;
+}
+#trd-load-budget .unit {
+  font-size: 11px; color: var(--faint); letter-spacing: 0.08em;
+  min-width: 54px; flex: 0 0 auto;
+}
+#trd-load-budget .hint {
+  font-size: 11.5px; color: var(--faint); line-height: 1.45; margin-top: 4px;
+}
+
+#trd-load-budget .helper {
+  margin-top: 16px; padding: 14px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--surface);
+}
+#trd-load-budget .helper h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--bone); font-weight: 800; margin-bottom: 8px;
+}
+#trd-load-budget .probe-result {
+  margin-top: 10px; font-size: 13px; color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+#trd-load-budget .row-line {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+}
+
+/* ===== Summary band ===== */
+#trd-load-budget .summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule); margin-bottom: 24px;
+}
+#trd-load-budget .stat { background: var(--panel); padding: 14px 16px; }
+#trd-load-budget .stat-value {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 900; letter-spacing: -0.04em;
+  line-height: 1.05; color: var(--paper); margin: 6px 0 4px;
+}
+#trd-load-budget .stat-note { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+
+/* ===== Panes ===== */
+#trd-load-budget .pane-head { margin-bottom: 14px; }
+#trd-load-budget .pane-head h2 {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 900; letter-spacing: -0.04em;
+  text-transform: uppercase; color: var(--paper); line-height: 0.95;
+  margin: 6px 0 8px;
+}
+#trd-load-budget .pane + .pane { margin-top: 32px; }
+#trd-load-budget .empty { color: var(--faint); font-size: 13px; }
+
+/* ===== Tables ===== */
+#trd-load-budget .table {
+  border: 1px solid var(--rule);
+  overflow-x: auto;
+}
+#trd-load-budget .trow {
+  display: flex; width: 100%;
+  border-bottom: 1px solid var(--rule-soft);
+  background: none; border-left: none; border-right: none; border-top: none;
+  text-align: left; font-family: var(--font); color: var(--body);
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+  padding: 0; border-radius: 0; cursor: default;
+}
+#trd-load-budget button.trow { cursor: pointer; }
+#trd-load-budget button.trow:hover { background: var(--surface); color: var(--body); }
+#trd-load-budget .trow:last-child { border-bottom: none; }
+#trd-load-budget .trow.thead {
+  background: var(--surface); border-bottom: 1px solid var(--rule);
+}
+#trd-load-budget .thead .tcell {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800;
+}
+#trd-load-budget .trow.active {
+  background: var(--signal-wash);
+  box-shadow: inset 3px 0 0 var(--signal);
+}
+#trd-load-budget .trow.illegal .tcell { color: var(--faint); }
+#trd-load-budget .tcell {
+  flex: 1 1 0; min-width: 0;
+  padding: 9px 12px; font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#trd-load-budget .tcell.tlabel { color: var(--muted); flex: 2 1 0; white-space: normal; }
+#trd-load-budget .tcell.tvalue { color: var(--paper); text-align: right; }
+#trd-load-budget .tcell.c-laps, #trd-load-budget .tcell.c-fuel { flex: 2 1 0; }
+#trd-load-budget .tcell.c-stops { flex: 0 0 82px; }
+#trd-load-budget .tcell.c-total { color: var(--paper); font-weight: 600; }
+#trd-load-budget .tcell.good { color: var(--bone); }
+#trd-load-budget .tcell.bad { color: var(--faint); }
+#trd-load-budget .tcell.over {
+  background: var(--signal); color: var(--paper); font-weight: 700;
+}
+#trd-load-budget .table.mini .tcell { padding: 6px 12px; }
+#trd-load-budget .row-note {
+  font-size: 11.5px; color: var(--signal-lift);
+  padding: 4px 12px 8px; border-bottom: 1px solid var(--rule-soft);
+}
+
+/* ===== Issues ===== */
+#trd-load-budget .issues {
+  margin-top: 20px; padding: 14px 16px;
+  border: 1px solid var(--signal); background: var(--signal-wash);
+}
+#trd-load-budget .issues h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--signal-lift); font-weight: 800; margin-bottom: 8px;
+}
+#trd-load-budget .issues ul { list-style: none; }
+#trd-load-budget .issues li {
+  font-size: 13px; line-height: 1.5; padding: 3px 0 3px 14px;
+  position: relative; color: var(--body);
+}
+#trd-load-budget .issues li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 6px; height: 6px; background: var(--steel);
+}
+#trd-load-budget .issues li.sev-error::before { background: var(--signal); }
+#trd-load-budget .issues li.sev-error { color: var(--paper); }
+
+/* ===== Chart ===== */
+
+
+/* ===== Footer ===== */
+#trd-load-budget .privacy {
+  margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--rule);
+  font-size: 12px; color: var(--faint); line-height: 1.6; max-width: 60ch;
+}
+#trd-load-budget .privacy strong { color: var(--bone); font-weight: 600; }
+#trd-load-budget footer[data-standalone] {
+  border-top: 1px solid var(--rule); background: var(--panel);
+  padding: 18px 28px; font-size: 11.5px; color: var(--faint);
+}
+
+/* ===== The circuit table =====
+   Wide, and it scrolls inside its own container rather than pushing
+   the page sideways. Entered columns and computed columns are told
+   apart by a rule down the middle of the table, not by hope. */
+#trd-load-budget .table.wide { overflow-x: auto; }
+#trd-load-budget .table.wide .trow { min-width: 1960px; }
+#trd-load-budget .row-notes:empty { display: none; }
+#trd-load-budget .row-notes { position: sticky; left: 0; }
+#trd-load-budget .tcell.tnum {
+  flex: 0 0 34px; color: var(--faint); font-size: 11px;
+}
+#trd-load-budget .tcell.tdel { flex: 0 0 40px; }
+#trd-load-budget .tcell.derived {
+  background: var(--rule-soft);
+  color: var(--bone);
+}
+#trd-load-budget .thead .tcell.derived { background: var(--surface-hi); }
+/* The boundary between what is typed and what is worked out. */
+#trd-load-budget .tcell.derived:first-of-type { box-shadow: inset 2px 0 0 var(--rule); }
+#trd-load-budget .tcell input,
+#trd-load-budget .tcell select {
+  width: 100%; padding: 5px 7px; font-size: 12.5px;
+}
+#trd-load-budget .tcell input[type="checkbox"] { width: 15px; }
+
+/* Margin states. Within limits reads as ordinary text; marginal picks
+   up a rule so it is visible without shouting; over limit is a Signal
+   Red fill with Paper on it, which clears 8:1 — red as text on Ink
+   would be 2.18:1 and would fail. */
+#trd-load-budget .trow.margin-marginal { box-shadow: inset 3px 0 0 var(--steel); }
+#trd-load-budget .trow.margin-marginal .tcell.derived { color: var(--muted); }
+#trd-load-budget .trow.margin-over { box-shadow: inset 3px 0 0 var(--signal); }
+#trd-load-budget .tcell .over {
+  display: inline-block; padding: 1px 6px;
+  background: var(--signal); color: var(--paper); font-weight: 700;
+}
+#trd-load-budget .row-note.sev-warning { color: var(--muted); }
+#trd-load-budget .row-note.sev-error { color: var(--signal-lift); }
+
+#trd-load-budget .stat-warn { background: var(--signal-wash); }
+#trd-load-budget .stat-warn .stat-value { color: var(--signal-lift); }
+#trd-load-budget .note-seed .blurb { color: var(--bone); }
+#trd-load-budget .note-seed { border-left: 3px solid var(--signal); padding-left: 12px; }
+
+/* ===== The fuse chart =====
+   On screen it is the last section of the page. Printed, it is the
+   whole page: Ink on Paper, large type, in fuse-position order,
+   because it is read in a dark garage with a torch. */
+#trd-load-budget .fuse-chart {
+  margin: 0 24px 48px;
+  padding: 22px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+}
+#trd-load-budget .chart-eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.2em;
+  text-transform: uppercase; color: #5a5a60;
+}
+#trd-load-budget .fuse-chart h2 {
+  font-family: var(--font-display);
+  font-size: 30px; font-weight: 900; letter-spacing: -0.04em;
+  text-transform: uppercase; line-height: 0.9; margin: 4px 0 6px;
+  color: var(--ink);
+}
+#trd-load-budget .chart-note, #trd-load-budget .chart-foot {
+  font-size: 11.5px; color: #4a4a50;
+}
+#trd-load-budget .chart-foot { margin-top: 12px; font-weight: 600; }
+#trd-load-budget .fuse-table {
+  width: 100%; border-collapse: collapse; margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+#trd-load-budget .fuse-table th {
+  text-align: left; font-size: 10px; font-weight: 800;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 6px 8px; border-bottom: 2px solid var(--ink); color: var(--ink);
+}
+#trd-load-budget .fuse-table td {
+  padding: 7px 8px; font-size: 14px;
+  border-bottom: 1px solid #c9c6c0; color: var(--ink);
+}
+#trd-load-budget .fuse-table .pos {
+  font-weight: 900; font-size: 16px; width: 8%;
+}
+#trd-load-budget .fuse-table .fuse { font-weight: 800; width: 12%; }
+#trd-load-budget .fuse-table .wire { width: 14%; }
+#trd-load-budget .fuse-table .name { width: 32%; font-weight: 600; }
+#trd-load-budget .fuse-table tbody tr:nth-child(even) { background: #e7e4de; }
+
+@media print {
+  /* standalone.css paints the page Ink so the tool fills the viewport.
+     A printed sheet is Paper, and this is the one place the page-level
+     ground has to be overridden rather than the tool's own. */
+  html, body { background: #fff; }
+  #trd-load-budget header[data-standalone],
+  #trd-load-budget footer[data-standalone],
+  #trd-load-budget main { display: none; }
+  #trd-load-budget { background: #fff; min-height: 0; }
+  #trd-load-budget .fuse-chart {
+    margin: 0; border: none; padding: 0;
+    background: #fff;
+  }
+  #trd-load-budget .fuse-table tbody tr:nth-child(even) { background: #eee; }
+}

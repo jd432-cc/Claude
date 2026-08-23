@@ -1,0 +1,111 @@
+{
+  "connectors": [
+    {
+      "id": "conn-ecu",
+      "name": "ECU A",
+      "type": "Deutsch",
+      "group": "cg-engine",
+      "pins": [
+        { "id": "p1", "number": 1, "label": "A1", "func": "Battery +" },
+        { "id": "p2", "number": 2, "label": "A2", "func": "Sensor 5V ref" },
+        { "id": "p3", "number": 3, "label": "A3", "func": "Sensor return" },
+        { "id": "p4", "number": 4, "label": "A4", "func": "Injector 1" }
+      ]
+    },
+    {
+      "id": "conn-fuse",
+      "name": "Fusebox",
+      "type": "Terminal",
+      "pins": [
+        { "id": "f1", "number": 1, "label": "F1", "func": "ECU feed" },
+        { "id": "f2", "number": 2, "label": "F2", "func": "Fuel pump" },
+        { "id": "f3", "number": 3, "label": "F3", "func": "Fan" }
+      ]
+    },
+    {
+      "id": "conn-tps",
+      "name": "TPS",
+      "type": "Superseal",
+      "pins": [
+        { "id": "t1", "number": 1, "label": "1", "func": "5V" },
+        { "id": "t2", "number": 2, "label": "2", "func": "Signal" },
+        { "id": "t3", "number": 3, "label": "3", "func": "Return" }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-pump",
+      "name": "Fuel pump",
+      "group": "cg-fuel",
+      "pins": [
+        { "id": "u1", "number": 1, "label": "+", "func": "Supply" },
+        { "id": "u2", "number": 2, "label": "-", "func": "Return" }
+      ]
+    },
+    {
+      "id": "comp-fan",
+      "name": "Radiator fan",
+      "pins": [
+        { "id": "n1", "number": 1, "label": "+", "func": "Supply" },
+        { "id": "n2", "number": 2, "label": "-", "func": "Return" }
+      ]
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1", "wireId": "W001",
+      "fromConnector": "conn-fuse", "fromPin": "f1",
+      "toConnector": "conn-ecu", "toPin": "p1",
+      "gauge": "16", "colour": "Red", "length": 2.4,
+      "notes": "ECU main feed", "wireGroup": "wg-power"
+    },
+    {
+      "id": "w2", "wireId": "W002",
+      "fromConnector": "conn-ecu", "fromPin": "p2",
+      "toConnector": "conn-tps", "toPin": "t1",
+      "gauge": "22", "colour": "White", "length": 1.8,
+      "notes": "5V reference", "wireGroup": "wg-sensor", "routeNode": "rn-bulkhead"
+    },
+    {
+      "id": "w3", "wireId": "W003",
+      "fromConnector": "conn-tps", "fromPin": "t3",
+      "toConnector": "conn-ecu", "toPin": "p3",
+      "gauge": "22", "colour": "Black", "length": 1.8,
+      "notes": "Sensor return", "wireGroup": "wg-sensor", "routeNode": "rn-bulkhead"
+    },
+    {
+      "id": "w4", "wireId": "W004",
+      "fromConnector": "conn-fuse", "fromPin": "f2",
+      "toConnector": "comp-pump", "toPin": "u1",
+      "gauge": "14", "colour": "Blue/White", "length": 4.0,
+      "notes": "Fuel pump supply", "wireGroup": "wg-power"
+    },
+    {
+      "id": "w5", "wireId": "W005",
+      "fromConnector": "conn-fuse", "fromPin": "f3",
+      "toConnector": "comp-fan", "toPin": "n1",
+      "gauge": "12", "colour": "Orange", "length": 3.2,
+      "notes": "Radiator fan supply", "wireGroup": "wg-power"
+    },
+    {
+      "id": "w6", "wireId": "W006",
+      "fromConnector": "conn-ecu", "fromPin": "p4",
+      "toConnector": "comp-pump", "toPin": "u2",
+      "gauge": "18", "colour": "Green/Black", "length": 2.1,
+      "notes": "Injector 1 low side", "wireGroup": "wg-engine"
+    }
+  ],
+  "routeNodes": [
+    { "id": "rn-bulkhead", "name": "Bulkhead grommet", "width": 60, "rotation": 0 }
+  ],
+  "connectorGroups": [
+    { "id": "cg-engine", "name": "Engine bay", "colour": "#970000" },
+    { "id": "cg-fuel", "name": "Fuel system", "colour": "#6F6F78" }
+  ],
+  "wireGroups": [
+    { "id": "wg-power", "name": "Power", "colour": "#CC0000" },
+    { "id": "wg-sensor", "name": "Sensors", "colour": "#CFCFD4" },
+    { "id": "wg-engine", "name": "Engine", "colour": "#8E8E95" }
+  ]
+}

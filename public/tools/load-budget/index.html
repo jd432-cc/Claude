@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Load Budget &amp; Voltage Drop &mdash; TheRacingData</title>
+  <meta name="description" content="Size conductors, fuses and the charging system for a race car loom, and prove the numbers. Reads the Loom Planner's own export. Runs entirely in the browser.">
+  <link rel="canonical" href="https://theracingdata.com/tools/load-budget/">
+  <meta property="og:title" content="Load Budget &amp; Voltage Drop &mdash; TheRacingData">
+  <meta property="og:description" content="Size conductors, fuses and the charging system for a race car loom, and prove the numbers.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://theracingdata.com/tools/load-budget/">
+  <meta name="theme-color" content="#0A0A0B">
+  <link rel="icon" href="../_shared/assets/favicon.svg" type="image/svg+xml">
+
+  <!-- Archivo is vendored under ../_shared/assets/fonts/ and declared in
+       trd-tokens.css. No CDN: this tool is used in a garage. -->
+  <link rel="preload" href="../_shared/assets/fonts/Archivo-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../_shared/css/trd-tokens.css">
+  <link rel="stylesheet" href="css/load-budget.css">
+  <!-- Standalone page only. Remove this line when embedding in the site shell. -->
+  <link rel="stylesheet" href="css/standalone.css">
+</head>
+<body>
+<!-- ==========================================================
+     TheRacingData — Load Budget & Voltage Drop
+     Drop-in page. Everything the tool needs lives inside
+     #trd-load-budget. The <header> and <footer> below are
+     marked data-standalone: delete both when embedding in the
+     site shell, which already provides nav and footer.
+     ========================================================== -->
+<div id="trd-load-budget" data-trd>
+
+  <header data-standalone>
+    <div class="brand-row">
+      <div class="brand-lockup">
+        <img src="../_shared/assets/logo.svg" alt="TheRacingData">
+      </div>
+      <div class="app-title">
+        <p class="eyebrow">Logistics</p>
+        <h1>Load Budget <em>&amp; Voltage Drop</em></h1>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="import-any" class="primary">Import from Loom Planner</button>
+      <span class="spacer"></span>
+      <button id="export-json" class="ghost">Save session</button>
+      <button id="export-csv" class="ghost">Circuit CSV</button>
+      <button id="export-loom" class="ghost">Back to Loom Planner</button>
+      <button id="print-chart" class="ghost">Print fuse chart</button>
+      <button id="reset" class="ghost danger">Clear</button>
+      <input type="file" id="import-file" accept=".json,.trd.json" hidden>
+    </div>
+    <p id="status" class="status"></p>
+  </header>
+
+  <main>
+    <section id="system" class="pane pane-side" aria-label="System and supply"></section>
+
+    <div class="column">
+      <div id="summary" class="summary" aria-label="Headline figures"></div>
+      <aside id="issues" class="issues" hidden></aside>
+      <section id="circuits" class="pane" aria-label="Circuits"></section>
+
+      <p class="privacy">
+        This runs entirely in your browser. Nothing is uploaded, and the
+        session is kept only in this browser&rsquo;s storage &mdash; use
+        <strong>Save session</strong> to move it anywhere else.
+      </p>
+    </div>
+  </main>
+
+  <!-- The laminated sheet. On screen it sits at the bottom of the page;
+       Print fuse chart hides everything else and prints this alone. -->
+  <section id="fuse-chart" class="fuse-chart" aria-label="Printable fuse chart"></section>
+
+  <footer data-standalone>
+    <p>TheRacingData &mdash; Modena. Wire ratings are seed data. Confirm them
+       against the datasheet for the wire actually in the car.</p>
+  </footer>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
