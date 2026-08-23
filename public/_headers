@@ -1,0 +1,56 @@
+# Cloudflare Pages headers.
+# Syntax: a path pattern on its own line, then indented "Name: value" lines.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# support.js and image-slot.js have no content hash in their filenames, so they
+# must NOT be cached immutably -- a redeploy would not reach returning visitors.
+# 5 minutes at the edge, always revalidate in the browser.
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+  CDN-Cache-Control: public, max-age=300
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# No Content-Security-Policy is set on purpose. The design runtime in
+# support.js compiles the page's <script type="text/x-dc"> block with
+# new Function(), and injects React/ReactDOM from unpkg.com at load time.
+# Any CSP would therefore need at minimum:
+#   script-src 'self' 'unsafe-eval' https://unpkg.com
+#   style-src  'self' 'unsafe-inline' https://fonts.googleapis.com
+#   font-src   https://fonts.gstatic.com
+# A CSP without 'unsafe-eval' renders a blank page. See README.
+
+# --- Tools ---------------------------------------------------------------
+# Scoped per tool, deliberately, and NOT to /tools/*.
+#
+# /tools/ itself is a design export like the marketing pages: it carries the
+# whole page in inline <script> blocks. A /tools/* rule matches it too, and a
+# policy without 'unsafe-inline' and 'unsafe-eval' renders it blank -- which
+# is exactly what happened. It is left without a CSP, as the marketing pages
+# above are, for the same reason.
+#
+# The tool pages themselves are hand written, load no runtime and keep their
+# scripts in files, so they take a real policy. A new tool gets no CSP until
+# it is added here; that fails open rather than shipping a blank page.
+
+# Nothing inline at all, and Archivo is vendored, so this one needs no
+# exemption and no offsite origin.
+/tools/report-builder/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+# The planner positions a few elements with style attributes, which style-src
+# governs, and still loads Archivo from Google Fonts. Vendoring its font and
+# moving those attributes into planner.css would let it take the policy above.
+/tools/loom-planner/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+# Report templates carry their version in the filename, so a given URL is
+# immutable: a new revision ships as a new filename and the schema asserts it.
+/tools/report-builder/templates/*
+  Cache-Control: public, max-age=31536000, immutable

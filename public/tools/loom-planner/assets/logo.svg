@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 617 88" width="617" height="88" role="img" aria-label="TheRacingData">
+  <title>TheRacingData</title>
+  <defs><clipPath id="capband" clipPathUnits="userSpaceOnUse"><rect x="-40" y="0" width="4000" height="100"/></clipPath></defs>
+  <g>
+    <g transform="translate(4.00,4.00) scale(0.68220)" fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6">
+      <path d="M0,112.0 H174" stroke="#968E87" stroke-width="3.51" opacity="0.6"/>
+      <path d="M64.0,88.00 V112.0" stroke="#968E87" stroke-width="4.03" stroke-dasharray="5.61 6.66" opacity="0.84"/>
+      <mask id="trdnode6" maskUnits="userSpaceOnUse" x="-40" y="-200" width="254" height="518"><rect x="-40" y="-200" width="254" height="518" fill="#fff"/><circle cx="64.0" cy="88.00" r="7.16" fill="#000"/></mask><g mask="url(#trdnode6)"><path d="M6,20 H32 L50,74 C55,84 57,88 64,88 C74,88 81,79 90,67 C106,46 126,26 150,16 C158,12.5 162,11.5 168,11" stroke="#970000" stroke-width="16.654857142857143"/><circle cx="64.0" cy="88.00" r="14.82" fill="#970000" stroke="none"/></g>
+    </g>
+    <g transform="translate(146.62,34.41) scale(0.46000)" clip-path="url(#capband)" fill="none" stroke-width="13.0" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6">
+      <path d="M0,6.5 H66 M33,0 V100" transform="translate(0.00,0)" stroke="#F2F1ED"/>
+      <path d="M6.5,0 V100 M61.5,0 V100 M6.5,50 H61.5" transform="translate(82.00,0)" stroke="#F2F1ED"/>
+      <path d="M6.5,0 V100 M0,6.5 H60 M0,50 H52 M0,93.5 H60" transform="translate(166.00,0)" stroke="#F2F1ED"/>
+      <path d="M6.5,0 V100 M6.5,6.5 H40 A19.5,21.5 0 0 1 40,49.5 H6.5 M40,49.5 L59.5,100" transform="translate(242.00,0)" stroke="#970000"/>
+      <path d="M4,100 L35,18 L66,100 M17.5,68 H52.5" transform="translate(324.00,0)" stroke="#970000"/>
+      <path d="M56.8,22 A28.5,43.5 0 1 0 56.8,78" transform="translate(410.00,0)" stroke="#970000"/>
+      <path d="M6.5,0 V100" transform="translate(496.00,0)" stroke="#970000"/>
+      <path d="M6.5,0 V100 M61.5,0 V100 M6.5,0 L61.5,100" transform="translate(525.00,0)" stroke="#970000"/>
+      <path d="M58.6,22 A29.5,43.5 0 1 0 58.6,78 V50 H44" transform="translate(609.00,0)" stroke="#970000"/>
+      <path d="M6.5,0 V100 M6.5,6.5 H36 A25,43.5 0 0 1 36,93.5 H6.5" transform="translate(691.00,0)" stroke="#F2F1ED"/>
+      <path d="M4,100 L35,18 L66,100 M17.5,68 H52.5" transform="translate(775.00,0)" stroke="#F2F1ED"/>
+      <path d="M0,6.5 H66 M33,0 V100" transform="translate(861.00,0)" stroke="#F2F1ED"/>
+      <path d="M4,100 L35,18 L66,100 M17.5,68 H52.5" transform="translate(943.00,0)" stroke="#F2F1ED"/>
+    </g>
+  </g>
+</svg>
