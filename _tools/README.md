@@ -62,13 +62,21 @@ block at the end of it.
 by hand afterwards:
 
 - the six entries in `live[]` — loom planner, report builder, fuel & stint,
-  load budget, run plan, event pack;
+  load budget, run plan, event pack. Plain text, not HTML: the runtime escapes
+  what it renders, so `&amp;` comes out as `&amp;` on the card;
 - `"Setup"` added to the `cats` array, which was
-  `["Telemetry", "Strategy", "Logistics"]`;
+  `["Telemetry", "Strategy", "Logistics"]`, **and** the cycle changed from
+  `% 3` to `% cats.length` — hard-coding the count leaves the fourth category
+  unreachable;
 - the placeholder ceiling raised from 9 to 12 (`for (let i = live.length + 1;
   i <= 12; i++)`), so the grid still fills;
 - the two figures in the count band at the top of the page — `12` tools and
-  `6` live.
+  `6` live;
+- **the trailing slash on the card link**: `href: isLive ? base + t.slug + "/"`.
+  Without it the browser resolves every relative asset in the tool's page
+  against `/tools/` rather than `/tools/<slug>/`, and the page arrives with no
+  stylesheet and no script. This one was already wrong for the two tools that
+  were live before, so it is the edit most worth checking after a re-export.
 
 The alternative — generating the catalogue from a data file at build time —
 would mean the design export could no longer round-trip, which is a larger
