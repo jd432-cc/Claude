@@ -116,11 +116,15 @@ node tools/build-web.mjs            # regenerate scoped CSS
 node tools/build-web.mjs --check    # CI gate: fails if any .scoped.css is stale
 node tools/build-tools.mjs          # _tools/ -> public/tools/, for local preview
 node tools/test-report-builder.mjs  # 49 assertions
-node tools/test-docx-fixtures.mjs   # DOCX output unmoved, per zip entry
-node tools/test-fuel-stint.mjs
-node tools/test-load-budget.mjs
-node tools/test-run-plan.mjs
-node tools/test-event-pack.mjs
+node tools/test-docx-fixtures.mjs   #  6 — DOCX output unmoved, per zip entry
+node tools/test-fuel-stint.mjs      # 58
+node tools/test-load-budget.mjs     # 86
+node tools/test-run-plan.mjs        # 89
+node tools/test-event-pack.mjs      # 95
+
+python3 tools/make_run_plan_templates.py    # rebuild the run plan's templates
+python3 tools/make_event_pack_templates.py  # rebuild the event pack's
+python3 tools/validate_template.py <template.docx> <schema.js>
 pwsh build.ps1                      # the real build
 node dev-server.js                  # http://localhost:8788
 ```
