@@ -56,7 +56,27 @@
 /tools/loom-planner/*
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
 
+# Hand written, nothing inline, everything vendored: the four tools below
+# take the same strict policy the report builder does.
+/tools/fuel-stint/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+/tools/load-budget/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+/tools/run-plan/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
+/tools/event-pack/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+
 # Report templates carry their version in the filename, so a given URL is
 # immutable: a new revision ships as a new filename and the schema asserts it.
 /tools/report-builder/templates/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/tools/run-plan/templates/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/tools/event-pack/templates/*
   Cache-Control: public, max-age=31536000, immutable

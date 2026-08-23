@@ -1,0 +1,36 @@
+{
+  "note": "Reference densities at 15 °C and the thermal expansion coefficient used to correct them. Confirm against the delivery note or the supplier's data sheet for the fuel actually in the car: a batch varies, and a blend varies more than a batch.",
+  "tempRef_c": 15,
+  "beta_per_c": 0.00095,
+  "betaSource": "Volumetric thermal expansion of light hydrocarbon fuels, 0.00090-0.00100 /°C. Petrol sits near the middle of that range; alcohols are lower. Editable per fuel.",
+  "fuels": [
+    {
+      "id": "petrol",
+      "label": "Petrol, unleaded",
+      "density_kg_per_l": 0.745,
+      "beta_per_c": 0.00095,
+      "source": "EN 228 permits 720-775 kg/m3 at 15 °C. 0.745 is the mid-range figure and is a placeholder for a measured one."
+    },
+    {
+      "id": "e85",
+      "label": "E85",
+      "density_kg_per_l": 0.785,
+      "beta_per_c": 0.00090,
+      "source": "Blend of ethanol (0.789) and petrol; the ethanol fraction varies seasonally and with it the density. Measure the batch."
+    },
+    {
+      "id": "methanol",
+      "label": "Methanol",
+      "density_kg_per_l": 0.792,
+      "beta_per_c": 0.00119,
+      "source": "Pure methanol at 15 °C. Expands faster than petrol, so the temperature correction matters more, not less."
+    },
+    {
+      "id": "diesel",
+      "label": "Diesel",
+      "density_kg_per_l": 0.835,
+      "beta_per_c": 0.00083,
+      "source": "EN 590 permits 820-845 kg/m3 at 15 °C."
+    }
+  ]
+}

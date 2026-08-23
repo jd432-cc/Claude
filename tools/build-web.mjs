@@ -33,6 +33,10 @@ const TOOLS_DIR = join(ROOT, '_tools');
 const SCOPES = {
   'loom-planner':   '#trd-loom-planner',
   'report-builder': '#trd-report-builder',
+  'fuel-stint':     '#trd-fuel-stint',
+  'load-budget':    '#trd-load-budget',
+  'run-plan':       '#trd-run-plan',
+  'event-pack':     '#trd-event-pack',
 };
 
 /* At-rules whose bodies contain nested rules that still need scoping.

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fuel &amp; Stint Calculator &mdash; TheRacingData</title>
+  <meta name="description" content="Build a stint plan and compare the strategies actually available: fuel loads, pit loss, the saving that removes a stop. Runs entirely in the browser.">
+  <link rel="canonical" href="https://theracingdata.com/tools/fuel-stint/">
+  <meta property="og:title" content="Fuel &amp; Stint Calculator &mdash; TheRacingData">
+  <meta property="og:description" content="Build a stint plan and compare the strategies actually available. Runs entirely in the browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://theracingdata.com/tools/fuel-stint/">
+  <meta name="theme-color" content="#0A0A0B">
+  <link rel="icon" href="../_shared/assets/favicon.svg" type="image/svg+xml">
+
+  <!-- Archivo is vendored under ../_shared/assets/fonts/ and declared in
+       trd-tokens.css, which also carries the palette. No CDN: the tool
+       has to work in a garage with no signal. -->
+  <link rel="preload" href="../_shared/assets/fonts/Archivo-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../_shared/css/trd-tokens.css">
+  <link rel="stylesheet" href="css/fuel-stint.css">
+  <!-- Standalone page only. Remove this line when embedding in the site shell. -->
+  <link rel="stylesheet" href="css/standalone.css">
+</head>
+<body>
+<!-- ==========================================================
+     TheRacingData — Fuel & Stint Calculator
+     Drop-in page. Everything the tool needs lives inside
+     #trd-fuel-stint. The <header> and <footer> below are
+     marked data-standalone: delete both when embedding in the
+     site shell, which already provides nav and footer.
+     ========================================================== -->
+<div id="trd-fuel-stint" data-trd>
+
+  <header data-standalone>
+    <div class="brand-row">
+      <div class="brand-lockup">
+        <img src="../_shared/assets/logo.svg" alt="TheRacingData">
+      </div>
+      <div class="app-title">
+        <p class="eyebrow">Strategy</p>
+        <h1>Fuel &amp; Stint <em>Calculator</em></h1>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <label class="picker">
+        <span>Units</span>
+        <select id="units" title="Display only. Everything is stored in SI.">
+          <option value="metric">Metric &mdash; l, kg, km/h</option>
+          <option value="imperial">Imperial &mdash; US gal, lb, mph</option>
+        </select>
+      </label>
+      <span class="spacer"></span>
+      <button id="import-json" class="ghost">Load session</button>
+      <button id="export-json" class="ghost">Save session</button>
+      <button id="export-csv" class="ghost">Stint table CSV</button>
+      <button id="export-peer" class="ghost">PEER fragment</button>
+      <button id="reset" class="ghost danger">Clear</button>
+      <input type="file" id="import-file" accept=".json,.trd.json" hidden>
+    </div>
+    <p id="status" class="status"></p>
+  </header>
+
+  <main>
+    <section id="inputs" class="pane pane-inputs" aria-label="Inputs"></section>
+
+    <div class="column">
+      <div id="summary" class="summary" aria-label="Headline figures"></div>
+      <section id="strategies" class="pane" aria-label="Candidate strategies"></section>
+      <aside id="issues" class="issues" hidden></aside>
+      <section id="detail" class="pane" aria-label="Selected strategy"></section>
+
+      <p class="privacy">
+        This runs entirely in your browser. Nothing is uploaded, and the
+        session is kept only in this browser&rsquo;s storage &mdash; use
+        <strong>Save session</strong> to move it anywhere else.
+      </p>
+    </div>
+
+    <section id="chart-pane" class="pane pane-chart" aria-label="Stint chart"></section>
+  </main>
+
+  <footer data-standalone>
+    <p>TheRacingData &mdash; Modena. Every figure here is computed from the
+       inputs on the left; none of them is typed twice.</p>
+  </footer>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
