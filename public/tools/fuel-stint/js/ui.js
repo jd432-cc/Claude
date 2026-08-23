@@ -35,8 +35,13 @@ export class UI {
     this.sensitivityProbe = { t1: '', m1: '', t2: '', m2: '' };
   }
 
-  change() {
-    this.onChange(this.session);
+  /* `structural` re-renders the input pane. A keystroke must never do
+     that: replacing an <input> mid-word takes the caret with it and
+     drops the next character typed into a detached element. Only a
+     select, a checkbox or a row being added or removed changes what
+     inputs exist. */
+  change(structural = false) {
+    this.onChange(this.session, structural);
   }
 
   /* ---------- inputs ---------- */
@@ -75,8 +80,7 @@ export class UI {
       box.checked = !!get(this.session, f.k);
       box.addEventListener('change', () => {
         set(this.session, f.k, box.checked);
-        this.change();
-        this.renderInputs();
+        this.change(true);
       });
       row.append(box, label);
       wrap.append(row);
@@ -99,8 +103,7 @@ export class UI {
       input.addEventListener('change', () => {
         set(this.session, f.k, input.value);
         if (f.k === 'car.fuel') this.adoptFuel(input.value);
-        this.change();
-        this.renderInputs();
+        this.change(true);
       });
     } else {
       input = el('input');
@@ -115,6 +118,8 @@ export class UI {
         set(this.session, f.k, v);
         this.change();
       });
+      // A select or a checkbox elsewhere in the group may add or remove
+      // this field; leaving the pane alone until then keeps the caret.
     }
 
     row.append(input);
@@ -184,8 +189,7 @@ export class UI {
     const use = el('button', 'link', 'Use this');
     use.addEventListener('click', () => {
       set(this.session, 'pace.fuelSensitivity_s_per_kg', Number(k.toFixed(4)));
-      this.change();
-      this.renderInputs();
+      this.change(true);
     });
     out.append(document.createTextNode('  '), use);
   }
@@ -224,11 +228,12 @@ export class UI {
         input.setAttribute('aria-label', label);
         input.value = row[key] ?? '';
         input.addEventListener('input', () => { row[key] = input.value; this.change(); });
+        input.addEventListener('change', () => this.change(true));
         line.append(input);
       }
       const x = el('button', 'icon', '×');
       x.title = 'Remove';
-      x.addEventListener('click', () => { list.splice(i, 1); this.change(); this.renderInputs(); });
+      x.addEventListener('click', () => { list.splice(i, 1); this.change(true); });
       line.append(x);
       box.append(line);
     });
@@ -236,8 +241,7 @@ export class UI {
     const add = el('button', 'add', `+ ${addLabel}`);
     add.addEventListener('click', () => {
       list.push(Object.fromEntries(columns.map(([k]) => [k, ''])));
-      this.change();
-      this.renderInputs();
+      this.change(true);
     });
     box.append(add);
     return box;
@@ -315,7 +319,7 @@ export class UI {
       row.addEventListener('click', () => {
         this.selected = c.id;
         this.session.pinned = c.id;
-        this.change();
+        this.change(true);
       });
       table.append(row);
 
@@ -490,13 +494,19 @@ export class UI {
     return list.find(c => c.id === this.selected) || list[0] || null;
   }
 
-  render(computed) {
-    this.renderInputs();
+  /* Everything a changed value can move, and nothing a keystroke
+     would have to survive. */
+  update(computed) {
     this.renderSummary(computed);
     this.renderStrategies(computed);
     this.renderIssues(computed);
     this.renderDetail(computed);
     this.renderChart(computed);
+  }
+
+  render(computed) {
+    this.renderInputs();
+    this.update(computed);
   }
 }
 

@@ -39,7 +39,8 @@ function prov(value, isProvisional) {
   return v && isProvisional ? `${v} (P)` : v;
 }
 
-export function buildPayload(report, { showGuidance = false, provisional = false } = {}) {
+export function buildPayload(report, options = {}) {
+  const { showGuidance = false, provisional = false } = options;
   const p = {};
 
   /* Dotted field keys are rebuilt as nested objects: the template
@@ -118,8 +119,10 @@ export function buildPayload(report, { showGuidance = false, provisional = false
 
   /* Anything the template needs that is neither a field nor a plain row
      loop — a nested block, a scale split around its selection — is the
-     schema's own business, and it gets the last word on the payload. */
-  SCHEMA.payload?.(report, p);
+     schema's own business, and it gets the last word on the payload. A
+     schema with more than one document is handed the options too, so it
+     can put a different block in front of each template. */
+  SCHEMA.payload?.(report, p, options);
 
   return p;
 }
@@ -141,8 +144,19 @@ async function fetchTemplate(file) {
   return bytes;
 }
 
-export async function renderDocx(report, options) {
-  const template = await fetchTemplate(SCHEMA.templateFile);
+/* A schema names one template, and may offer more: three views of one
+   run plan are three tagged documents over the same report, not three
+   reports. `document` picks one from SCHEMA.documents; anything not
+   named there falls back to the schema's own template. */
+export function documentFile(id) {
+  if (!id) return SCHEMA.templateFile;
+  const doc = SCHEMA.documents?.find(d => d.id === id);
+  if (!doc) throw new Error(`unknown document: ${id}`);
+  return doc.templateFile;
+}
+
+export async function renderDocx(report, options = {}) {
+  const template = await fetchTemplate(documentFile(options.document));
   const data = buildPayload(report, options);
   return createReport({
     template,

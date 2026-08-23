@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run Plan &amp; Setup Log &mdash; TheRacingData</title>
+  <meta name="description" content="A run plan that enforces one variable at a time, and a versioned setup sheet per car. Exports Word documents in the house format. Runs entirely in the browser.">
+  <link rel="canonical" href="https://theracingdata.com/tools/run-plan/">
+  <meta property="og:title" content="Run Plan &amp; Setup Log &mdash; TheRacingData">
+  <meta property="og:description" content="A run plan that enforces one variable at a time, and a versioned setup sheet per car.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://theracingdata.com/tools/run-plan/">
+  <meta name="theme-color" content="#0A0A0B">
+  <link rel="icon" href="../_shared/assets/favicon.svg" type="image/svg+xml">
+
+  <!-- Archivo is vendored under ../_shared/assets/fonts/ and declared in
+       trd-tokens.css. No CDN: the tool works in a garage with no signal. -->
+  <link rel="preload" href="../_shared/assets/fonts/Archivo-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../_shared/css/trd-tokens.css">
+  <link rel="stylesheet" href="css/run-plan.css">
+  <!-- Standalone page only. Remove this line when embedding in the site shell. -->
+  <link rel="stylesheet" href="css/standalone.css">
+</head>
+<body>
+<!-- ==========================================================
+     TheRacingData — Run Plan & Setup Log
+     Drop-in page. Everything the tool needs lives inside
+     #trd-run-plan. The <header> and <footer> below are marked
+     data-standalone: delete both when embedding in the site
+     shell, which already provides nav and footer.
+     ========================================================== -->
+<div id="trd-run-plan" data-trd>
+
+  <header data-standalone>
+    <div class="brand-row">
+      <div class="brand-lockup">
+        <img src="../_shared/assets/logo.svg" alt="TheRacingData">
+      </div>
+      <div class="app-title">
+        <p class="eyebrow">Setup</p>
+        <h1>Run Plan <em>&amp; Setup Log</em></h1>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <label class="picker">
+        <span>Document</span>
+        <select id="doc-type" title="Three documents over one run plan."></select>
+      </label>
+      <span class="spacer"></span>
+      <button id="import-json" class="ghost">Load session or register</button>
+      <button id="export-json" class="ghost">Save session</button>
+      <button id="export-peer" class="ghost">PEER fragment</button>
+      <button id="reset" class="ghost danger">Clear</button>
+      <button id="export-draft" class="ghost">Export DRAFT</button>
+      <button id="export-release" class="primary">Export RELEASE</button>
+      <input type="file" id="import-file" accept=".json,.trd.json" hidden>
+    </div>
+    <p id="status" class="status"></p>
+  </header>
+
+  <main>
+    <section class="pane pane-side" aria-label="Car and event">
+      <h3>Car and event</h3>
+      <div id="meta" class="field-grid"></div>
+      <p class="privacy">
+        This runs entirely in your browser. Nothing is uploaded, and the
+        session is kept only in this browser&rsquo;s storage &mdash; use
+        <strong>Save session</strong> to move it anywhere else.
+      </p>
+    </section>
+
+    <div class="column">
+      <nav id="tabs" class="tabs" aria-label="Views"></nav>
+      <aside id="issues" class="issues" hidden></aside>
+      <section id="pane" class="pane" aria-label="Run plan or setup sheet"></section>
+    </div>
+  </main>
+
+  <footer data-standalone>
+    <p>TheRacingData &mdash; Modena. Templates <code>setup-sheet-v1.0</code>,
+       <code>run-plan-v1.0</code>, <code>setup-diff-v1.0</code>.</p>
+  </footer>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

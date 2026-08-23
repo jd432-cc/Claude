@@ -39,20 +39,21 @@ async function fuels() {
   }
 }
 
-function draw() {
+function draw(structural = true) {
   const computed = compute(session);
-  ui.render(computed);
+  if (structural) ui.render(computed);
+  else ui.update(computed);
   return computed;
 }
 
-function changed() {
+function changed(_session, structural = false) {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     if (!save(session)) {
       status('Autosave unavailable — export to a file before you close this tab.', 'warn');
     }
   }, 400);
-  draw();
+  draw(structural);
 }
 
 ui = new UI(session, await fuels(), changed);

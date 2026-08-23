@@ -1,0 +1,886 @@
+{
+  "id": "default",
+  "label": "Default register",
+  "note": "Ships as data so a car class can override it. A historic single-seater and a modern GT do not share a setup sheet, and forking the code per car is the failure mode to avoid. Copy this file, edit it, and load it in the tool.",
+  "groups": [
+    "Mass",
+    "Ride",
+    "Springs",
+    "Dampers",
+    "Anti-roll",
+    "Geometry",
+    "Tyres",
+    "Transmission",
+    "Brakes",
+    "Aero"
+  ],
+  "params": [
+    {
+      "key": "mass.corner.fl",
+      "group": "Mass",
+      "label": "Corner weight FL",
+      "unit": "kg",
+      "type": "number",
+      "precision": 1,
+      "step": 0.5
+    },
+    {
+      "key": "mass.corner.fr",
+      "group": "Mass",
+      "label": "Corner weight FR",
+      "unit": "kg",
+      "type": "number",
+      "precision": 1,
+      "step": 0.5
+    },
+    {
+      "key": "mass.corner.rl",
+      "group": "Mass",
+      "label": "Corner weight RL",
+      "unit": "kg",
+      "type": "number",
+      "precision": 1,
+      "step": 0.5
+    },
+    {
+      "key": "mass.corner.rr",
+      "group": "Mass",
+      "label": "Corner weight RR",
+      "unit": "kg",
+      "type": "number",
+      "precision": 1,
+      "step": 0.5
+    },
+    {
+      "key": "mass.total",
+      "group": "Mass",
+      "label": "Total",
+      "unit": "kg",
+      "type": "number",
+      "precision": 1,
+      "computed": "massTotal"
+    },
+    {
+      "key": "mass.crossWeight",
+      "group": "Mass",
+      "label": "Cross weight",
+      "unit": "%",
+      "type": "number",
+      "precision": 2,
+      "hint": "(FL + RR) / total. Fifty per cent is a car that behaves the same in both directions.",
+      "computed": "crossWeight"
+    },
+    {
+      "key": "mass.frontPct",
+      "group": "Mass",
+      "label": "Front distribution",
+      "unit": "%",
+      "type": "number",
+      "precision": 2,
+      "computed": "frontPct"
+    },
+    {
+      "key": "mass.ballastPositions",
+      "group": "Mass",
+      "label": "Ballast positions",
+      "unit": "",
+      "type": "text",
+      "precision": 2,
+      "hint": "Where it is, not just how much. Moving it is a setup change."
+    },
+    {
+      "key": "mass.driverIn",
+      "group": "Mass",
+      "label": "Weighed with driver",
+      "unit": "",
+      "type": "select",
+      "precision": 2,
+      "options": [
+        "Y",
+        "N"
+      ]
+    },
+    {
+      "key": "ride.height.fl",
+      "group": "Ride",
+      "label": "Ride height FL",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "ride.height.fr",
+      "group": "Ride",
+      "label": "Ride height FR",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "ride.height.rl",
+      "group": "Ride",
+      "label": "Ride height RL",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "ride.height.rr",
+      "group": "Ride",
+      "label": "Ride height RR",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "ride.heightF",
+      "group": "Ride",
+      "label": "Ride height, front mean",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "computed": "rideHeightF"
+    },
+    {
+      "key": "ride.heightR",
+      "group": "Ride",
+      "label": "Ride height, rear mean",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "computed": "rideHeightR"
+    },
+    {
+      "key": "ride.rake",
+      "group": "Ride",
+      "label": "Rake",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "hint": "Rear mean minus front mean. Positive is nose down.",
+      "computed": "rake"
+    },
+    {
+      "key": "ride.bumpStopGapF",
+      "group": "Ride",
+      "label": "Bump stop gap, front",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "ride.bumpStopGapR",
+      "group": "Ride",
+      "label": "Bump stop gap, rear",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "spring.rateF",
+      "group": "Springs",
+      "label": "Spring rate, front",
+      "unit": "N/mm",
+      "type": "number",
+      "precision": 1,
+      "step": 5
+    },
+    {
+      "key": "spring.rateR",
+      "group": "Springs",
+      "label": "Spring rate, rear",
+      "unit": "N/mm",
+      "type": "number",
+      "precision": 1,
+      "step": 5
+    },
+    {
+      "key": "spring.motionRatioF",
+      "group": "Springs",
+      "label": "Motion ratio, front",
+      "unit": "",
+      "type": "number",
+      "precision": 3,
+      "step": 0.01,
+      "hint": "Wheel travel per spring travel. Squared into the wheel rate, so a guess here is a guess squared."
+    },
+    {
+      "key": "spring.motionRatioR",
+      "group": "Springs",
+      "label": "Motion ratio, rear",
+      "unit": "",
+      "type": "number",
+      "precision": 3,
+      "step": 0.01
+    },
+    {
+      "key": "spring.wheelRateF",
+      "group": "Springs",
+      "label": "Wheel rate, front",
+      "unit": "N/mm",
+      "type": "number",
+      "precision": 2,
+      "computed": "wheelRateF"
+    },
+    {
+      "key": "spring.wheelRateR",
+      "group": "Springs",
+      "label": "Wheel rate, rear",
+      "unit": "N/mm",
+      "type": "number",
+      "precision": 2,
+      "computed": "wheelRateR"
+    },
+    {
+      "key": "spring.rideFreqF",
+      "group": "Springs",
+      "label": "Ride frequency, front",
+      "unit": "Hz",
+      "type": "number",
+      "precision": 2,
+      "computed": "rideFreqF"
+    },
+    {
+      "key": "spring.rideFreqR",
+      "group": "Springs",
+      "label": "Ride frequency, rear",
+      "unit": "Hz",
+      "type": "number",
+      "precision": 2,
+      "computed": "rideFreqR"
+    },
+    {
+      "key": "spring.helperF",
+      "group": "Springs",
+      "label": "Helper / tender, front",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "spring.helperR",
+      "group": "Springs",
+      "label": "Helper / tender, rear",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "damper.bumpLow.fl",
+      "group": "Dampers",
+      "label": "Bump, low speed FL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpHigh.fl",
+      "group": "Dampers",
+      "label": "Bump, high speed FL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebLow.fl",
+      "group": "Dampers",
+      "label": "Rebound, low speed FL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebHigh.fl",
+      "group": "Dampers",
+      "label": "Rebound, high speed FL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpLow.fr",
+      "group": "Dampers",
+      "label": "Bump, low speed FR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpHigh.fr",
+      "group": "Dampers",
+      "label": "Bump, high speed FR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebLow.fr",
+      "group": "Dampers",
+      "label": "Rebound, low speed FR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebHigh.fr",
+      "group": "Dampers",
+      "label": "Rebound, high speed FR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpLow.rl",
+      "group": "Dampers",
+      "label": "Bump, low speed RL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpHigh.rl",
+      "group": "Dampers",
+      "label": "Bump, high speed RL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebLow.rl",
+      "group": "Dampers",
+      "label": "Rebound, low speed RL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebHigh.rl",
+      "group": "Dampers",
+      "label": "Rebound, high speed RL",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpLow.rr",
+      "group": "Dampers",
+      "label": "Bump, low speed RR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.bumpHigh.rr",
+      "group": "Dampers",
+      "label": "Bump, high speed RR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebLow.rr",
+      "group": "Dampers",
+      "label": "Rebound, low speed RR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.rebHigh.rr",
+      "group": "Dampers",
+      "label": "Rebound, high speed RR",
+      "unit": "clicks",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "damper.clickRange",
+      "group": "Dampers",
+      "label": "Click range",
+      "unit": "",
+      "type": "text",
+      "precision": 2,
+      "hint": "0-20 from full soft, or whatever this damper actually is. A click count with no range is not a setting."
+    },
+    {
+      "key": "damper.serial",
+      "group": "Dampers",
+      "label": "Damper set / serials",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "arb.frontType",
+      "group": "Anti-roll",
+      "label": "Front bar, diameter or blade",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "arb.frontSetting",
+      "group": "Anti-roll",
+      "label": "Front bar setting",
+      "unit": "",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "arb.rearType",
+      "group": "Anti-roll",
+      "label": "Rear bar, diameter or blade",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "arb.rearSetting",
+      "group": "Anti-roll",
+      "label": "Rear bar setting",
+      "unit": "",
+      "type": "number",
+      "precision": 0,
+      "step": 1
+    },
+    {
+      "key": "arb.dropLinkF",
+      "group": "Anti-roll",
+      "label": "Drop link, front",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "arb.dropLinkR",
+      "group": "Anti-roll",
+      "label": "Drop link, rear",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "geo.camber.fl",
+      "group": "Geometry",
+      "label": "Camber FL",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "geo.camber.fr",
+      "group": "Geometry",
+      "label": "Camber FR",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "geo.camber.rl",
+      "group": "Geometry",
+      "label": "Camber RL",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "geo.camber.rr",
+      "group": "Geometry",
+      "label": "Camber RR",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "geo.toe.fl",
+      "group": "Geometry",
+      "label": "Toe FL",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "geo.toe.fr",
+      "group": "Geometry",
+      "label": "Toe FR",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "geo.toe.rl",
+      "group": "Geometry",
+      "label": "Toe RL",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "geo.toe.rr",
+      "group": "Geometry",
+      "label": "Toe RR",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "geo.castorL",
+      "group": "Geometry",
+      "label": "Castor, left",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.1
+    },
+    {
+      "key": "geo.castorR",
+      "group": "Geometry",
+      "label": "Castor, right",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.1
+    },
+    {
+      "key": "geo.rackShim",
+      "group": "Geometry",
+      "label": "Steering rack shim",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "geo.bumpSteer",
+      "group": "Geometry",
+      "label": "Bump steer note",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "geo.toeTotalF",
+      "group": "Geometry",
+      "label": "Total toe, front",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "computed": "toeTotalF"
+    },
+    {
+      "key": "geo.toeTotalR",
+      "group": "Geometry",
+      "label": "Total toe, rear",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "computed": "toeTotalR"
+    },
+    {
+      "key": "tyre.compound",
+      "group": "Tyres",
+      "label": "Compound",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "tyre.setNumber",
+      "group": "Tyres",
+      "label": "Set number",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "tyre.cold.fl",
+      "group": "Tyres",
+      "label": "Cold pressure FL",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.cold.fr",
+      "group": "Tyres",
+      "label": "Cold pressure FR",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.cold.rl",
+      "group": "Tyres",
+      "label": "Cold pressure RL",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.cold.rr",
+      "group": "Tyres",
+      "label": "Cold pressure RR",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.hotTarget.fl",
+      "group": "Tyres",
+      "label": "Target hot pressure FL",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.hotTarget.fr",
+      "group": "Tyres",
+      "label": "Target hot pressure FR",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.hotTarget.rl",
+      "group": "Tyres",
+      "label": "Target hot pressure RL",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "tyre.hotTarget.rr",
+      "group": "Tyres",
+      "label": "Target hot pressure RR",
+      "unit": "bar",
+      "type": "number",
+      "precision": 2,
+      "step": 0.05
+    },
+    {
+      "key": "trans.finalDrive",
+      "group": "Transmission",
+      "label": "Final drive",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear1",
+      "group": "Transmission",
+      "label": "Gear 1",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear2",
+      "group": "Transmission",
+      "label": "Gear 2",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear3",
+      "group": "Transmission",
+      "label": "Gear 3",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear4",
+      "group": "Transmission",
+      "label": "Gear 4",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear5",
+      "group": "Transmission",
+      "label": "Gear 5",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.gear6",
+      "group": "Transmission",
+      "label": "Gear 6",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "trans.diffPreload",
+      "group": "Transmission",
+      "label": "Diff preload",
+      "unit": "Nm",
+      "type": "number",
+      "precision": 0,
+      "step": 5
+    },
+    {
+      "key": "trans.rampAccel",
+      "group": "Transmission",
+      "label": "Ramp angle, acceleration",
+      "unit": "deg",
+      "type": "number",
+      "precision": 0,
+      "step": 5
+    },
+    {
+      "key": "trans.rampDecel",
+      "group": "Transmission",
+      "label": "Ramp angle, deceleration",
+      "unit": "deg",
+      "type": "number",
+      "precision": 0,
+      "step": 5
+    },
+    {
+      "key": "trans.clutchPack",
+      "group": "Transmission",
+      "label": "Clutch pack",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "brake.biasFront",
+      "group": "Brakes",
+      "label": "Bias, front",
+      "unit": "%",
+      "type": "number",
+      "precision": 1,
+      "step": 0.5
+    },
+    {
+      "key": "brake.padF",
+      "group": "Brakes",
+      "label": "Pad compound, front",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "brake.padR",
+      "group": "Brakes",
+      "label": "Pad compound, rear",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "brake.mcF",
+      "group": "Brakes",
+      "label": "Master cylinder, front",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "brake.mcR",
+      "group": "Brakes",
+      "label": "Master cylinder, rear",
+      "unit": "mm",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "brake.discF",
+      "group": "Brakes",
+      "label": "Disc spec, front",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "brake.discR",
+      "group": "Brakes",
+      "label": "Disc spec, rear",
+      "unit": "",
+      "type": "text",
+      "precision": 2
+    },
+    {
+      "key": "aero.splitter",
+      "group": "Aero",
+      "label": "Front splitter",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 5
+    },
+    {
+      "key": "aero.wingAngle",
+      "group": "Aero",
+      "label": "Rear wing angle",
+      "unit": "deg",
+      "type": "number",
+      "precision": 2,
+      "step": 0.5
+    },
+    {
+      "key": "aero.gurney",
+      "group": "Aero",
+      "label": "Gurney",
+      "unit": "mm",
+      "type": "number",
+      "precision": 1,
+      "step": 1
+    },
+    {
+      "key": "aero.balanceNote",
+      "group": "Aero",
+      "label": "Aero balance note",
+      "unit": "",
+      "type": "text",
+      "precision": 2,
+      "hint": "Stated from the splitter and wing settings, not typed. A balance note that disagrees with the settings above it is worse than none.",
+      "computed": "aeroBalance"
+    }
+  ]
+}
