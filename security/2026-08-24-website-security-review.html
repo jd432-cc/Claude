@@ -1,0 +1,1082 @@
+<title>Site Scrutineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap">
+
+<style>
+  /* ==========================================================
+     TheRacingData — security review.
+     Palette, type roles and the one hard colour rule are taken
+     from public/tools/_shared/css/trd-tokens.css and the TRD
+     brand guidelines. One accent. Signal Red is a FILL only.
+     Severity is encoded by fill weight in that one hue, never
+     by introducing a second colour.
+     ========================================================== */
+
+  :root {
+    --ink:          #0A0A0B;
+    --panel:        #0F0F11;
+    --surface:      #141417;
+    --surface-hi:   #1B1B1F;
+    --rule:         #232327;
+    --rule-soft:    #18181B;
+
+    --paper:        #F2F0EC;
+    --bone:         #CFCFD4;
+    --body:         #A6A6AD;
+    --muted:        #8E8E95;
+    --faint:        #74747A;
+    --steel:        #6F6F78;
+
+    --signal:       #970000;
+    --signal-hi:    #AD0000;
+    --signal-lo:    #6E0000;
+    --signal-lift:  #CC0000;
+    --signal-wash:  rgba(151, 0, 0, 0.14);
+    --signal-edge:  rgba(151, 0, 0, 0.38);
+
+    --font:         'Archivo', Arial, Helvetica, sans-serif;
+    --font-mono:    'Cascadia Mono', 'SF Mono', Consolas, ui-monospace, monospace;
+
+    --radius: 2px;
+    --measure: 68ch;
+    --gutter: clamp(20px, 5vw, 64px);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--body);
+    font-family: var(--font);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 var(--gutter) 96px;
+  }
+
+  /* ---- type roles ---------------------------------------- */
+
+  .eyebrow {
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0;
+  }
+
+  h1, h2, h3 {
+    color: var(--paper);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    line-height: 0.90;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h1 { font-size: clamp(38px, 7.4vw, 82px); }
+  h2 { font-size: clamp(26px, 3.4vw, 38px); }
+  h3 { font-size: clamp(19px, 2.1vw, 24px); line-height: 1.02; }
+
+  p { margin: 0; max-width: var(--measure); }
+
+  a { color: var(--bone); text-decoration-color: var(--steel); text-underline-offset: 3px; }
+  a:hover { color: var(--paper); text-decoration-color: var(--signal-lift); }
+  :focus-visible { outline: 2px solid var(--signal-lift); outline-offset: 3px; }
+
+  strong { color: var(--bone); font-weight: 700; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--bone);
+    background: var(--surface);
+    border: 1px solid var(--rule-soft);
+    border-radius: var(--radius);
+    padding: 0.1em 0.36em;
+  }
+
+  /* ---- masthead ------------------------------------------ */
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: clamp(48px, 9vw, 104px) 0 40px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .masthead-id {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    align-items: center;
+  }
+
+  .stamp {
+    display: inline-block;
+    background: var(--signal);
+    color: var(--paper);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    padding: 5px 10px 4px;
+    border-radius: var(--radius);
+  }
+
+  .standfirst {
+    color: var(--bone);
+    font-size: clamp(17px, 1.9vw, 20px);
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+
+  /* the trace: flat entry, brake knee, min-speed node, shallow exit */
+  .trace { display: block; width: 100%; max-width: 340px; height: auto; }
+
+  /* 1px gap + a 1px ring on each tile: the rings meet in the gap and read as
+     a single hairline, and a short final row leaves page ground, not a block. */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    gap: 1px;
+  }
+
+  .tile {
+    background: var(--panel);
+    box-shadow: 0 0 0 1px var(--rule);
+    border-radius: var(--radius);
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tile-figure {
+    font-weight: 900;
+    font-size: clamp(30px, 4.2vw, 44px);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--paper);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tile-figure .unit { font-size: 0.5em; color: var(--muted); margin-left: 0.24em; }
+  .tile.is-critical .tile-figure { color: var(--signal-lift); }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px 40px;
+  }
+
+  .meta-item { display: flex; flex-direction: column; gap: 5px; }
+  .meta-item p { font-size: 14.5px; color: var(--body); }
+
+  /* ---- sections ------------------------------------------ */
+
+  section { padding-top: clamp(56px, 8vw, 92px); }
+
+  .section-head {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 26px;
+  }
+
+  .prose { display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---- register ------------------------------------------ */
+
+  .scroller { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  thead th {
+    text-align: left;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding: 0 14px 10px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    color: var(--body);
+  }
+
+  tbody tr:nth-child(odd) td { background: var(--panel); }
+  tbody td:first-child { color: var(--paper); font-weight: 700; width: 1%; white-space: nowrap; }
+  .t-finding { color: var(--bone); min-width: 20rem; }
+
+  /* severity: one hue, four weights of fill */
+  .sev {
+    display: inline-block;
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px 9px 3px;
+    border-radius: var(--radius);
+    white-space: nowrap;
+  }
+  .sev-high   { background: var(--signal);      color: var(--paper); }
+  .sev-medium { background: var(--signal-wash); color: var(--signal-lift); box-shadow: inset 0 0 0 1px var(--signal-edge); }
+  .sev-low    { background: transparent;        color: var(--bone);  box-shadow: inset 0 0 0 1px var(--steel); }
+  .sev-info   { background: transparent;        color: var(--faint); box-shadow: inset 0 0 0 1px var(--rule); }
+
+  .status { font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+  .status-bad  { color: var(--signal-lift); }
+  .status-ok   { color: var(--body); }
+  .status-na   { color: var(--faint); }
+
+  /* ---- findings ------------------------------------------ */
+
+  .findings { display: flex; flex-direction: column; gap: 4px; }
+
+  .finding {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: var(--panel);
+    border-left: 3px solid var(--rule);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 30px clamp(20px, 3.4vw, 38px) 34px;
+  }
+
+  .finding[data-sev="high"]   { border-left-color: var(--signal); }
+  .finding[data-sev="medium"] { border-left-color: var(--signal-edge); }
+  .finding[data-sev="low"]    { border-left-color: var(--steel); }
+  .finding[data-sev="info"]   { border-left-color: var(--rule); }
+
+  .finding-head { display: flex; flex-direction: column; gap: 12px; }
+
+  .finding-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+  }
+
+  .tag-num {
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tag-site {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tag-poc {
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--signal-lo);
+    box-shadow: inset 0 0 0 1px var(--signal-edge);
+    border-radius: var(--radius);
+    padding: 4px 9px 3px;
+  }
+
+  /* ---- code + readouts ----------------------------------- */
+
+  pre {
+    margin: 0;
+    background: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.62;
+    color: var(--bone);
+    tab-size: 2;
+  }
+
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; color: inherit; }
+  pre .c { color: var(--faint); }
+  pre .hit { color: var(--signal-lift); font-weight: 700; }
+
+  .readout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--ink);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--signal);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+
+  .readout pre { border: 0; padding: 0; background: none; }
+  .readout .eyebrow { color: var(--muted); }
+
+  .fix {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+  }
+
+  ol, ul { margin: 0; padding-left: 1.3em; max-width: var(--measure); display: flex; flex-direction: column; gap: 9px; }
+  li::marker { color: var(--faint); }
+
+  /* ---- holds up ------------------------------------------ */
+
+  .holds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .hold {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 22px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hold h3 { font-size: 14px; letter-spacing: 0.02em; text-transform: none; line-height: 1.3; color: var(--bone); font-weight: 700; }
+  .hold p { font-size: 14px; color: var(--muted); }
+
+  /* ---- order of work ------------------------------------- */
+
+  .steps { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+
+  .step {
+    background: var(--panel);
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    align-items: start;
+    gap: 18px;
+    padding: 20px 22px;
+  }
+
+  .step-n {
+    font-weight: 900;
+    font-size: 26px;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--signal-lift);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step h3 { font-size: 15.5px; text-transform: none; letter-spacing: -0.01em; line-height: 1.3; }
+  .step p { font-size: 14px; color: var(--muted); margin-top: 5px; }
+
+  footer {
+    margin-top: clamp(56px, 8vw, 92px);
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  footer p { font-size: 13.5px; color: var(--faint); max-width: 62ch; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <svg class="trace" viewBox="0 0 340 64" role="img" aria-label="Speed trace through a corner">
+      <line x1="0" y1="52" x2="340" y2="52" stroke="#232327" stroke-width="1"></line>
+      <path d="M0 12 L96 12 L134 44 L168 46 L214 34 L270 20 L340 13"
+            fill="none" stroke="#CC0000" stroke-width="2.5"
+            stroke-linejoin="round" stroke-linecap="round"></path>
+      <circle cx="168" cy="46" r="4.5" fill="#0A0A0B" stroke="#CC0000" stroke-width="2.5"></circle>
+      <line x1="168" y1="46" x2="168" y2="58" stroke="#6F6F78" stroke-width="1"></line>
+    </svg>
+
+    <div class="masthead-id">
+      <span class="stamp">Security review</span>
+      <p class="eyebrow">24 August 2026 &middot; Static site audit</p>
+    </div>
+
+    <h1>Site scrutineering</h1>
+
+    <p class="standfirst">
+      Ten findings across the two TheRacingData deployments. Every one was reproduced;
+      three were demonstrated with working exploit code in a headless browser.
+      The two highest both sit on the live main site, and they compound.
+    </p>
+
+    <div class="tiles">
+      <div class="tile">
+        <p class="eyebrow">Findings</p>
+        <span class="tile-figure">10</span>
+      </div>
+      <div class="tile is-critical">
+        <p class="eyebrow">High severity</p>
+        <span class="tile-figure">2</span>
+      </div>
+      <div class="tile">
+        <p class="eyebrow">Proven by PoC</p>
+        <span class="tile-figure">3</span>
+      </div>
+      <div class="tile">
+        <p class="eyebrow">Secrets found</p>
+        <span class="tile-figure">0</span>
+      </div>
+      <div class="tile">
+        <p class="eyebrow">Tools broken</p>
+        <span class="tile-figure">3<span class="unit">of 6</span></span>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="meta-item">
+        <p class="eyebrow">Scope</p>
+        <p><code>Website-Main</code> and <code>Website-ComingSoon</code> — static Cloudflare Pages / Workers sites, 440 files.</p>
+      </div>
+      <div class="meta-item">
+        <p class="eyebrow">Method</p>
+        <p>Source review, then dynamic testing in headless Chromium against both sites served locally.</p>
+      </div>
+      <div class="meta-item">
+        <p class="eyebrow">Not covered</p>
+        <p>Live DNS, TLS configuration, Cloudflare zone settings and account access were out of scope.</p>
+      </div>
+    </div>
+  </header>
+
+  <section id="register">
+    <div class="section-head">
+      <p class="eyebrow">01 &middot; Register</p>
+      <h2>What was found</h2>
+    </div>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Finding</th>
+            <th scope="col">Main</th>
+            <th scope="col">Coming-soon</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td class="t-finding">Stored XSS in Loom Planner via imported project JSON</td>
+            <td><span class="status status-bad">Exploitable</span></td>
+            <td><span class="status status-ok">Blocked by CSP</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td class="t-finding">Every per-tool CSP rule missing from <code>_headers</code></td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-na">&mdash;</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><span class="sev sev-medium">Medium</span></td>
+            <td class="t-finding">Both projects declare the same Worker name</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><span class="sev sev-medium">Medium</span></td>
+            <td class="t-finding">No CSP on marketing pages; stated reason fails under test</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><span class="sev sev-medium">Medium</span></td>
+            <td class="t-finding">Deployed <code>public/tools/</code> stale — three tools broken</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-na">&mdash;</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><span class="sev sev-low">Low</span></td>
+            <td class="t-finding">Bundled page bypasses the SRI checks protecting main</td>
+            <td><span class="status status-na">&mdash;</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><span class="sev sev-low">Low</span></td>
+            <td class="t-finding"><code>dev-server.js</code> containment is a string prefix match</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><span class="sev sev-low">Low</span></td>
+            <td class="t-finding"><code>postMessage</code> listener has no origin check</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><span class="sev sev-low">Low</span></td>
+            <td class="t-finding">Template path resolver reaches prototype properties</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><span class="sev sev-info">Info</span></td>
+            <td class="t-finding">Transport and isolation headers not set</td>
+            <td><span class="status status-bad">Affected</span></td>
+            <td><span class="status status-bad">Affected</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="findings">
+    <div class="section-head">
+      <p class="eyebrow">02 &middot; Detail</p>
+      <h2>The findings</h2>
+      <p>Numbered by severity. Findings 1 and 2 are a pair — the second is what turns the first from a bug into working code execution.</p>
+    </div>
+
+    <div class="findings">
+
+      <!-- 1 -->
+      <article class="finding" data-sev="high">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">01</span>
+            <span class="sev sev-high">High</span>
+            <span class="tag-site">Main site</span>
+            <span class="tag-poc">Proven</span>
+          </div>
+          <h3>Stored XSS in the Loom Planner</h3>
+        </div>
+
+        <div class="prose">
+          <p><code>public/tools/loom-planner/</code> renders its state through <code>innerHTML</code> with unescaped interpolation, and <code>importJSON()</code> accepts a project file with no schema validation. It checks that one top-level key is an array, then hands the whole object to <code>setState()</code>:</p>
+
+          <pre><code><span class="c">// js/wiring.js:624</span>
+const data = JSON.parse(content);
+if (data.connectors &amp;&amp; Array.isArray(data.connectors)) setState(data);</code></pre>
+
+          <p>From there the file's contents reach eleven sinks unescaped — colour fields dropped straight into <code>style</code> attributes, numeric fields assumed to be numbers, ids written into <code>data-</code> attributes:</p>
+
+          <pre><code><span class="c">js/wiring.js:871, 1027</span>   style="background:<span class="hit">${group.colour}</span>;color:${T.PAPER};"
+<span class="c">js/wiring.js:1224</span>        style="border-left-color:<span class="hit">${group.colour}</span>;"
+<span class="c">js/canbus.js:534</span>         &lt;span class="${dirClass}"&gt;<span class="hit">${msg.direction}</span>&lt;/span&gt;
+<span class="c">js/canbus.js:581</span>         data-sig-edit="<span class="hit">${sig.id}</span>"
+<span class="c">js/utils.js:92, 118</span>      value="<span class="hit">${val}</span>"   value="<span class="hit">${displayText}</span>"</code></pre>
+
+          <p>The <code>escHtml()</code> helper applied elsewhere is itself only correct for element-text context. It escapes <code>&lt;</code>, <code>&gt;</code> and <code>&amp;</code> but not quotes, so it is unsafe inside a quoted attribute even where it <em>is</em> used:</p>
+
+          <pre><code><span class="c">// js/wiring.js:2161 — and the identical copy at js/canbus.js:817</span>
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;   <span class="c">// escapes &lt; &gt; &amp; — but NOT " or '</span>
+}</code></pre>
+
+          <div class="readout">
+            <p class="eyebrow">Observed — crafted wiring_loom.json, imported through the real UI</p>
+            <pre><code>window.__XSS_WIREGROUP set : <span class="hit">true</span>
+window.__XSS_CONNGROUP set : <span class="hit">true</span>
+injected &lt;img src=x&gt; nodes : 3
+XSS EXECUTED               : <span class="hit">true</span></code></pre>
+          </div>
+
+          <p>The CAN bus tab falls the same way through <code>#can-import</code>, via <code>msg.direction</code> and <code>sig.id</code>. And because <code>app.js</code> autosaves to <code>localStorage</code> on <code>beforeunload</code>, one import is enough — the payload re-fires on every later visit with no further user action:</p>
+
+          <div class="readout">
+            <p class="eyebrow">Observed — after import, then a plain page load</p>
+            <pre><code>localStorage keys : [ 'wiring_planner_state', 'canbus_planner_state' ]
+XSS re-fires on plain page load (no re-import) : <span class="hit">true</span></code></pre>
+          </div>
+
+          <p>A wiring loom or CAN configuration is exactly the kind of file a team passes around. One opened file buys an attacker persistent script execution on <code>theracingdata.com</code>, with access to everything else same-origin — including the other tools' saved sessions.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <ol>
+            <li><strong>Escape for the context.</strong> Use an attribute-safe escaper for anything inside a quoted attribute, or set values with <code>setAttribute</code>, <code>textContent</code> and <code>el.style.x =</code> rather than building HTML strings.</li>
+            <li><strong>Validate on import.</strong> Colours against <code>/^#[0-9a-f]{3,8}$/i</code> or a name allowlist; numeric fields through <code>Number()</code>; ids regenerated locally rather than trusted from the file.</li>
+            <li><strong>Ship the CSP</strong> (finding 2) — it contains the damage even when a sink is missed.</li>
+          </ol>
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article class="finding" data-sev="high">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">02</span>
+            <span class="sev sev-high">High</span>
+            <span class="tag-site">Main site</span>
+            <span class="tag-poc">Proven</span>
+          </div>
+          <h3>Every per-tool CSP rule is missing</h3>
+        </div>
+
+        <div class="prose">
+          <p>The coming-soon site carries hardened per-tool policies. The main site's <code>_headers</code> is byte-identical up to line 27 and then simply stops — the entire tools section is gone:</p>
+
+          <pre><code>$ diff Website-Main/public/_headers Website-ComingSoon/public/_headers
+27a28,56
+&gt; <span class="hit">/tools/report-builder/*</span>
+&gt;   Content-Security-Policy: default-src 'none'; script-src 'self'; …
+&gt; <span class="hit">/tools/loom-planner/*</span>
+&gt;   Content-Security-Policy: default-src 'none'; script-src 'self'; …
+&gt; <span class="hit">/tools/report-builder/templates/*</span>
+&gt;   Cache-Control: public, max-age=31536000, immutable</code></pre>
+
+          <p>This is the difference between an injection bug and code execution. Replaying the identical finding-1 payload with the coming-soon loom-planner policy applied:</p>
+
+          <div class="readout">
+            <p class="eyebrow">Observed — same payload, coming-soon CSP applied</p>
+            <pre><code>injected &lt;img src=x&gt; nodes : 3    <span class="c">(HTML injection still happens)</span>
+XSS EXECUTED               : <span class="hit">false</span>
+CSP violations logged      : 3
+  e.g. Refused to execute inline event handler because it violates …</code></pre>
+          </div>
+
+          <p>Same bug, same payload. The policy stops it dead.</p>
+
+          <p>The other four tools have no policy on <em>either</em> site. <code>_headers</code> explains that a new tool "gets no CSP until it is added here; that fails open rather than shipping a blank page." That trade-off costs nothing here — I loaded each unprotected tool under the strictest policy already in use and all four render with zero violations:</p>
+
+          <div class="scroller">
+            <table>
+              <thead>
+                <tr><th scope="col">Tool</th><th scope="col">DOM nodes</th><th scope="col">CSP violations</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>/tools/run-plan/</code></td><td>82</td><td><span class="status status-ok">none</span></td></tr>
+                <tr><td><code>/tools/fuel-stint/</code></td><td>488</td><td><span class="status status-ok">none</span></td></tr>
+                <tr><td><code>/tools/event-pack/</code></td><td>150</td><td><span class="status status-ok">none</span></td></tr>
+                <tr><td><code>/tools/load-budget/</code></td><td>168</td><td><span class="status status-ok">none</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix — restore the section, then extend it</p>
+          <pre><code>/tools/run-plan/*
+/tools/fuel-stint/*
+/tools/event-pack/*
+/tools/load-budget/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self';
+    font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none';
+    base-uri 'none'; frame-ancestors 'none'</code></pre>
+          <p>Consider inverting the default while you are in the file: a broad <code>/tools/*</code> policy with named exceptions fails closed instead of open.</p>
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article class="finding" data-sev="medium">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">03</span>
+            <span class="sev sev-medium">Medium</span>
+            <span class="tag-site">Both sites</span>
+          </div>
+          <h3>Both sites deploy to the same Worker</h3>
+        </div>
+
+        <div class="prose">
+          <pre><code><span class="c">// Website-Main/wrangler.jsonc AND Website-ComingSoon/wrangler.jsonc — identical</span>
+{ "name": <span class="hit">"yellow-cake-de51"</span>, "compatibility_date": "2026-08-20", … }</code></pre>
+
+          <p>Two separate sites, one deployment target. Whichever is published last silently replaces the other, with no warning at deploy time. The coming-soon site is the more hardened of the two and the main site is the one carrying the live tools, so either direction is a bad outcome.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <p>Give each project its own <code>name</code>.</p>
+        </div>
+      </article>
+
+      <!-- 4 -->
+      <article class="finding" data-sev="medium">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">04</span>
+            <span class="sev sev-medium">Medium</span>
+            <span class="tag-site">Both sites</span>
+            <span class="tag-poc">Proven</span>
+          </div>
+          <h3>No CSP on the marketing pages</h3>
+        </div>
+
+        <div class="prose">
+          <p><code>_headers</code> documents this as deliberate: <em>"No Content-Security-Policy is set on purpose. […] A CSP without <code>'unsafe-eval'</code> renders a blank page."</em> I tested that claim against the actual pages. It does not hold.</p>
+
+          <div class="scroller">
+            <table>
+              <thead>
+                <tr><th scope="col">Test</th><th scope="col">Page</th><th scope="col">Result</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Baseline, no CSP</td><td><code>/index.html</code></td><td>renders — 286 nodes</td></tr>
+                <tr><td>Candidate <strong>with</strong> <code>'unsafe-eval'</code></td><td><code>/index.html</code></td><td><span class="status status-ok">renders — 286 nodes, 0 violations</span></td></tr>
+                <tr><td>Candidate <strong>without</strong> <code>'unsafe-eval'</code></td><td><code>/index.html</code></td><td>still renders — 271 nodes, degrades to props only</td></tr>
+                <tr><td>Candidate + <code>'unsafe-inline'</code> + <code>blob:</code></td><td><code>/tools/index.html</code></td><td>renders — 196 nodes</td></tr>
+                <tr><td>Candidate</td><td><code>/404.html</code></td><td>renders — 48 nodes</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>The page never went blank. The inline <code>&lt;script type="text/x-dc"&gt;</code> block is inert to the browser — unknown MIME type — so it needs no <code>script-src</code> allowance at all. Only <code>support.js</code>, <code>image-slot.js</code> and the unpkg bundles do.</p>
+
+          <p>A policy with <code>'unsafe-eval'</code> is weaker than one without, but far stronger than nothing: it still blocks injected external script sources, <code>&lt;object&gt;</code> and <code>&lt;embed&gt;</code>, <code>&lt;base&gt;</code> hijacking and form exfiltration.</p>
+
+          <p><strong>A related dependency.</strong> <code>support.js</code> loads React, ReactDOM and Babel from <code>unpkg.com</code> at page load. During testing, with unpkg unreachable, the marketing pages rendered <strong>completely blank</strong> — zero nodes, zero characters of body text, no fallback. The SRI hashes are pinned and I verified all three against the live upstream files; they match exactly, so integrity is sound. Availability rests entirely on a third-party CDN.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix — tested policy for /index.html, /404.html and the design-export pages</p>
+          <pre><code>default-src 'none'; script-src 'self' 'unsafe-eval' https://unpkg.com;
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:;
+connect-src 'self' https://unpkg.com; object-src 'none'; base-uri 'none';
+form-action 'none'; frame-ancestors 'none'</code></pre>
+          <p><code>/tools/index.html</code> additionally needs <code>'unsafe-inline'</code> and <code>blob:</code> in <code>script-src</code>. Separately, consider vendoring the three CDN files, as the tools already do for Archivo and docx-templates.</p>
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article class="finding" data-sev="medium">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">05</span>
+            <span class="sev sev-medium">Medium</span>
+            <span class="tag-site">Main site</span>
+          </div>
+          <h3>The deployed tools directory is stale</h3>
+        </div>
+
+        <div class="prose">
+          <div class="readout">
+            <p class="eyebrow">Observed — node tools/build-tools.mjs --check</p>
+            <pre><code>  STALE   tools/_shared/report-engine/<span class="hit">resolve.js</span>
+  STALE   tools/_shared/report-engine/<span class="hit">store.js</span>
+  STALE   tools/_shared/report-engine/<span class="hit">values.js</span>
+  STALE   tools/build-tools.mjs
+  ORPHAN  tools/fuel-stint/README.md
+  ORPHAN  tools/fuel-stint/js/state.js
+  ORPHAN  tools/fuel-stint/js/ui.js</code></pre>
+          </div>
+
+          <p>Three modules that <code>_shared/report-engine/docx.js</code> imports are absent from the deploy directory. Loading the affected pages confirms real breakage — half of the tool suite:</p>
+
+          <div class="scroller">
+            <table>
+              <thead>
+                <tr><th scope="col">Page</th><th scope="col">HTTP failures</th><th scope="col">Rendered</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>/tools/report-builder/</code></td><td><span class="status status-bad">404 store.js</span></td><td>broken</td></tr>
+                <tr><td><code>/tools/run-plan/</code></td><td><span class="status status-bad">404 store.js, resolve.js</span></td><td>38 nodes <span class="status status-na">(82 on coming-soon)</span></td></tr>
+                <tr><td><code>/tools/event-pack/</code></td><td><span class="status status-bad">404 resolve.js, store.js</span></td><td>33 nodes <span class="status status-na">(150 on coming-soon)</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>The coming-soon deploy directory is out of sync in the other direction — 10 stale files, 10 orphaned.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <ol>
+            <li>Run <code>node tools/build-tools.mjs</code> before packaging, and wire <code>--check</code> into CI so a stale deploy directory fails the build.</li>
+            <li>Move <code>_tools/build-tools.mjs</code> to <code>tools/</code>, where a copy already lives. It currently sits inside the tree that is copied verbatim to <code>public/tools/</code>, so once the build runs the build script itself is published at <code>/tools/build-tools.mjs</code>.</li>
+          </ol>
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article class="finding" data-sev="low">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">06</span>
+            <span class="sev sev-low">Low</span>
+            <span class="tag-site">Coming-soon</span>
+          </div>
+          <h3>The bundled page bypasses SRI</h3>
+        </div>
+
+        <div class="prose">
+          <p><code>support.js</code> protects its CDN loads with subresource integrity — but the check is skipped whenever a resource override is present:</p>
+
+          <pre><code><span class="c">// public/support.js:1149</span>
+function cdnScriptFor(url, sri) {
+  const res = window.__resources;
+  const v = res ? res[url] : void 0;
+  return typeof v === "string" &amp;&amp; v
+    ? <span class="hit">{ src: v }</span>          <span class="c">// no integrity on this branch</span>
+    : { src: url, integrity: sri };
+}</code></pre>
+
+          <p>The coming-soon <code>index.html</code> is a self-extracting bundle that decodes React and ReactDOM from embedded base64, turns them into blob URLs, and injects exactly that map:</p>
+
+          <pre><code>&lt;script type="__bundler/ext_resources"&gt;
+[{"id":"https://unpkg.com/react@18.3.1/umd/react.production.min.js",
+  "uuid":"38ef6850-b0d7-4866-8497-38cc4b82229b"}, …]</code></pre>
+
+          <p>The blobs are same-origin and delivered over TLS, so practical risk is low. But the bundled bytes execute with no verification of any kind, and the SRI hashes that protect the main site do not apply here. If the bundling step is ever compromised, nothing catches it.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <p>Verify bundled bytes against the pinned hashes before creating the blob URL.</p>
+        </div>
+      </article>
+
+      <!-- 7 -->
+      <article class="finding" data-sev="low">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">07</span>
+            <span class="sev sev-low">Low</span>
+            <span class="tag-site">Both sites</span>
+            <span class="tag-poc">Proven</span>
+          </div>
+          <h3>Dev-server containment is a prefix match</h3>
+        </div>
+
+        <div class="prose">
+          <pre><code>const ROOT = path.join(__dirname, 'public');
+let file = path.join(ROOT, rel);
+if (<span class="hit">!file.startsWith(ROOT)</span>) { res.writeHead(403).end('forbidden'); return; }</code></pre>
+
+          <p><code>path.join</code> normalises <code>..</code>, so classic traversal is blocked. But <code>startsWith(ROOT)</code> also accepts any <em>sibling directory whose name begins with</em> <code>public</code> — <code>public.bak</code>, <code>public-secret</code>, <code>public_old</code>:</p>
+
+          <div class="readout">
+            <p class="eyebrow">Observed</p>
+            <pre><code>$ curl 'http://localhost:8788/..%2fpublic-secret/leak.txt'
+<span class="hit">SECRET-OUTSIDE-ROOT</span>
+
+$ curl -o /dev/null -w '%{http_code}\n' 'http://localhost:8788/..%2f..%2fetc%2fpasswd'
+403</code></pre>
+          </div>
+
+          <p>Local preview tooling only, bound to <code>localhost:8788</code> — but <code>public.bak/</code> is precisely the sort of directory that accumulates next to a deploy folder.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <pre><code>const rp = path.relative(ROOT, file);
+if (rp.startsWith('..') || path.isAbsolute(rp)) { res.writeHead(403).end('forbidden'); return; }</code></pre>
+        </div>
+      </article>
+
+      <!-- 8 -->
+      <article class="finding" data-sev="low">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">08</span>
+            <span class="sev sev-low">Low</span>
+            <span class="tag-site">Both sites</span>
+          </div>
+          <h3>Message listener has no origin check</h3>
+        </div>
+
+        <div class="prose">
+          <p><code>public/support.js:1407</code> accepts messages from any origin. Reachable impact is small — the theme value is validated against <code>"light"</code> and <code>"dark"</code>, and <code>X-Frame-Options: DENY</code> stops the site being framed at all.</p>
+          <pre><code>window.addEventListener("message", (e) =&gt; {
+  const type = e.data &amp;&amp; e.data.type;      <span class="c">// no e.origin check</span>
+  if (type === "__dc_theme") { … }
+  if (!designDocMode || type !== "__dc_probe") return;
+  postDesignMode(designDocMode);
+});</code></pre>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <p>Check <code>e.origin</code> against an allowlist, and replace the <code>"*"</code> targets on the two outbound <code>postMessage</code> calls (lines 1387 and 1858) with a concrete origin.</p>
+        </div>
+      </article>
+
+      <!-- 9 -->
+      <article class="finding" data-sev="low">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">09</span>
+            <span class="sev sev-low">Low</span>
+            <span class="tag-site">Both sites</span>
+          </div>
+          <h3>Resolver reaches prototype properties</h3>
+        </div>
+
+        <div class="prose">
+          <p><code>_shared/report-engine/resolve.js</code> is a genuinely good piece of design: it replaces docx-templates' JavaScript evaluation with a strict grammar, so a template can never execute code and the page needs no <code>'unsafe-eval'</code>. One gap — <code>lookup()</code> walks any dotted path, and <code>__proto__</code>, <code>constructor</code> and <code>prototype</code> all match the identifier pattern:</p>
+
+          <pre><code>const PATH = /^\$?[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*$/;</code></pre>
+
+          <p>A template containing <code>{constructor.constructor}</code> resolves to the <code>Function</code> constructor. The result is only stringified into the document, so this is an information-disclosure edge rather than code execution.</p>
+        </div>
+
+        <div class="fix">
+          <p class="eyebrow">Fix</p>
+          <p>Reject those three segment names explicitly, and prefer <code>Object.hasOwn(value, key)</code> in the walk.</p>
+        </div>
+      </article>
+
+      <!-- 10 -->
+      <article class="finding" data-sev="info">
+        <div class="finding-head">
+          <div class="finding-tags">
+            <span class="tag-num">10</span>
+            <span class="sev sev-info">Info</span>
+            <span class="tag-site">Both sites</span>
+          </div>
+          <h3>Transport and isolation headers</h3>
+        </div>
+
+        <div class="prose">
+          <p>Currently set on <code>/*</code>, on both sites: <code>X-Content-Type-Options</code>, <code>Referrer-Policy</code>, <code>X-Frame-Options</code>, <code>Permissions-Policy</code>. Worth adding:</p>
+          <pre><code>Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin</code></pre>
+          <p>Confirm whether HSTS is already applied at the Cloudflare zone level before adding it here. <code>Permissions-Policy</code> could also deny <code>payment=()</code>, <code>usb=()</code> and <code>serial=()</code>.</p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="holds-up">
+    <div class="section-head">
+      <p class="eyebrow">03 &middot; Clean</p>
+      <h2>What holds up</h2>
+      <p>Worth recording, because several of these are things sites of this kind usually get wrong.</p>
+    </div>
+
+    <div class="holds">
+      <div class="hold">
+        <h3>No secrets anywhere</h3>
+        <p>Scans for AWS keys, GitHub and Slack tokens, PEM blocks and credential-shaped assignments came back clean across both trees. No <code>.env</code>, no lockfiles, no npm dependency surface.</p>
+      </div>
+      <div class="hold">
+        <h3>SRI hashes are correct</h3>
+        <p>All three pinned <code>sha384</code> values match the live upstream files byte for byte. The pinning is real, not decorative.</p>
+      </div>
+      <div class="hold">
+        <h3>The docx resolver is a real mitigation</h3>
+        <p>Finding 9 notwithstanding. <code>noSandbox</code> is not enabled, and the custom <code>runJs</code> avoids both the iframe and <code>new Function()</code> paths in docx-templates.</p>
+      </div>
+      <div class="hold">
+        <h3>The templates are clean</h3>
+        <p>No <code>vbaProject.bin</code>, no OLE objects and no <code>TargetMode="External"</code> references across all 20 <code>.docx</code> templates. No active content in any SVG.</p>
+      </div>
+      <div class="hold">
+        <h3>Loom Planner is the outlier, not the pattern</h3>
+        <p><code>run-plan</code>, <code>event-pack</code>, <code>fuel-stint</code> and <code>load-budget</code> contain zero uses of <code>innerHTML</code>, <code>insertAdjacentHTML</code>, <code>document.write</code>, <code>eval</code> or <code>new Function</code>.</p>
+      </div>
+      <div class="hold">
+        <h3>Build and link hygiene</h3>
+        <p>No <code>Invoke-Expression</code>, <code>shell=True</code> or <code>pickle.load</code> in the build and dev scripts. No <code>target="_blank"</code> without <code>rel="noopener"</code>, no <code>http://</code> subresources, no open-redirect patterns.</p>
+      </div>
+      <div class="hold">
+        <h3>Tool data stays local</h3>
+        <p>The tools persist to <code>localStorage</code> and export to file. Nothing is transmitted — which is also why finding 1 lands where it does.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="order">
+    <div class="section-head">
+      <p class="eyebrow">04 &middot; Sequence</p>
+      <h2>Order of work</h2>
+      <p>Ordered by effect per unit of effort, not by severity alone.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-n">1</span>
+        <div>
+          <h3>Restore and extend the tool CSP rules</h3>
+          <p>One file, biggest effect. It also contains finding 1 while that fix is in progress. — finding 2</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">2</span>
+        <div>
+          <h3>Fix the Loom Planner escaping and validate on import</h3>
+          <p>Both tabs, all eleven sinks, plus the shared <code>escHtml</code> helper. — finding 1</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">3</span>
+        <div>
+          <h3>Give the two projects distinct Worker names</h3>
+          <p>A two-character change that removes a silent whole-site overwrite. — finding 3</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">4</span>
+        <div>
+          <h3>Re-run the tools build and add <code>--check</code> to CI</h3>
+          <p>Restores three broken tools and stops the next stale deploy. — finding 5</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">5</span>
+        <div>
+          <h3>Add the tested marketing-page CSP</h3>
+          <p>The policy in finding 4 is verified against every affected page. — finding 4</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">6</span>
+        <div>
+          <h3>Findings 6 to 10 as maintenance</h3>
+          <p>SRI on bundled resources, dev-server containment, origin checks, resolver hardening, transport headers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="eyebrow">TheRacingData &middot; Security review</p>
+    <p>Findings were reproduced against the supplied archives served locally; live DNS, TLS and Cloudflare zone configuration were not in scope. Full write-up with line references is committed at <code>security/2026-08-24-website-security-review.md</code>.</p>
+  </footer>
+
+</div>

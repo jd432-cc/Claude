@@ -1,0 +1,16 @@
+{
+  "connectors": [
+    { "id": "c1", "name": "ECU", "type": "AMP", "group": "g1", "pins": [{ "number": 1, "label": "PWR", "func": "12V" }] }
+  ],
+  "components": [],
+  "routeNodes": [],
+  "connectorGroups": [
+    { "id": "g1", "name": "Front Loom", "colour": "red\"></span><img src=x onerror=\"window.__XSS_CONNGROUP=true\" x=\"" }
+  ],
+  "wireGroups": [
+    { "id": "wg1", "name": "Power", "colour": "red\"><img src=x onerror=\"window.__XSS_WIREGROUP=true\">" }
+  ],
+  "wires": [
+    { "wireId": "W1", "wireGroup": "wg1", "fromConnector": "c1", "fromPin": 1, "toConnector": "c1", "toPin": 1, "gauge": 18, "colour": "RED", "length": 1, "notes": "" }
+  ]
+}

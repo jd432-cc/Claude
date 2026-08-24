@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "n1", "name": "ECU", "address": "0x100",
+      "messages": [
+        { "id": "m1", "name": "Status", "msgId": "0x200", "dlc": 8, "cycleTime": 10,
+          "direction": "TX</span><img src=x onerror=\"window.__XSS_CANBUS=true\">",
+          "signals": [ { "id": "s1\"><img src=x onerror=\"window.__XSS_SIGID=true\">", "name": "RPM", "startBit": 0, "bitLength": 16, "factor": 1, "offset": 0, "min": 0, "max": 8000, "unit": "rpm" } ] }
+      ] }
+  ],
+  "branches": []
+}
