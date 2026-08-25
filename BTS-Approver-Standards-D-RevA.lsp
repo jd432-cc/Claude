@@ -2200,20 +2200,18 @@
 (defun bts:count-on-wc (wc / ss)
   (if (setq ss (ssget "_X" (list (cons 8 wc)))) (sslength ss) 0))
 
-(defun bts:check-utility ( / out svc app lab eas sto hat n)
+;;; Apparatus layers only - what is drawn as the service run and its
+;;; fittings. The label, easement and stand-off layers are left alone:
+;;; an apparatus layer with no matching label is a survey decision, not
+;;; a standards deviation, and BTSCHECK already audits every register
+;;; layer whether or not anything is on it.
+(defun bts:check-utility ( / out svc app lab n)
   (setq out '())
   (foreach svc (bts:services)
     (setq app (strcat "BTS-U-" svc "-Apparatus")
-          lab (strcat "BTS-U-" svc "-Label")
-          eas (strcat "BTS-U-" svc "-Easement")
-          sto (strcat "BTS-U-" svc "-StandOff")
-          hat (strcat "BTS-U-" svc "-StandOff-Hatch"))
+          lab (strcat "BTS-U-" svc "-Label"))
     (if (> (setq n (bts:count-on-wc app)) 0)
       (progn
-        (if (= 0 (bts:count-on-wc lab))
-          (setq out (cons (bts:iss "UTIL" app
-                                   (strcat (itoa n) " object(s) with nothing on " lab))
-                          out)))
         (if (= (strcase svc) "UNKN")
           (setq out (cons (bts:iss "UTIL" app
                                    (strcat (itoa n)
@@ -2226,28 +2224,7 @@
           (setq out (cons (bts:iss "UTIL" app (strcat "annotation found here - move it to " lab))
                           out)))
         (if (> (bts:count-filter (list (cons 8 app) '(0 . "HATCH"))) 0)
-          (setq out (cons (bts:iss "UTIL" app "hatch found on an apparatus layer") out)))))
-    (if (and (bts:lay-ent hat)
-             (> (bts:count-on-wc hat) 0)
-             (= 0 (bts:count-on-wc sto)))
-      (setq out (cons (bts:iss "UTIL" hat (strcat "fill with no boundary on " sto)) out)))
-    (if (and (bts:lay-ent hat)
-             (> (bts:count-on-wc sto) 0)
-             (= 0 (bts:count-on-wc hat)))
-      (setq out (cons (bts:iss "UTIL" sto (strcat "boundary with no fill on " hat)) out)))
-    (if (> (bts:count-filter (list (cons 8 lab)
-                                   '(-4 . "<NOT")
-                                   '(-4 . "<OR") '(0 . "TEXT") '(0 . "MTEXT")
-                                   '(0 . "MULTILEADER") '(0 . "LEADER") '(0 . "INSERT")
-                                   '(-4 . "OR>")
-                                   '(-4 . "NOT>")))
-           0)
-      (setq out (cons (bts:iss "UTIL" lab "geometry on a label layer - labels only") out)))
-    (if (> (bts:count-filter (list (cons 8 eas) '(0 . "HATCH"))) 0)
-      (setq out (cons (bts:iss "UTIL" eas
-                               (strcat "hatch on the easement boundary layer - split it onto "
-                                       eas "-Hatch"))
-                      out))))
+          (setq out (cons (bts:iss "UTIL" app "hatch found on an apparatus layer") out))))))
   (reverse out))
 
 (defun bts:check-ltype ( / out lay ss i e lt rule used ltsc)
@@ -3473,9 +3450,9 @@
 
 (defun C:BTSUTILCHECK (/ svc n)
   (bts:show "BTSUTILCHECK - utility layer compliance" (bts:check-utility))
-  (bts:say "  Objects by service:")
+  (bts:say "  Objects on the apparatus layers:")
   (foreach svc (bts:services)
-    (setq n (bts:count-on-wc (strcat "BTS-U-" svc "-*")))
+    (setq n (bts:count-on-wc (strcat "BTS-U-" svc "-Apparatus")))
     (if (> n 0)
       (bts:say (strcat "     " (bts:pad svc 10) (itoa n) " object(s)"))))
   (princ))
@@ -3981,7 +3958,7 @@
   ("BTSSTATS"        "Object, layer and utility run length statistics.")
   ("BTSCOMPARE"      "Diff a CSV snapshot against this drawing or another.")
   ("-- utility --"   "")
-  ("BTSUTILCHECK"    "Utility layer compliance by service.")
+  ("BTSUTILCHECK"    "Apparatus layer compliance, service by service.")
   ("BTSLTYPECHECK"   "Linetypes on the utility layers.")
   ("BTSQLCHECK"      "PAS 128 quality level attribution.")
   ("BTSCONFLICTS"    "Crossings and clearance breaches between services.")
