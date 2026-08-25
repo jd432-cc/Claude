@@ -5,9 +5,40 @@ This file provides guidance to AI assistants (Claude and others) working in this
 ## Repository Overview
 
 **Repository**: jd432-cc/Claude
-**Status**: Initial setup — this repository is currently empty.
+**Contents**: The BTS Enterprise Standards Suite — AutoCAD standards tooling
+for BTS utility survey drawings, written in AutoLISP.
 
-This CLAUDE.md should be updated as the project evolves to reflect the actual codebase structure, tooling, and conventions.
+See `README.md` for install, commands and limitations.
+
+### Layout
+
+| Path | Role |
+| --- | --- |
+| `src/BTSEnterprise.lsp` | Registers, helpers, and the audit / fix / remap / cleanup engines. Everything else builds on it. |
+| `src/BTSBatch.lsp` | Folder-wide commands. Generates and runs `.scr` batch scripts. |
+| `src/BTSSurvey.lsp` | `BTSQLCHECK` — PAS 128 quality levels. |
+| `src/BTSAnno.lsp` | `BTSTEXTCHECK` — text standards. |
+| `src/BTSProject.lsp` | Project audit, management reporting, issue packaging. |
+| `src/BTSLoad.lsp` | Loader. Module order matters — core first. |
+
+### Conventions specific to this codebase
+
+- **Target is AutoCAD LT 2024+.** No ActiveX (`vla-*`), no ObjectDBX, no VBA —
+  LT has none of them. Stay on `entmake` / `entget` / `entmod` / `ssget` /
+  `tblnext` and DXF group codes.
+- **Engines return data; commands print.** Anything named `bts:*` returns a
+  value and writes nothing to the screen, so the batch and project layers can
+  call it and collect the result. Only `C:*` commands call `bts:say`.
+- **Findings are `"CODE|subject|detail"` strings.** The code root — the part
+  before the first hyphen — drives scoring through `*BTS-SEVERITY*`. `INFO`
+  and `META` lines carry context, not faults, and are excluded from counts and
+  scores by `bts:faults`.
+- **Declare every local**, including `foreach` variables. An undeclared loop
+  variable becomes a global and will collide.
+- Any function calling `(command …)` must guard its `*error*` handler with
+  `*push-error-using-command*` / `*pop-error-mode*`.
+- Site-specific values live in `*BTS-…*` registers at the top of a module, not
+  inline in the logic.
 
 ---
 
