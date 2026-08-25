@@ -9,11 +9,21 @@ This file provides guidance to AI assistants (Claude and others) working in this
 
 | File | Role |
 | --- | --- |
-| `BTSStandards.lsp` | Release R v1.1. Holds the standards data tables (`*BTS-LAYERS*`, `*BTS-REMAP*`, `*BTS-SPLIT*`, `*BTS-VARS*`) and the core commands: BTSCHECK, BTSFIX, BTSREMAP, BTSVARS, BTSJUNK, BTSOVERRIDE, BTSREPORT, BTSHELP. |
-| `BTS-Approver-Standards-D-RevA.lsp` | Approver Standards D Rev A. A companion module adding the auditing, remediation, reporting and project governance commands. Requires the register from release R, so load that file first. |
+| `BTS-Approver-Standards-D-RevA.lsp` | The whole suite, self contained: the register, the release R v1.1 commands and the 41 approver commands. 49 commands in one file. |
+| `BTSStandards.lsp` | Release R v1.1 on its own, for anyone who wants the register commands without the approver suite. |
 
-Load order matters: `(load "BTSStandards")` then `(load "BTS-Approver-Standards-D-RevA")`.
-`BTSHELP` lists the release R commands, `BTSAHELP` the approver suite.
+Load one file, not both:
+
+```lisp
+(load "BTS-Approver-Standards-D-RevA")   ; everything
+(load "BTSStandards")                    ; release R only
+```
+
+`BTSHELP` lists the register commands, `BTSAHELP` the approver suite.
+
+**The register is duplicated between the two files.** Release R's code is carried into the approver file verbatim, so a change to `*BTS-LAYERS*` and friends has to be made in both, or `BTSStandards.lsp` has to be retired. Keep them in step, or delete the one you do not issue.
+
+The approver file is laid out in five parts: the register, the core helpers, the release R audit and commands, the approver suite, and the help and load banner.
 
 ### Conventions in the LISP
 
