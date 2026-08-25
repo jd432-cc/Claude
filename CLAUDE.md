@@ -5,7 +5,23 @@ This file provides guidance to AI assistants (Claude and others) working in this
 ## Repository Overview
 
 **Repository**: jd432-cc/Claude
-**Status**: Initial setup — this repository is currently empty.
+**Contents**: AutoLISP tooling for the BTS CAD layer standard.
+
+| File | Role |
+| --- | --- |
+| `BTSStandards.lsp` | Release R v1.1. Holds the standards data tables (`*BTS-LAYERS*`, `*BTS-REMAP*`, `*BTS-SPLIT*`, `*BTS-VARS*`) and the core commands: BTSCHECK, BTSFIX, BTSREMAP, BTSVARS, BTSJUNK, BTSOVERRIDE, BTSREPORT, BTSHELP. |
+| `BTS-Approver-Standards-D-RevA.lsp` | Approver Standards D Rev A. A companion module adding the auditing, remediation, reporting and project governance commands. Requires the register from release R, so load that file first. |
+
+Load order matters: `(load "BTSStandards")` then `(load "BTS-Approver-Standards-D-RevA")`.
+`BTSHELP` lists the release R commands, `BTSAHELP` the approver suite.
+
+### Conventions in the LISP
+
+- Target is **AutoCAD LT 2024+**: entity level AutoLISP only. No ActiveX, no `vla-*`, no ObjectDBX. Anything needing a second drawing open is done by generating a script for `SCRIPT`.
+- Commands are `C:BTSNAME`, internal functions are `bts:name`.
+- Every check returns a list of `"CODE     |item|detail"` strings, printed by `bts:show` and written out by `bts:report-writer`, `bts:csv-writer` and `bts:json-writer`.
+- Site policy lives in the `*BTS-A-*` configuration tables at the top of the approver module — edit those, not the code.
+- Comments explain *why* a piece of DXF handling is the way it is; keep that habit.
 
 This CLAUDE.md should be updated as the project evolves to reflect the actual codebase structure, tooling, and conventions.
 
